@@ -30,6 +30,22 @@
     @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200;
   }
   
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200;
+  }
+  
+  .form-select {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200 bg-white;
+  }
+  
+  .form-textarea {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200 resize-y;
+  }
+  
+  .form-checkbox {
+    @apply h-4 w-4 text-accent-600 focus:ring-accent-500 border-gray-300 rounded;
+  }
+  
   .card {
     @apply bg-white rounded-xl shadow-soft border border-gray-100 p-6;
   }

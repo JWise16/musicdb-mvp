@@ -8,6 +8,8 @@ import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import VenueDetails from './pages/VenueDetails';
 import EventDetails from './pages/EventDetails';
+import AddEvent from './pages/AddEvent';
+import Verification from './pages/Verification';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -29,6 +31,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/add-event"
+          element={
+            <ProtectedRoute>
+              <AddEvent />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/verification"
+          element={
+            <ProtectedRoute>
+              <Verification />
             </ProtectedRoute>
           }
         />
