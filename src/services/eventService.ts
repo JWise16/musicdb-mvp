@@ -27,6 +27,27 @@ export type ArtistData = {
   social_media?: any;
 };
 
+export type EventFilters = {
+  genre?: string;
+  city?: string;
+  venueSize?: 'small' | 'medium' | 'large';
+  timeFrame?: 'upcoming' | 'past' | 'all';
+  percentageSold?: 'low' | 'medium' | 'high';
+  searchQuery?: string;
+};
+
+export type EventWithDetails = Tables<'events'> & {
+  venues: Tables<'venues'>;
+  event_artists: Array<{
+    artists: Tables<'artists'>;
+    is_headliner: boolean;
+    performance_order: number;
+  }>;
+  event_metrics: Tables<'event_metrics'> | null;
+  percentage_sold: number;
+  total_revenue: number;
+};
+
 export class EventService {
   // Create a new event with artists
   static async createEvent(eventData: EventFormData): Promise<{ success: boolean; eventId?: string; error?: string }> {
@@ -215,7 +236,109 @@ export class EventService {
     }
   }
 
-  // Get all events
+  // Get all events with full details and filtering
+  static async getEventsWithFilters(filters: EventFilters = {}): Promise<EventWithDetails[]> {
+    try {
+      let query = supabase
+        .from('events')
+        .select(`
+          *,
+          venues (*),
+          event_artists (
+            artists (*),
+            is_headliner,
+            performance_order
+          ),
+          event_metrics (*)
+        `)
+        .order('date', { ascending: false });
+
+      // Apply filters
+      if (filters.searchQuery) {
+        query = query.or(`name.ilike.%${filters.searchQuery}%,venues.name.ilike.%${filters.searchQuery}%`);
+      }
+
+      if (filters.city) {
+        query = query.eq('venues.location', filters.city);
+      }
+
+      if (filters.venueSize) {
+        const sizeRanges = {
+          small: { min: 0, max: 200 },
+          medium: { min: 201, max: 1000 },
+          large: { min: 1001, max: 999999 }
+        };
+        const range = sizeRanges[filters.venueSize];
+        query = query.gte('venues.capacity', range.min).lte('venues.capacity', range.max);
+      }
+
+      if (filters.timeFrame) {
+        const now = new Date().toISOString();
+        switch (filters.timeFrame) {
+          case 'upcoming':
+            query = query.gte('date', now);
+            break;
+          case 'past':
+            query = query.lt('date', now);
+            break;
+          // 'all' doesn't need any filter
+        }
+      }
+
+      const { data: events, error } = await query;
+
+      if (error) {
+        console.error('Error fetching events:', error);
+        return [];
+      }
+
+      // Process events to add calculated fields and apply remaining filters
+      let processedEvents = events?.map(event => {
+        const percentageSold = event.tickets_sold && event.total_tickets 
+          ? (event.tickets_sold / event.total_tickets) * 100 
+          : 0;
+        
+        const totalRevenue = event.event_metrics?.total_revenue || 
+          (event.tickets_sold ? event.tickets_sold * event.ticket_price : 0) + 
+          (event.bar_sales || 0);
+
+        return {
+          ...event,
+          percentage_sold: percentageSold,
+          total_revenue: totalRevenue,
+        };
+      }) || [];
+
+      // Apply percentage sold filter
+      if (filters.percentageSold) {
+        const percentageRanges = {
+          low: { min: 0, max: 33 },
+          medium: { min: 34, max: 66 },
+          high: { min: 67, max: 100 }
+        };
+        const range = percentageRanges[filters.percentageSold];
+        processedEvents = processedEvents.filter(event => 
+          event.percentage_sold >= range.min && event.percentage_sold <= range.max
+        );
+      }
+
+      // Apply genre filter
+      if (filters.genre) {
+        processedEvents = processedEvents.filter(event =>
+          event.event_artists?.some((ea: any) => 
+            ea.artists?.genre?.toLowerCase().includes(filters.genre!.toLowerCase())
+          )
+        );
+      }
+
+      return processedEvents as EventWithDetails[];
+    } catch (error) {
+      console.error('Error in getEventsWithFilters:', error);
+      return [];
+    }
+  }
+
+  // Get all events (legacy method)
   static async getAllEvents(): Promise<Tables<'events'>[]> {
     try {
       const { data: events, error } = await supabase
@@ -240,6 +363,65 @@ export class EventService {
     } catch (error) {
       console.error('Error in getAllEvents:', error);
       return [];
+    }
+  }
+
+  // Get available filter options
+  static async getFilterOptions(): Promise<{
+    genres: string[];
+    cities: string[];
+    venueSizes: Array<{ value: string; label: string; count: number }>;
+  }> {
+    try {
+      // Get all events with details to extract filter options
+      const events = await this.getEventsWithFilters();
+      
+      // Extract unique genres
+      const genres = new Set<string>();
+      events.forEach(event => {
+        event.event_artists?.forEach(ea => {
+          if (ea.artists?.genre) {
+            genres.add(ea.artists.genre);
+          }
+        });
+      });
+
+      // Extract unique cities
+      const cities = new Set<string>();
+      events.forEach(event => {
+        if (event.venues?.location) {
+          cities.add(event.venues.location);
+        }
+      });
+
+      // Calculate venue size distribution
+      const venueSizeCounts = {
+        small: 0,
+        medium: 0,
+        large: 0
+      };
+
+      events.forEach(event => {
+        const capacity = event.venues?.capacity || 0;
+        if (capacity <= 200) venueSizeCounts.small++;
+        else if (capacity <= 1000) venueSizeCounts.medium++;
+        else venueSizeCounts.large++;
+      });
+
+      const venueSizes = [
+        { value: 'small', label: 'Small (≤200)', count: venueSizeCounts.small },
+        { value: 'medium', label: 'Medium (201-1000)', count: venueSizeCounts.medium },
+        { value: 'large', label: 'Large (1000+)', count: venueSizeCounts.large }
+      ];
+
+      return {
+        genres: Array.from(genres).sort(),
+        cities: Array.from(cities).sort(),
+        venueSizes
+      };
+    } catch (error) {
+      console.error('Error getting filter options:', error);
+      return { genres: [], cities: [], venueSizes: [] };
     }
   }
 } 

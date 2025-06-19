@@ -6,6 +6,8 @@ import Login from './pages/Auth/login';
 import Signup from './pages/Auth/signup';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
+import Events from './pages/Events';
+import Venues from './pages/Venues';
 import VenueDetails from './pages/VenueDetails';
 import EventDetails from './pages/EventDetails';
 import AddEvent from './pages/AddEvent';
@@ -31,6 +33,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events"
+          element={
+            <ProtectedRoute>
+              <Events />
             </ProtectedRoute>
           }
         />
@@ -63,6 +73,14 @@ function App() {
           element={
             <ProtectedRoute>
               <EventDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/venues"
+          element={
+            <ProtectedRoute>
+              <Venues />
             </ProtectedRoute>
           }
         />
