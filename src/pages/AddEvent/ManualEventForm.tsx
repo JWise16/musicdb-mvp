@@ -106,7 +106,7 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
   const validateCurrentStep = (): boolean => {
     switch (currentStep) {
       case 'details':
-        return !!(formData.name && formData.date && formData.venue_id && formData.ticket_price > 0 && formData.total_tickets > 0);
+        return !!(formData.name && formData.date && formData.venue_id && formData.total_tickets > 0);
       case 'artists':
         return formData.artists.length > 0 && formData.artists.every(artist => artist.name.trim());
       case 'financial':
@@ -167,7 +167,7 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
           {steps.map((step, index) => (
             <div key={step.key} className="flex items-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
-                currentStep === step.key ? 'bg-accent-600 text-white' : 
+                currentStep === step.key ? 'bg-black text-white' : 
                 steps.indexOf({ key: currentStep, label: '' }) > index ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
               }`}>
                 {steps.indexOf({ key: currentStep, label: '' }) > index ? (
@@ -179,7 +179,7 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
                 )}
               </div>
               <span className={`ml-2 text-sm font-medium ${
-                currentStep === step.key ? 'text-accent-600' : 'text-gray-500'
+                currentStep === step.key ? 'text-black' : 'text-gray-500'
               }`}>
                 {step.label}
               </span>
@@ -216,9 +216,10 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
         </label>
         <input
           type="date"
-          value={formData.date}
+          value={formData.date || ''}
           onChange={(e) => updateFormData({ date: e.target.value })}
           className="form-input w-full"
+          placeholder="Select event date"
         />
       </div>
 
@@ -241,35 +242,22 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Ticket Price ($) *
-          </label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.ticket_price}
-            onChange={(e) => updateFormData({ ticket_price: parseFloat(e.target.value) || 0 })}
-            className="form-input w-full"
-            placeholder="0.00"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Total Tickets Available *
-          </label>
-          <input
-            type="number"
-            min="1"
-            value={formData.total_tickets}
-            onChange={(e) => updateFormData({ total_tickets: parseInt(e.target.value) || 0 })}
-            className="form-input w-full"
-            placeholder="0"
-          />
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Total Tickets Available *
+        </label>
+        <input
+          type="number"
+          min="1"
+          value={formData.total_tickets || ''}
+          onChange={(e) => {
+            const value = e.target.value;
+            const numValue = value === '' ? 0 : parseInt(value) || 0;
+            updateFormData({ total_tickets: numValue });
+          }}
+          className="form-input w-full"
+          placeholder="0"
+        />
       </div>
 
       <div>
@@ -422,7 +410,11 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
               min="0"
               max={formData.total_tickets}
               value={formData.tickets_sold || ''}
-              onChange={(e) => updateFormData({ tickets_sold: parseInt(e.target.value) || undefined })}
+              onChange={(e) => {
+                const value = e.target.value;
+                const numValue = value === '' ? undefined : parseInt(value) || undefined;
+                updateFormData({ tickets_sold: numValue });
+              }}
               className="form-input w-full"
               placeholder="0"
             />
@@ -488,10 +480,6 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
                 <dd className="text-sm text-gray-900">{selectedVenue?.name}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Ticket Price</dt>
-                <dd className="text-sm text-gray-900">${formData.ticket_price}</dd>
-              </div>
-              <div>
                 <dt className="text-sm font-medium text-gray-500">Total Tickets</dt>
                 <dd className="text-sm text-gray-900">{formData.total_tickets}</dd>
               </div>
@@ -524,7 +512,7 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Total Revenue</dt>
                     <dd className="text-sm text-gray-900">
-                      ${((formData.tickets_sold || 0) * formData.ticket_price + (formData.bar_sales || 0)).toFixed(2)}
+                      ${(formData.bar_sales || 0).toFixed(2)}
                     </dd>
                   </div>
                 </>
