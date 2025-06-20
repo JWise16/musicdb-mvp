@@ -19,19 +19,6 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-  const testSupabaseConnection = async () => {
-    console.log('Testing Supabase connection...');
-    try {
-      const { data, error } = await supabase.from('_dummy_table_').select('*').limit(1);
-      console.log('Supabase connection test result:', { data, error });
-      if (error) {
-        console.log('Supabase connection error (expected for dummy table):', error.message);
-      }
-    } catch (err) {
-      console.error('Supabase connection test failed:', err);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -143,15 +130,6 @@ const Login = () => {
               </a>
             </p>
           </div>
-        </div>
-        
-        <div className="text-center">
-          <button 
-            onClick={testSupabaseConnection} 
-            className="text-sm text-gray-500 hover:text-gray-700 underline"
-          >
-            Test Connection
-          </button>
         </div>
       </div>
     </div>
