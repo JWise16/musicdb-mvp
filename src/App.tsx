@@ -5,6 +5,7 @@ import { supabase } from './supabaseClient';
 import Login from './pages/Auth/login';
 import Signup from './pages/Auth/signup';
 import Landing from './pages/Landing';
+import AboutPage from './pages/About';
 import Dashboard from './pages/Dashboard';
 import Events from './pages/Events';
 import Venues from './pages/Venues';
@@ -28,6 +29,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route
           path="/dashboard"
           element={
