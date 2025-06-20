@@ -16,15 +16,6 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
     });
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
   const getHeadliners = (event: VenueEvent) => {
     return event.event_artists
       ?.filter(ea => ea.is_headliner)

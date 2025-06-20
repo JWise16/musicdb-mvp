@@ -1,7 +1,6 @@
 // src/App.tsx or src/main.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
-import { supabase } from './supabaseClient';
 import Login from './pages/Auth/login';
 import Signup from './pages/Auth/signup';
 import Landing from './pages/Landing';

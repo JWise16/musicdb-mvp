@@ -237,7 +237,6 @@ export class VenueService {
 
       // Calculate analytics
       const showsReported = events.length;
-      let totalTicketSales = 0;
       let totalBarSales = 0;
       let totalTicketsSold = 0;
       let totalTicketsAvailable = 0;

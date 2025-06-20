@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TypewriterEffect } from '../../components/common/TypewriterEffect';
-import { Button } from '../../components/common/Button';
 import logoImage from '../../assets/logo.png';
 
 const Landing = () => {

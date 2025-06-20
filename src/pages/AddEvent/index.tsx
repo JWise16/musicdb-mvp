@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import ReportTypeSelection from './ReportTypeSelection';
 import ManualEventForm from './ManualEventForm';
@@ -10,19 +9,15 @@ type Step = 'selection' | 'manual' | 'upload';
 
 const AddEvent = () => {
   const [currentStep, setCurrentStep] = useState<Step>('selection');
-  const [reportType, setReportType] = useState<'manual' | 'upload' | null>(null);
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const handleReportTypeSelect = (type: 'manual' | 'upload') => {
-    setReportType(type);
     setCurrentStep(type);
   };
 
   const handleBack = () => {
     if (currentStep === 'manual' || currentStep === 'upload') {
       setCurrentStep('selection');
-      setReportType(null);
     } else {
       navigate('/dashboard');
     }

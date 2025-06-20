@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { supabase } from '../../supabaseClient';
 import { VenueService, type VenueAnalytics, type VenueEvent } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import TimeFrameSelector from '../../components/features/dashboard/TimeFrameSelector';
@@ -76,11 +75,6 @@ const Dashboard = () => {
 
     loadDashboardData();
   }, [user, hasVenues, timeFrame]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
-  };
 
   const handleEventClick = (eventId: string) => {
     navigate(`/event/${eventId}`);

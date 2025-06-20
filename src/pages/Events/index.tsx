@@ -5,20 +5,13 @@ import { EventService, type EventFilters, type EventWithDetails } from '../../se
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import EventCard from '../../components/features/events/EventCard';
-import EventFiltersComponent from '../../components/features/events/EventFilters';
 
 const Events = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [events, setEvents] = useState<EventWithDetails[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<EventWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<EventFilters>({});
-  const [filterOptions, setFilterOptions] = useState({
-    genres: [] as string[],
-    cities: [] as string[],
-    venueSizes: [] as Array<{ value: string; label: string; count: number }>
-  });
   
   // Verification states
   const [hasVenues, setHasVenues] = useState<boolean | null>(null);
@@ -73,14 +66,9 @@ const Events = () => {
 
       setIsLoading(true);
       try {
-        const [eventsData, optionsData] = await Promise.all([
-          EventService.getEventsWithFilters(),
-          EventService.getFilterOptions()
-        ]);
+        const eventsData = await EventService.getEventsWithFilters();
         
-        setEvents(eventsData);
         setFilteredEvents(eventsData);
-        setFilterOptions(optionsData);
       } catch (error) {
         console.error('Error loading events:', error);
       } finally {
@@ -109,14 +97,6 @@ const Events = () => {
 
     applyFilters();
   }, [filters, hasVenues, hasVenueEvents]);
-
-  const handleFilterChange = (newFilters: Partial<EventFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  };
-
-  const clearFilters = () => {
-    setFilters({});
-  };
 
   const handleEventClick = (eventId: string) => {
     navigate(`/event/${eventId}`);
@@ -216,7 +196,7 @@ const Events = () => {
                 {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
               </span>
               <button
-                onClick={clearFilters}
+                onClick={() => setFilters({})}
                 className="btn-secondary text-sm"
                 disabled={Object.keys(filters).length === 0}
               >
@@ -224,13 +204,6 @@ const Events = () => {
               </button>
             </div>
           </div>
-
-          {/* Filters */}
-          <EventFiltersComponent
-            filters={filters}
-            filterOptions={filterOptions}
-            onFilterChange={handleFilterChange}
-          />
 
           {/* Events Grid */}
           {isLoading ? (
@@ -256,7 +229,7 @@ const Events = () => {
               </p>
               {Object.keys(filters).length > 0 && (
                 <button
-                  onClick={clearFilters}
+                  onClick={() => setFilters({})}
                   className="btn-primary"
                 >
                   Clear All Filters

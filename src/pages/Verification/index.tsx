@@ -16,7 +16,6 @@ const Verification = () => {
   const [searchResults, setSearchResults] = useState<Tables<'venues'>[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<Tables<'venues'> | null>(null);
   const [userRole, setUserRole] = useState('manager');
-  const [isCreatingVenue, setIsCreatingVenue] = useState(false);
   const [newVenueData, setNewVenueData] = useState<VenueData>({
     name: '',
     location: '',
