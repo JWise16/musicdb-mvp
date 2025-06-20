@@ -20,7 +20,7 @@ const TimeFrameSelector = ({ timeFrame, onTimeFrameChange }: TimeFrameSelectorPr
             onClick={() => onTimeFrameChange(option.value)}
             className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
               timeFrame === option.value
-                ? 'bg-white text-accent-600 shadow-sm'
+                ? 'bg-white font-bold text-black shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
