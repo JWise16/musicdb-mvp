@@ -51,13 +51,13 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
             {event.name}
           </h4>
           <p className="text-sm text-gray-600 mb-2">
-            {formatDate(event.date)} at {formatTime(event.date)}
+            {formatDate(event.date)}
           </p>
           <p className="text-sm text-gray-600 mb-2">
             {event.venues?.name} • {event.venues?.location}
           </p>
           <p className="text-sm font-medium text-gray-900">
-            {getHeadliners(event)}
+            Artist: {getHeadliners(event)}
           </p>
         </div>
         <div className={`px-2 py-1 text-xs rounded-full ${
