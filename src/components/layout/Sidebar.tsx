@@ -1,4 +1,15 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../supabaseClient';
+import logoImage from '../../assets/logo.png';
+
+type UserVenue = {
+  role: string;
+  venue: {
+    name: string;
+  };
+};
 
 const navLinks = [
   { name: 'Home', to: '/dashboard', icon: (
@@ -14,15 +25,68 @@ const navLinks = [
 
 const Sidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
+  const [userVenue, setUserVenue] = useState<UserVenue | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserVenue = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('user_venues')
+          .select(`
+            role,
+            venue:venues (
+              name
+            )
+          `)
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching user venue:', error);
+        } else if (data) {
+          // Handle the nested venue data structure
+          const venueData = {
+            role: data.role,
+            venue: Array.isArray(data.venue) ? data.venue[0] : data.venue
+          };
+          setUserVenue(venueData as UserVenue);
+        }
+      } catch (error) {
+        console.error('Error fetching user venue:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserVenue();
+  }, [user]);
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user?.email) return 'U';
+    const email = user.email;
+    const name = email.split('@')[0];
+    return name.charAt(0).toUpperCase();
+  };
+
   return (
     <aside className="flex flex-col justify-between h-screen w-64 bg-[#F6F6F3] border-r border-gray-200 py-6 px-4 fixed left-0 top-0 z-20">
       <div>
         {/* Logo */}
         <div className="flex items-center mb-10 px-2">
-          <span className="text-2xl font-extrabold text-gray-900 tracking-tight">MusicDB</span>
-          <span className="ml-2">
-            <svg className="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" /></svg>
-          </span>
+          <span className="text-3xl font-extrabold text-gray-900 tracking-tight">MusicDB</span>
+          <img 
+            src={logoImage} 
+            alt="MusicDB Logo" 
+            className="w-8 h-8 ml-2 object-contain"
+          />
         </div>
         {/* Nav Links */}
         <nav className="flex flex-col gap-2">
@@ -30,7 +94,7 @@ const Sidebar = () => {
             <Link
               key={link.name}
               to={link.to}
-              className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-150 ${location.pathname === link.to ? 'bg-white text-accent-600 shadow' : 'text-gray-700 hover:bg-gray-100'}`}
+              className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-150 ${location.pathname === link.to ? 'bg-white text-black font-extrabold shadow' : 'text-gray-700 hover:bg-gray-100'}`}
             >
               {link.icon}
               {link.name}
@@ -38,14 +102,32 @@ const Sidebar = () => {
           ))}
         </nav>
       </div>
-      {/* User Profile */}
-      <div className="flex items-center gap-3 px-2 mt-8">
-        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="w-10 h-10 rounded-full object-cover border border-gray-300" />
-        <div>
-          <div className="font-semibold text-gray-900 text-sm">PaulMcCartney10</div>
-          <div className="text-xs text-gray-500">Venue Admin</div>
+      
+      <div>
+        {/* User Profile */}
+        <div className="flex items-center gap-3 px-2">
+          <div className="w-10 h-10 rounded-full bg-accent-600 flex items-center justify-center text-white font-semibold text-sm">
+            {getUserInitials()}
+          </div>
+          <div className="flex-1">
+            <div className="font-semibold text-gray-900 text-sm">
+              {user?.email ? user.email.split('@')[0] : 'User'}
+            </div>
+            <div className="text-xs text-gray-500">
+              {loading ? 'Loading...' : userVenue ? `${userVenue.role} at ${userVenue.venue.name}` : 'No venue assigned'}
+            </div>
+          </div>
         </div>
-        <svg className="w-4 h-4 ml-auto text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+        
+        {/* Sign Out */}
+        <div className="px-2 mt-4">
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="text-black underline text-xs hover:no-underline transition-all"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </aside>
   );
