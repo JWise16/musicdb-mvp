@@ -30,6 +30,19 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
     return 'text-red-600';
   };
 
+  const formatTicketPrice = (event: VenueEvent) => {
+    // Check if it's a price range
+    if (event.ticket_price_min && event.ticket_price_max) {
+      return `$${event.ticket_price_min} - $${event.ticket_price_max}`;
+    }
+    // Check if it's a single price
+    if (event.ticket_price) {
+      return `$${event.ticket_price}`;
+    }
+    // No price set
+    return 'TBA';
+  };
+
   const renderEventCard = (event: VenueEvent, isUpcoming: boolean) => (
     <div 
       key={event.id}
@@ -58,28 +71,46 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-sm">
+      {/* Ticket Price */}
+      <div className="flex items-center justify-between text-sm mb-2">
         <div className="flex items-center">
-          <span className="text-gray-600">Tickets:</span>
-          <span className="ml-1 font-medium">${event.ticket_price}</span>
+          <span className="text-gray-600">Ticket Price:</span>
+          <span className="ml-1 font-medium">{formatTicketPrice(event)}</span>
         </div>
-        
-        {!isUpcoming && event.tickets_sold && event.total_tickets && (
-          <div className="flex items-center">
-            <span className="text-gray-600 mr-1">Sold:</span>
-            <span className={`font-medium ${getPercentageSoldColor(event.percentage_sold)}`}>
-              {event.percentage_sold.toFixed(0)}%
-            </span>
-          </div>
-        )}
       </div>
 
-      {!isUpcoming && event.total_revenue > 0 && (
-        <div className="mt-2 text-sm">
-          <span className="text-gray-600">Revenue: </span>
-          <span className="font-medium text-green-600">
-            ${event.total_revenue.toLocaleString()}
-          </span>
+      {/* Revenue Information for Past Events */}
+      {!isUpcoming && (
+        <div className="space-y-1">
+          {/* Tickets Sold */}
+          {event.tickets_sold && (
+            <div className="text-sm">
+              <span className="text-gray-600">Tickets Sold: </span>
+              <span className="font-medium text-gray-900">
+                {event.tickets_sold.toLocaleString()} / {event.total_tickets.toLocaleString()}
+              </span>
+            </div>
+          )}
+
+          {/* Total Ticket Revenue */}
+          {event.total_ticket_revenue && event.total_ticket_revenue > 0 && (
+            <div className="text-sm">
+              <span className="text-gray-600">Ticket Revenue: </span>
+              <span className="font-medium text-blue-600">
+                ${event.total_ticket_revenue.toLocaleString()}
+              </span>
+            </div>
+          )}
+
+          {/* Bar Sales */}
+          {event.bar_sales && event.bar_sales > 0 && (
+            <div className="text-sm">
+              <span className="text-gray-600">Bar Sales: </span>
+              <span className="font-medium text-purple-600">
+                ${event.bar_sales.toLocaleString()}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,12 +1,15 @@
 import { type EventWithDetails } from '../../../services/eventService';
+import { EventService } from '../../../services/eventService';
 
 interface EventCardProps {
   event: EventWithDetails;
   onClick: () => void;
+  onUpdate?: () => void; // Callback for when event is updated
 }
 
-const EventCard = ({ event, onClick }: EventCardProps) => {
+const EventCard = ({ event, onClick, onUpdate }: EventCardProps) => {
   const isPastEvent = new Date(event.date) < new Date();
+  const needsUpdate = EventService.needsUpdate(event);
   const headliners = event.event_artists?.filter(ea => ea.is_headliner).map(ea => ea.artists?.name).filter(Boolean) || [];
   const supportingActs = event.event_artists?.filter(ea => !ea.is_headliner).map(ea => ea.artists?.name).filter(Boolean) || [];
   
@@ -20,33 +23,59 @@ const EventCard = ({ event, onClick }: EventCardProps) => {
     });
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
   const getPercentageSoldColor = (percentage: number) => {
     if (percentage >= 80) return 'text-green-600';
     if (percentage >= 50) return 'text-yellow-600';
     return 'text-red-600';
   };
 
-  const getVenueSizeLabel = (capacity: number | null) => {
-    if (!capacity) return 'Unknown';
-    if (capacity <= 200) return 'Small';
-    if (capacity <= 1000) return 'Medium';
-    return 'Large';
+  const formatTicketPrice = (event: EventWithDetails) => {
+    // Check if it's a price range
+    if (event.ticket_price_min && event.ticket_price_max) {
+      return `$${event.ticket_price_min} - $${event.ticket_price_max}`;
+    }
+    // Check if it's a single price
+    if (event.ticket_price) {
+      return `$${event.ticket_price}`;
+    }
+    // No price set
+    return 'TBA';
+  };
+
+  const handleUpdateClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    // Navigate to event details page with update mode
+    window.location.href = `/event/${event.id}?update=true`;
   };
 
   return (
     <div 
-      className="card hover:shadow-medium transition-all duration-200 cursor-pointer group"
+      className="card hover:shadow-medium transition-all duration-200 cursor-pointer group relative"
       onClick={onClick}
     >
+      {/* Update Prompt for Past Events */}
+      {needsUpdate && (
+        <div className="absolute top-4 right-4 z-10">
+          <div className="bg-orange-100 border border-orange-200 rounded-lg p-3 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span className="text-xs font-medium text-orange-800">Needs Update</span>
+            </div>
+            <p className="text-xs text-orange-700 mb-2">
+              Add financial data for this past event
+            </p>
+            <button
+              onClick={handleUpdateClick}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium py-1.5 px-3 rounded transition-colors"
+            >
+              Update Event
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Event Header */}
       <div className="mb-4">
         <div className="flex items-start justify-between mb-2">
@@ -64,7 +93,7 @@ const EventCard = ({ event, onClick }: EventCardProps) => {
           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          {formatDate(event.date)} at {formatTime(event.date)}
+          {formatDate(event.date)}
         </div>
         
         <div className="flex items-center text-sm text-gray-600">
@@ -102,10 +131,10 @@ const EventCard = ({ event, onClick }: EventCardProps) => {
             <svg className="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
-            <span className="text-gray-600">{getVenueSizeLabel(event.venues?.capacity)} Venue</span>
+            <span className="text-gray-600">Capacity</span>
           </div>
           {event.venues?.capacity && (
-            <span className="text-gray-500">Capacity: {event.venues.capacity.toLocaleString()}</span>
+            <span className="text-gray-500">{event.venues.capacity.toLocaleString()}</span>
           )}
         </div>
       </div>
@@ -113,27 +142,35 @@ const EventCard = ({ event, onClick }: EventCardProps) => {
       {/* Financial Info */}
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center">
-          <span className="text-gray-600">Tickets:</span>
-          <span className="ml-1 font-medium">${event.ticket_price}</span>
+          <span className="text-gray-600">Ticket Price:</span>
+          <span className="ml-1 font-medium">{formatTicketPrice(event)}</span>
         </div>
-        
-        {isPastEvent && event.tickets_sold && event.total_tickets && (
-          <div className="flex items-center">
-            <span className="text-gray-600 mr-1">Sold:</span>
-            <span className={`font-medium ${getPercentageSoldColor(event.percentage_sold)}`}>
-              {event.percentage_sold.toFixed(0)}%
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Revenue (for past events) */}
-      {isPastEvent && event.total_revenue > 0 && (
-        <div className="mt-2 text-sm">
-          <span className="text-gray-600">Revenue: </span>
-          <span className="font-medium text-green-600">
-            ${event.total_revenue.toLocaleString()}
-          </span>
+      {isPastEvent && (
+        <div className="space-y-1">
+          {/* Tickets Sold */}
+          {event.tickets_sold && (
+            <div className="text-sm">
+              <span className="text-gray-600">Tickets Sold: </span>
+              <span className="font-medium text-gray-900">
+                {event.tickets_sold.toLocaleString()} / {event.total_tickets.toLocaleString()}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Missing Financial Data Warning */}
+      {needsUpdate && (
+        <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+          <div className="flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <span>Financial data missing</span>
+          </div>
         </div>
       )}
 

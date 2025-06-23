@@ -195,7 +195,7 @@ const EventFilters = ({ filters, filterOptions, onFilterChange }: EventFiltersPr
           
           {filters.venueSize && (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700">
-              Venue: {filters.venueSize}
+              Venue: {filterOptions.venueSizes.find(size => size.value === filters.venueSize)?.label || filters.venueSize}
               <button
                 onClick={() => clearFilter('venueSize')}
                 className="ml-2 text-purple-500 hover:text-purple-700"
@@ -223,7 +223,10 @@ const EventFilters = ({ filters, filterOptions, onFilterChange }: EventFiltersPr
           
           {filters.percentageSold && (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-700">
-              Sales: {filters.percentageSold}
+              Sales: {filters.percentageSold === 'low' ? '0-33%' : 
+                      filters.percentageSold === 'medium' ? '34-66%' : 
+                      filters.percentageSold === 'high' ? '67-100%' : 
+                      filters.percentageSold}
               <button
                 onClick={() => clearFilter('percentageSold')}
                 className="ml-2 text-red-500 hover:text-red-700"

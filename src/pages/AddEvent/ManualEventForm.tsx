@@ -22,13 +22,19 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
     name: '',
     date: '',
     venue_id: '',
-    ticket_price: 0,
+    ticket_price: undefined,
+    ticket_price_min: undefined,
+    ticket_price_max: undefined,
+    total_ticket_revenue: undefined,
     total_tickets: 0,
     tickets_sold: undefined,
     bar_sales: undefined,
     notes: '',
     artists: [],
   });
+
+  // Price type state for radio buttons
+  const [priceType, setPriceType] = useState<'single' | 'range' | null>(null);
 
   // Load venues on component mount
   useEffect(() => {
@@ -110,7 +116,16 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
       case 'artists':
         return formData.artists.length > 0 && formData.artists.every(artist => artist.name.trim());
       case 'financial':
-        return true; // Financial data is optional
+        // Require either single ticket price or price range
+        if (priceType === 'single') {
+          return formData.ticket_price !== undefined && formData.ticket_price !== null;
+        } else if (priceType === 'range') {
+          return formData.ticket_price_min !== undefined && 
+                 formData.ticket_price_max !== undefined && 
+                 formData.ticket_price_min !== null && 
+                 formData.ticket_price_max !== null;
+        }
+        return false; // No price type selected
       case 'review':
         return true;
       default:
@@ -386,65 +401,211 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
   );
 
   const renderFinancialStep = () => (
-    <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-900 mb-2">
-          {isPastEvent() ? 'Past Event Data' : 'Future Event Data'}
-        </h4>
-        <p className="text-sm text-blue-800">
-          {isPastEvent() 
-            ? 'For past events, you can provide actual ticket sales and bar sales data.'
-            : 'For future events, you can set the capacity and estimated ticket price.'
-          }
-        </p>
-      </div>
-
-      {isPastEvent() ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-8">
+      {/* Ticket Price and Sales Section */}
+      <div className="card p-6">
+        <div className="space-y-6">
+          {/* Ticket Price */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tickets Sold
-            </label>
-            <input
-              type="number"
-              min="0"
-              max={formData.total_tickets}
-              value={formData.tickets_sold || ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                const numValue = value === '' ? undefined : parseInt(value) || undefined;
-                updateFormData({ tickets_sold: numValue });
-              }}
-              className="form-input w-full"
-              placeholder="0"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Maximum: {formData.total_tickets} tickets
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Price</h3>
+            <div className="space-y-4">
+              {/* Single Price Option */}
+              <div className="flex items-center">
+                <input
+                  type="radio"
+                  id="single-price"
+                  name="price-type"
+                  checked={priceType === 'single'}
+                  onChange={() => {
+                    setPriceType('single');
+                    updateFormData({ 
+                      ticket_price: undefined, 
+                      ticket_price_min: undefined, 
+                      ticket_price_max: undefined 
+                    });
+                  }}
+                  className="form-radio"
+                />
+                <label htmlFor="single-price" className="ml-3 text-sm font-medium text-gray-700">
+                  Single Price
+                </label>
+              </div>
+              {priceType === 'single' && (
+                <div className="ml-6">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.ticket_price || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numValue = value === '' ? undefined : parseFloat(value) || undefined;
+                      updateFormData({ ticket_price: numValue });
+                    }}
+                    className="form-input w-full max-w-xs"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              )}
+
+              {/* Price Range Option */}
+              <div className="flex items-center">
+                <input
+                  type="radio"
+                  id="price-range"
+                  name="price-type"
+                  checked={priceType === 'range'}
+                  onChange={() => {
+                    setPriceType('range');
+                    updateFormData({ 
+                      ticket_price: undefined, 
+                      ticket_price_min: undefined, 
+                      ticket_price_max: undefined 
+                    });
+                  }}
+                  className="form-radio"
+                />
+                <label htmlFor="price-range" className="ml-3 text-sm font-medium text-gray-700">
+                  Price Range
+                </label>
+              </div>
+              {priceType === 'range' && (
+                <div className="ml-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Minimum Price *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.ticket_price_min || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = value === '' ? undefined : parseFloat(value) || undefined;
+                        updateFormData({ ticket_price_min: numValue });
+                      }}
+                      className="form-input w-full"
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Maximum Price *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.ticket_price_max || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = value === '' ? undefined : parseFloat(value) || undefined;
+                        updateFormData({ ticket_price_max: numValue });
+                      }}
+                      className="form-input w-full"
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Tickets Sold (for past events) */}
+          {isPastEvent() && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Tickets Sold</h3>
+              <input
+                type="number"
+                min="0"
+                max={formData.total_tickets}
+                value={formData.tickets_sold || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const numValue = value === '' ? undefined : parseInt(value) || undefined;
+                  updateFormData({ tickets_sold: numValue });
+                }}
+                className="form-input w-full max-w-xs"
+                placeholder="0"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Maximum: {formData.total_tickets} tickets
+              </p>
+            </div>
+          )}
+
+          {!isPastEvent() && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-gray-600 text-sm">
+                For future events, ticket sales data will be collected after the event takes place.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Revenue Tracking Section */}
+      <div className="card p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Tracking (Optional)</h3>
+        
+        <div className="space-y-4">
+          {/* Total Ticket Revenue */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Bar Sales ($)
+              Total Ticket Revenue
             </label>
             <input
               type="number"
               min="0"
               step="0.01"
-              value={formData.bar_sales || ''}
-              onChange={(e) => updateFormData({ bar_sales: parseFloat(e.target.value) || undefined })}
-              className="form-input w-full"
+              value={formData.total_ticket_revenue || ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                const numValue = value === '' ? undefined : parseFloat(value) || undefined;
+                updateFormData({ total_ticket_revenue: numValue });
+              }}
+              className="form-input w-full max-w-xs"
               placeholder="0.00"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Total revenue from all ticket sales
+            </p>
+          </div>
+
+          {/* Bar Sales */}
+          {isPastEvent() && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Bar Sales ($)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.bar_sales || ''}
+                onChange={(e) => updateFormData({ bar_sales: parseFloat(e.target.value) || undefined })}
+                className="form-input w-full max-w-xs"
+                placeholder="0.00"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Privacy Notice */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-sm text-blue-800 font-medium mb-1">Privacy Notice</p>
+            <p className="text-sm text-blue-700">
+              Bar sales and total ticket revenue data will not be made public. This information is for your internal tracking only.
+            </p>
           </div>
         </div>
-      ) : (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <p className="text-gray-600">
-            For future events, financial data will be collected after the event takes place.
-          </p>
-        </div>
-      )}
+      </div>
     </div>
   );
 
@@ -483,6 +644,27 @@ const ManualEventForm = ({ onBack, onComplete }: ManualEventFormProps) => {
                 <dt className="text-sm font-medium text-gray-500">Total Tickets</dt>
                 <dd className="text-sm text-gray-900">{formData.total_tickets}</dd>
               </div>
+              {/* Ticket Price Display */}
+              {formData.ticket_price !== undefined && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Ticket Price</dt>
+                  <dd className="text-sm text-gray-900">${formData.ticket_price}</dd>
+                </div>
+              )}
+              {formData.ticket_price_min !== undefined && formData.ticket_price_max !== undefined && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Ticket Price Range</dt>
+                  <dd className="text-sm text-gray-900">
+                    ${formData.ticket_price_min} - ${formData.ticket_price_max}
+                  </dd>
+                </div>
+              )}
+              {formData.total_ticket_revenue !== undefined && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Total Ticket Revenue</dt>
+                  <dd className="text-sm text-gray-900">${formData.total_ticket_revenue}</dd>
+                </div>
+              )}
               {formData.notes && (
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Notes</dt>

@@ -137,7 +137,10 @@ export type Database = {
           name: string
           notes: string | null
           ticket_price: number
+          ticket_price_max: number | null
+          ticket_price_min: number | null
           tickets_sold: number | null
+          total_ticket_revenue: number | null
           total_tickets: number
           updated_at: string | null
           venue_id: string | null
@@ -149,8 +152,11 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
-          ticket_price: number
+          ticket_price?: number | null
+          ticket_price_max?: number | null
+          ticket_price_min?: number | null
           tickets_sold?: number | null
+          total_ticket_revenue?: number | null
           total_tickets: number
           updated_at?: string | null
           venue_id?: string | null
@@ -163,7 +169,10 @@ export type Database = {
           name?: string
           notes?: string | null
           ticket_price?: number
+          ticket_price_max?: number | null
+          ticket_price_min?: number | null
           tickets_sold?: number | null
+          total_ticket_revenue?: number | null
           total_tickets?: number
           updated_at?: string | null
           venue_id?: string | null

@@ -5,7 +5,10 @@ export type EventFormData = {
   name: string;
   date: string;
   venue_id: string;
-  ticket_price: number;
+  ticket_price?: number;
+  ticket_price_min?: number;
+  ticket_price_max?: number;
+  total_ticket_revenue?: number;
   total_tickets: number;
   tickets_sold?: number;
   bar_sales?: number;
@@ -59,7 +62,10 @@ export class EventService {
           name: eventData.name,
           date: eventData.date,
           venue_id: eventData.venue_id,
-          ticket_price: eventData.ticket_price,
+          ticket_price: eventData.ticket_price || null,
+          ticket_price_min: eventData.ticket_price_min || null,
+          ticket_price_max: eventData.ticket_price_max || null,
+          total_ticket_revenue: eventData.total_ticket_revenue || null,
           total_tickets: eventData.total_tickets,
           tickets_sold: eventData.tickets_sold || null,
           bar_sales: eventData.bar_sales || null,
@@ -98,7 +104,9 @@ export class EventService {
 
       // Create event metrics if we have financial data
       if (eventData.tickets_sold || eventData.bar_sales) {
-        const ticketRevenue = eventData.tickets_sold ? eventData.tickets_sold * eventData.ticket_price : 0;
+        // Use total_ticket_revenue if provided, otherwise calculate from ticket_price
+        const ticketRevenue = eventData.total_ticket_revenue || 
+          (eventData.tickets_sold && eventData.ticket_price ? eventData.tickets_sold * eventData.ticket_price : 0);
         const totalRevenue = ticketRevenue + (eventData.bar_sales || 0);
         const attendance = eventData.tickets_sold || 0;
         const barSalesPerAttendee = eventData.tickets_sold && eventData.bar_sales 
@@ -409,9 +417,9 @@ export class EventService {
       });
 
       const venueSizes = [
-        { value: 'small', label: 'Small (≤200)', count: venueSizeCounts.small },
-        { value: 'medium', label: 'Medium (201-1000)', count: venueSizeCounts.medium },
-        { value: 'large', label: 'Large (1000+)', count: venueSizeCounts.large }
+        { value: 'small', label: '≤200', count: venueSizeCounts.small },
+        { value: 'medium', label: '201-1000', count: venueSizeCounts.medium },
+        { value: 'large', label: '1000+', count: venueSizeCounts.large }
       ];
 
       return {
@@ -422,6 +430,73 @@ export class EventService {
     } catch (error) {
       console.error('Error getting filter options:', error);
       return { genres: [], cities: [], venueSizes: [] };
+    }
+  }
+
+  // Check if an event needs updating (past event without financial data)
+  static needsUpdate(event: EventWithDetails): boolean {
+    const isPastEvent = new Date(event.date) < new Date();
+    const hasFinancialData = event.tickets_sold !== null || event.bar_sales !== null;
+    return isPastEvent && !hasFinancialData;
+  }
+
+  // Update event with financial data
+  static async updateEventFinancials(
+    eventId: string, 
+    ticketsSold: number, 
+    barSales: number
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Update the event with financial data
+      const { error: eventError } = await supabase
+        .from('events')
+        .update({
+          tickets_sold: ticketsSold,
+          bar_sales: barSales,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', eventId);
+
+      if (eventError) {
+        console.error('Error updating event:', eventError);
+        return { success: false, error: eventError.message };
+      }
+
+      // Get the event to calculate revenue
+      const { data: event } = await supabase
+        .from('events')
+        .select('ticket_price')
+        .eq('id', eventId)
+        .single();
+
+      if (event) {
+        const ticketRevenue = ticketsSold * event.ticket_price;
+        const totalRevenue = ticketRevenue + barSales;
+        const barSalesPerAttendee = ticketsSold > 0 ? barSales / ticketsSold : null;
+
+        // Update or create event metrics
+        const { error: metricsError } = await supabase
+          .from('event_metrics')
+          .upsert({
+            event_id: eventId,
+            attendance: ticketsSold,
+            ticket_revenue: ticketRevenue,
+            total_revenue: totalRevenue,
+            bar_sales_per_attendee: barSalesPerAttendee,
+            is_public: true,
+            updated_at: new Date().toISOString()
+          });
+
+        if (metricsError) {
+          console.error('Error updating event metrics:', metricsError);
+          return { success: false, error: metricsError.message };
+        }
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error in updateEventFinancials:', error);
+      return { success: false, error: 'Failed to update event' };
     }
   }
 } 

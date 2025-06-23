@@ -1,22 +1,48 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { EventService, type EventFilters, type EventWithDetails } from '../../services/eventService';
+import { EventService, type EventFilters as EventFiltersType, type EventWithDetails } from '../../services/eventService';
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import EventCard from '../../components/features/events/EventCard';
+import EventFilters from '../../components/features/events/EventFilters';
 
 const Events = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [filteredEvents, setFilteredEvents] = useState<EventWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState<EventFilters>({});
+  const [filters, setFilters] = useState<EventFiltersType>({});
+  const [filterOptions, setFilterOptions] = useState({
+    genres: [] as string[],
+    cities: [] as string[],
+    venueSizes: [] as Array<{ value: string; label: string; count: number }>
+  });
   
   // Verification states
   const [hasVenues, setHasVenues] = useState<boolean | null>(null);
   const [hasVenueEvents, setHasVenueEvents] = useState<boolean | null>(null);
   const [isCheckingVerification, setIsCheckingVerification] = useState(true);
+
+  // Load filter options
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      if (!hasVenues || !hasVenueEvents) return;
+      
+      try {
+        const options = await EventService.getFilterOptions();
+        setFilterOptions(options);
+      } catch (error) {
+        console.error('Error loading filter options:', error);
+      }
+    };
+
+    loadFilterOptions();
+  }, [hasVenues, hasVenueEvents]);
+
+  const handleFilterChange = (newFilters: Partial<EventFiltersType>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
 
   // Check user verification status
   useEffect(() => {
@@ -204,6 +230,13 @@ const Events = () => {
               </button>
             </div>
           </div>
+
+          {/* Filters */}
+          <EventFilters
+            filters={filters}
+            filterOptions={filterOptions}
+            onFilterChange={handleFilterChange}
+          />
 
           {/* Events Grid */}
           {isLoading ? (
