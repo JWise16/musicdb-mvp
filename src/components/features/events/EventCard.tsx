@@ -4,10 +4,9 @@ import { EventService } from '../../../services/eventService';
 interface EventCardProps {
   event: EventWithDetails;
   onClick: () => void;
-  onUpdate?: () => void; // Callback for when event is updated
 }
 
-const EventCard = ({ event, onClick, onUpdate }: EventCardProps) => {
+const EventCard = ({ event, onClick }: EventCardProps) => {
   const isPastEvent = new Date(event.date) < new Date();
   const needsUpdate = EventService.needsUpdate(event);
   const headliners = event.event_artists?.filter(ea => ea.is_headliner).map(ea => ea.artists?.name).filter(Boolean) || [];
@@ -21,12 +20,6 @@ const EventCard = ({ event, onClick, onUpdate }: EventCardProps) => {
       day: 'numeric',
       year: 'numeric'
     });
-  };
-
-  const getPercentageSoldColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-600';
   };
 
   const formatTicketPrice = (event: EventWithDetails) => {

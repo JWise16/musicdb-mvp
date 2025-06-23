@@ -24,12 +24,6 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
       .join(', ') || 'TBA';
   };
 
-  const getPercentageSoldColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
   const formatTicketPrice = (event: VenueEvent) => {
     // Check if it's a price range
     if (event.ticket_price_min && event.ticket_price_max) {

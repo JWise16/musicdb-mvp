@@ -5,7 +5,7 @@ import { EventService, type EventFilters as EventFiltersType, type EventWithDeta
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import EventCard from '../../components/features/events/EventCard';
-import EventFilters from '../../components/features/events/EventFilters';
+import EventFiltersComponent from '../../components/features/events/EventFilters';
 
 const Events = () => {
   const { user } = useAuth();
@@ -232,7 +232,7 @@ const Events = () => {
           </div>
 
           {/* Filters */}
-          <EventFilters
+          <EventFiltersComponent
             filters={filters}
             filterOptions={filterOptions}
             onFilterChange={handleFilterChange}

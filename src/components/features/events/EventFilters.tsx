@@ -10,7 +10,7 @@ interface EventFiltersProps {
   onFilterChange: (filters: Partial<EventFilters>) => void;
 }
 
-const EventFilters = ({ filters, filterOptions, onFilterChange }: EventFiltersProps) => {
+const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: EventFiltersProps) => {
   const handleSearchChange = (value: string) => {
     onFilterChange({ searchQuery: value || undefined });
   };
@@ -243,4 +243,4 @@ const EventFilters = ({ filters, filterOptions, onFilterChange }: EventFiltersPr
   );
 };
 
-export default EventFilters; 
+export default EventFiltersComponent; 
