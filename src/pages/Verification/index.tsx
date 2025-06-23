@@ -1,272 +1,259 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { VenueService, type VenueData } from '../../services/venueService';
-import { ROLE_OPTIONS, getDefaultRole, type RoleValue } from '../../utils/roleUtils';
-import type { Tables } from '../../types/database.types';
+import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
+import { formatRole, isValidRole } from '../../utils/roleUtils';
 
-type VerificationStep = 'create' | 'complete';
+interface VenueFormData {
+  name: string;
+  location: string;
+  address: string;
+  capacity: number | '';
+  contact_email: string;
+  contact_phone: string;
+  description: string;
+  role: string;
+}
 
 const Verification = () => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState<VerificationStep>('create');
-  const [isLoading, setIsLoading] = useState(false);
-  const [userRole, setUserRole] = useState<RoleValue>(getDefaultRole());
-  const [newVenueData, setNewVenueData] = useState<VenueData>({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<VenueFormData>({
     name: '',
     location: '',
     address: '',
-    capacity: undefined,
+    capacity: '',
     contact_email: '',
     contact_phone: '',
     description: '',
+    role: ''
   });
 
-  useEffect(() => {
-    console.log('Verification: useEffect triggered', { user: user?.email, user_id: user?.id });
-    // Only redirect if we're not loading and definitely have no user
-    if (!user && !loading) {
-      console.log('Verification: No user and not loading, navigating to login');
-      navigate('/login');
-    } else if (user) {
-      console.log('Verification: User found, staying on verification page');
-    } else {
-      console.log('Verification: Still loading or user undefined, waiting...');
-    }
-  }, [user, loading, navigate]);
+  // Available roles
+  const availableRoles = [
+    'owner',
+    'manager',
+    'promoter',
+    'booking_agent',
+    'event_coordinator',
+    'marketing_manager',
+    'operations_manager',
+    'general_manager',
+    'assistant_manager',
+    'coordinator'
+  ];
 
-  const handleCreateVenue = async () => {
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  const handleInputChange = (field: keyof VenueFormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) return;
 
-    setIsLoading(true);
-    try {
-      // Create the venue
-      const venueResult = await VenueService.createVenue(newVenueData);
-      
-      if (venueResult.success && venueResult.venueId) {
-        // Associate user with the new venue
-        const associateResult = await VenueService.associateUserWithVenue({
-          user_id: user.id,
-          venue_id: venueResult.venueId,
-          role: userRole,
-        });
+    // Validate role
+    if (!isValidRole(formData.role)) {
+      alert('Please select a valid role.');
+      return;
+    }
 
-        if (associateResult.success) {
-          setCurrentStep('complete');
-        } else {
-          alert(`Error associating with venue: ${associateResult.error}`);
-        }
+    setIsSubmitting(true);
+    try {
+      const result = await VenueService.createVenue({
+        ...formData,
+        capacity: formData.capacity ? parseInt(formData.capacity.toString()) : undefined
+      });
+
+      if (result.success && result.venueId) {
+        // Associate user with venue
+        await VenueService.associateUserWithVenue({
+          user_id: user.id,
+          venue_id: result.venueId,
+          role: formData.role
+        });
+        navigate('/dashboard');
       } else {
-        alert(`Error creating venue: ${venueResult.error}`);
+        alert(`Error creating venue: ${result.error}`);
       }
     } catch (error) {
       console.error('Error creating venue:', error);
       alert('Failed to create venue. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleComplete = () => {
-    navigate('/dashboard');
-  };
-
-  const renderCreateStep = () => (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          Create Your Venue
-        </h3>
-        <p className="text-gray-600">
-          Add your venue to our database so you can start reporting events and contributing to the music community.
-        </p>
-      </div>
-
-      <div className="card p-6">
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Venue Name *
-              </label>
-              <input
-                type="text"
-                value={newVenueData.name}
-                onChange={(e) => setNewVenueData(prev => ({ ...prev, name: e.target.value }))}
-                className="form-input w-full"
-                placeholder="Enter venue name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location (City, State) *
-              </label>
-              <input
-                type="text"
-                value={newVenueData.location}
-                onChange={(e) => setNewVenueData(prev => ({ ...prev, location: e.target.value }))}
-                className="form-input w-full"
-                placeholder="e.g., New York, NY"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Address *
-            </label>
-            <input
-              type="text"
-              value={newVenueData.address}
-              onChange={(e) => setNewVenueData(prev => ({ ...prev, address: e.target.value }))}
-              className="form-input w-full"
-              placeholder="Enter full address"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Capacity
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={newVenueData.capacity || ''}
-                onChange={(e) => setNewVenueData(prev => ({ ...prev, capacity: parseInt(e.target.value) || undefined }))}
-                className="form-input w-full"
-                placeholder="Maximum capacity"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Role *
-              </label>
-              <select
-                value={userRole}
-                onChange={(e) => setUserRole(e.target.value as RoleValue)}
-                className="form-select w-full"
-              >
-                {ROLE_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Email
-              </label>
-              <input
-                type="email"
-                value={newVenueData.contact_email || ''}
-                onChange={(e) => setNewVenueData(prev => ({ ...prev, contact_email: e.target.value }))}
-                className="form-input w-full"
-                placeholder="venue@example.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Phone
-              </label>
-              <input
-                type="tel"
-                value={newVenueData.contact_phone || ''}
-                onChange={(e) => setNewVenueData(prev => ({ ...prev, contact_phone: e.target.value }))}
-                className="form-input w-full"
-                placeholder="(555) 123-4567"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
-            <textarea
-              value={newVenueData.description || ''}
-              onChange={(e) => setNewVenueData(prev => ({ ...prev, description: e.target.value }))}
-              className="form-textarea w-full"
-              rows={3}
-              placeholder="Brief description of the venue..."
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end mt-8">
-          <button
-            onClick={handleCreateVenue}
-            disabled={isLoading || !newVenueData.name || !newVenueData.location || !newVenueData.address}
-            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Creating...' : 'Create Venue'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderCompleteStep = () => (
-    <div className="max-w-2xl mx-auto text-center">
-      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-        <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-      
-      <h3 className="text-2xl font-bold text-gray-900 mb-4">
-        Venue Created Successfully!
-      </h3>
-      
-      <p className="text-gray-600 mb-8">
-        Your venue has been added to our database and you're now associated with it. 
-        You can start adding events and contributing to the music community.
-      </p>
-      
-      <button
-        onClick={handleComplete}
-        className="btn-primary"
-      >
-        Go to Dashboard
-      </button>
-    </div>
-  );
-
-  const renderCurrentStep = () => {
-    switch (currentStep) {
-      case 'create':
-        return renderCreateStep();
-      case 'complete':
-        return renderCompleteStep();
-      default:
-        return null;
-    }
-  };
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
       <Sidebar />
       <main className="flex-1 ml-64 p-8">
         <div className="rounded-3xl bg-white shadow-soft p-8 min-h-[90vh]">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading verification...</p>
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Venue Verification</h2>
+            <p className="text-gray-600">
+              Create or verify your venue to start reporting events
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
+            {/* Venue Information */}
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Venue Information</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Venue Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="e.g., The Grand Hall"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="e.g., New York, NY"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address *
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  className="form-input w-full"
+                  placeholder="e.g., 123 Main Street"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Capacity
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.capacity}
+                    onChange={(e) => handleInputChange('capacity', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="e.g., 500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contact Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="contact@venue.com"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contact Phone
+                </label>
+                <input
+                  type="tel"
+                  value={formData.contact_phone}
+                  onChange={(e) => handleInputChange('contact_phone', e.target.value)}
+                  className="form-input w-full"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  className="form-textarea w-full"
+                  rows={3}
+                  placeholder="Brief description of your venue..."
+                />
               </div>
             </div>
-          ) : (
-            renderCurrentStep()
-          )}
+
+            {/* Role Selection */}
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Role</h3>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select your role at this venue *
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => handleInputChange('role', e.target.value)}
+                  className="form-select w-full"
+                  required
+                >
+                  <option value="">Select your role</option>
+                  {availableRoles.map(role => (
+                    <option key={role} value={role}>
+                      {formatRole(role)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Creating Venue...' : 'Create Venue'}
+              </button>
+            </div>
+          </form>
         </div>
       </main>
     </div>

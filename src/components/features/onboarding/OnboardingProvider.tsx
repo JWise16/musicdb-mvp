@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useOnboarding } from '../../../hooks/useOnboarding';
 import OnboardingModal from './OnboardingModal';
 import OnboardingComplete from './OnboardingComplete';

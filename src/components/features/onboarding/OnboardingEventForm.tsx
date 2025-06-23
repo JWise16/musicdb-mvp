@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { EventService, type EventFormData } from '../../../services/eventService';
 import { VenueService } from '../../../services/venueService';
@@ -19,7 +18,6 @@ export default function OnboardingEventForm({
   totalEventsRequired 
 }: OnboardingEventFormProps) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [userVenues, setUserVenues] = useState<Tables<'venues'>[]>([]);
   const [priceType, setPriceType] = useState<'single' | 'range' | null>(null);
@@ -99,11 +97,6 @@ export default function OnboardingEventForm({
         artists: prev.artists.filter((_, i) => i !== index)
       }));
     }
-  };
-
-  const isPastEvent = () => {
-    if (!formData.date) return false;
-    return new Date(formData.date) < new Date();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

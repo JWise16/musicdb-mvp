@@ -13,7 +13,7 @@ type Step = 'selection' | 'manual' | 'upload' | 'onboarding';
 
 const AddEvent = () => {
   const { user } = useAuth();
-  const { progress, refreshProgress } = useOnboarding();
+  const { refreshProgress } = useOnboarding();
   const [currentStep, setCurrentStep] = useState<Step>('selection');
   const [isOnboardingMode, setIsOnboardingMode] = useState(false);
   const [currentEventNumber, setCurrentEventNumber] = useState(1);
@@ -140,6 +140,10 @@ const AddEvent = () => {
   };
 
   const headerContent = getHeaderContent();
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
