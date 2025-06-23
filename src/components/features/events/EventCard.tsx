@@ -35,40 +35,11 @@ const EventCard = ({ event, onClick }: EventCardProps) => {
     return 'TBA';
   };
 
-  const handleUpdateClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the card click
-    // Navigate to event details page with update mode
-    window.location.href = `/event/${event.id}?update=true`;
-  };
-
   return (
     <div 
       className="card hover:shadow-medium transition-all duration-200 cursor-pointer group relative"
       onClick={onClick}
     >
-      {/* Update Prompt for Past Events */}
-      {needsUpdate && (
-        <div className="absolute top-4 right-4 z-10">
-          <div className="bg-orange-100 border border-orange-200 rounded-lg p-3 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              <span className="text-xs font-medium text-orange-800">Needs Update</span>
-            </div>
-            <p className="text-xs text-orange-700 mb-2">
-              Add financial data for this past event
-            </p>
-            <button
-              onClick={handleUpdateClick}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium py-1.5 px-3 rounded transition-colors"
-            >
-              Update Event
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Event Header */}
       <div className="mb-4">
         <div className="flex items-start justify-between mb-2">

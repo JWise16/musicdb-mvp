@@ -1,15 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { useOnboarding } from '../../hooks/useOnboarding';
+import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import ReportTypeSelection from './ReportTypeSelection';
 import ManualEventForm from './ManualEventForm';
 import FileUpload from './FileUpload';
+import OnboardingEventForm from '../../components/features/onboarding/OnboardingEventForm';
 
-type Step = 'selection' | 'manual' | 'upload';
+type Step = 'selection' | 'manual' | 'upload' | 'onboarding';
 
 const AddEvent = () => {
+  const { user } = useAuth();
+  const { progress, refreshProgress } = useOnboarding();
   const [currentStep, setCurrentStep] = useState<Step>('selection');
+  const [isOnboardingMode, setIsOnboardingMode] = useState(false);
+  const [currentEventNumber, setCurrentEventNumber] = useState(1);
   const navigate = useNavigate();
+
+  // Check if user should see onboarding flow
+  useEffect(() => {
+    const checkOnboardingMode = async () => {
+      if (!user) return;
+
+      try {
+        const hasVenues = await VenueService.hasUserVenues(user.id);
+        
+        if (hasVenues) {
+          const userVenues = await VenueService.getUserVenues(user.id);
+          const venueEvents = await Promise.all(
+            userVenues.map(venue => VenueService.getVenueEvents(venue.id))
+          );
+          const eventsReported = venueEvents.reduce((total, events) => 
+            total + events.upcoming.length + events.past.length, 0
+          );
+
+          // Show onboarding if user has venues but less than 3 events
+          if (eventsReported < 3) {
+            setIsOnboardingMode(true);
+            setCurrentStep('onboarding');
+            setCurrentEventNumber(eventsReported + 1);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking onboarding mode:', error);
+      }
+    };
+
+    checkOnboardingMode();
+  }, [user]);
 
   const handleReportTypeSelect = (type: 'manual' | 'upload') => {
     setCurrentStep(type);
@@ -18,6 +58,8 @@ const AddEvent = () => {
   const handleBack = () => {
     if (currentStep === 'manual' || currentStep === 'upload') {
       setCurrentStep('selection');
+    } else if (currentStep === 'onboarding') {
+      navigate('/dashboard');
     } else {
       navigate('/dashboard');
     }
@@ -27,7 +69,32 @@ const AddEvent = () => {
     navigate('/dashboard');
   };
 
+  const handleOnboardingEventAdded = () => {
+    setCurrentEventNumber(prev => prev + 1);
+    refreshProgress();
+    
+    // If we've added all required events, go to dashboard
+    if (currentEventNumber >= 3) {
+      navigate('/dashboard');
+    }
+  };
+
+  const handleOnboardingSkip = () => {
+    navigate('/dashboard');
+  };
+
   const renderStep = () => {
+    if (isOnboardingMode && currentStep === 'onboarding') {
+      return (
+        <OnboardingEventForm
+          onEventAdded={handleOnboardingEventAdded}
+          onSkip={handleOnboardingSkip}
+          currentEventNumber={currentEventNumber}
+          totalEventsRequired={3}
+        />
+      );
+    }
+
     switch (currentStep) {
       case 'selection':
         return (
@@ -55,6 +122,25 @@ const AddEvent = () => {
     }
   };
 
+  const getHeaderContent = () => {
+    if (isOnboardingMode && currentStep === 'onboarding') {
+      return {
+        title: `Add Event ${currentEventNumber} of 3`,
+        subtitle: 'Complete your onboarding by adding your events'
+      };
+    }
+
+    return {
+      title: 'Add Event',
+      subtitle: currentStep === 'selection' && 'Choose how you would like to report your event' ||
+                currentStep === 'manual' && 'Enter event details manually' ||
+                currentStep === 'upload' && 'Upload event file' ||
+                ''
+    };
+  };
+
+  const headerContent = getHeaderContent();
+
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
       <Sidebar />
@@ -63,12 +149,8 @@ const AddEvent = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-1">Add Event</h2>
-              <p className="text-gray-600">
-                {currentStep === 'selection' && 'Choose how you would like to report your event'}
-                {currentStep === 'manual' && 'Enter event details manually'}
-                {currentStep === 'upload' && 'Upload event file'}
-              </p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-1">{headerContent.title}</h2>
+              <p className="text-gray-600">{headerContent.subtitle}</p>
             </div>
           </div>
 

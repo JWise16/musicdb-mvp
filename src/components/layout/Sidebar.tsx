@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../supabaseClient';
+import { formatRole } from '../../utils/roleUtils';
 import logoImage from '../../assets/logo.png';
 
 type UserVenue = {
@@ -114,7 +115,7 @@ const Sidebar = () => {
               {user?.email ? user.email.split('@')[0] : 'User'}
             </div>
             <div className="text-xs text-gray-500">
-              {loading ? 'Loading...' : userVenue ? `${userVenue.role} at ${userVenue.venue.name}` : 'No venue assigned'}
+              {loading ? 'Loading...' : userVenue ? `${formatRole(userVenue.role)} at ${userVenue.venue.name}` : 'No venue assigned'}
             </div>
           </div>
         </div>

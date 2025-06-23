@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useOnboarding } from '../../hooks/useOnboarding';
 import { VenueService, type VenueAnalytics, type VenueEvent } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import TimeFrameSelector from '../../components/features/dashboard/TimeFrameSelector';
@@ -10,6 +11,7 @@ import YourShows from '../../components/features/dashboard/YourShows';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { progress } = useOnboarding();
   const navigate = useNavigate();
   const [hasVenues, setHasVenues] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,6 +84,113 @@ const Dashboard = () => {
 
   const handleTimeFrameChange = (newTimeFrame: 'YTD' | 'MTD' | 'ALL') => {
     setTimeFrame(newTimeFrame);
+  };
+
+  const renderOnboardingProgress = () => {
+    if (progress.isComplete) return null;
+
+    return (
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                Welcome to MusicDB! 🎵
+              </h3>
+              <p className="text-gray-600">
+                Complete these steps to unlock all features and access the full events database.
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600">
+                {Math.round(((progress.hasVenues ? 1 : 0) + (progress.eventsReported / progress.totalEventsRequired)) * 50)}%
+              </div>
+              <div className="text-sm text-gray-500">Complete</div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Venue Verification Step */}
+            <div className="flex items-center gap-4">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                progress.hasVenues ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
+              }`}>
+                {progress.hasVenues ? '✓' : '1'}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900">Verify your venue</span>
+                  {progress.hasVenues && (
+                    <span className="text-green-600 text-sm font-medium">✓ Complete</span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600">Search for your venue or create a new one</p>
+              </div>
+              {!progress.hasVenues && (
+                <Link to="/verification" className="btn-primary text-sm px-4 py-2">
+                  Verify Now
+                </Link>
+              )}
+            </div>
+
+            {/* Event Reporting Step */}
+            <div className="flex items-center gap-4">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                progress.eventsReported >= progress.totalEventsRequired ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
+              }`}>
+                {progress.eventsReported >= progress.totalEventsRequired ? '✓' : '2'}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900">
+                    Report {progress.totalEventsRequired} events
+                  </span>
+                  {progress.eventsReported >= progress.totalEventsRequired && (
+                    <span className="text-green-600 text-sm font-medium">✓ Complete</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-gray-600">
+                    Add your past or upcoming shows ({progress.eventsReported}/{progress.totalEventsRequired})
+                  </p>
+                  <div className="flex-1 max-w-32">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min((progress.eventsReported / progress.totalEventsRequired) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {progress.hasVenues && progress.eventsReported < progress.totalEventsRequired && (
+                <Link to="/add-event" className="btn-primary text-sm px-4 py-2">
+                  Add Event
+                </Link>
+              )}
+            </div>
+
+            {/* Completion Step */}
+            <div className="flex items-center gap-4">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                progress.isComplete ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
+              }`}>
+                {progress.isComplete ? '✓' : '3'}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900">Access everything for free!</span>
+                  {progress.isComplete && (
+                    <span className="text-green-600 text-sm font-medium">✓ Unlocked</span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600">Unlock all features and insights</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -160,6 +269,9 @@ const Dashboard = () => {
           ) : (
             // User has venues - show dashboard content
             <>
+              {/* Onboarding Progress */}
+              {renderOnboardingProgress()}
+
               {/* Analytics Cards */}
               <AnalyticsCards analytics={analytics} />
 

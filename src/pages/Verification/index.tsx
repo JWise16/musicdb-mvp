@@ -2,20 +2,18 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { VenueService, type VenueData } from '../../services/venueService';
+import { ROLE_OPTIONS, getDefaultRole, type RoleValue } from '../../utils/roleUtils';
 import type { Tables } from '../../types/database.types';
 import Sidebar from '../../components/layout/Sidebar';
 
-type VerificationStep = 'search' | 'create' | 'associate' | 'complete';
+type VerificationStep = 'create' | 'complete';
 
 const Verification = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState<VerificationStep>('search');
+  const [currentStep, setCurrentStep] = useState<VerificationStep>('create');
   const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Tables<'venues'>[]>([]);
-  const [selectedVenue, setSelectedVenue] = useState<Tables<'venues'> | null>(null);
-  const [userRole, setUserRole] = useState('manager');
+  const [userRole, setUserRole] = useState<RoleValue>(getDefaultRole());
   const [newVenueData, setNewVenueData] = useState<VenueData>({
     name: '',
     location: '',
@@ -38,53 +36,6 @@ const Verification = () => {
       console.log('Verification: Still loading or user undefined, waiting...');
     }
   }, [user, loading, navigate]);
-
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-
-    setIsLoading(true);
-    try {
-      const results = await VenueService.searchVenues(searchQuery);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Error searching venues:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSelectVenue = (venue: Tables<'venues'>) => {
-    setSelectedVenue(venue);
-    setCurrentStep('associate');
-  };
-
-  const handleCreateNewVenue = () => {
-    setCurrentStep('create');
-  };
-
-  const handleAssociateWithVenue = async () => {
-    if (!user || !selectedVenue) return;
-
-    setIsLoading(true);
-    try {
-      const result = await VenueService.associateUserWithVenue({
-        user_id: user.id,
-        venue_id: selectedVenue.id,
-        role: userRole,
-      });
-
-      if (result.success) {
-        setCurrentStep('complete');
-      } else {
-        alert(`Error: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Error associating with venue:', error);
-      alert('Failed to associate with venue. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleCreateVenue = async () => {
     if (!user) return;
@@ -122,83 +73,14 @@ const Verification = () => {
     navigate('/dashboard');
   };
 
-  const renderSearchStep = () => (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          Complete Your Venue Verification
-        </h3>
-        <p className="text-gray-600">
-          To add events, you need to be associated with a venue. Search for your venue or create a new one.
-        </p>
-      </div>
-
-      <div className="card p-6">
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Search for your venue
-          </label>
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="form-input flex-1"
-              placeholder="Enter venue name or location..."
-            />
-            <button
-              onClick={handleSearch}
-              disabled={isLoading || !searchQuery.trim()}
-              className="btn-primary disabled:opacity-50"
-            >
-              {isLoading ? 'Searching...' : 'Search'}
-            </button>
-          </div>
-        </div>
-
-        {searchResults.length > 0 && (
-          <div className="mb-6">
-            <h4 className="font-semibold text-gray-900 mb-3">Search Results</h4>
-            <div className="space-y-3">
-              {searchResults.map(venue => (
-                <div
-                  key={venue.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-accent-300 cursor-pointer transition-colors"
-                  onClick={() => handleSelectVenue(venue)}
-                >
-                  <h5 className="font-medium text-gray-900">{venue.name}</h5>
-                  <p className="text-sm text-gray-600">{venue.location}</p>
-                  {venue.address && (
-                    <p className="text-sm text-gray-500">{venue.address}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="border-t pt-6">
-          <p className="text-gray-600 mb-4">Don't see your venue?</p>
-          <button
-            onClick={handleCreateNewVenue}
-            className="btn-secondary w-full"
-          >
-            Create New Venue
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   const renderCreateStep = () => (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
         <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          Create New Venue
+          Create Your Venue
         </h3>
         <p className="text-gray-600">
-          Add your venue to our database so you can start reporting events.
+          Add your venue to our database so you can start reporting events and contributing to the music community.
         </p>
       </div>
 
@@ -266,13 +148,14 @@ const Verification = () => {
               </label>
               <select
                 value={userRole}
-                onChange={(e) => setUserRole(e.target.value)}
+                onChange={(e) => setUserRole(e.target.value as RoleValue)}
                 className="form-select w-full"
               >
-                <option value="owner">Owner</option>
-                <option value="manager">Manager</option>
-                <option value="staff">Staff</option>
-                <option value="promoter">Promoter</option>
+                {ROLE_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -319,92 +202,13 @@ const Verification = () => {
           </div>
         </div>
 
-        <div className="flex justify-between mt-8">
-          <button
-            onClick={() => setCurrentStep('search')}
-            className="btn-secondary"
-          >
-            Back to Search
-          </button>
-
+        <div className="flex justify-end mt-8">
           <button
             onClick={handleCreateVenue}
             disabled={isLoading || !newVenueData.name || !newVenueData.location || !newVenueData.address}
             className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Creating...' : 'Create Venue'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderAssociateStep = () => (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          Associate with Venue
-        </h3>
-        <p className="text-gray-600">
-          Confirm your association with {selectedVenue?.name}
-        </p>
-      </div>
-
-      <div className="card p-6">
-        <div className="mb-6">
-          <h4 className="font-semibold text-gray-900 mb-4">Venue Details</h4>
-          <dl className="space-y-2">
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Name</dt>
-              <dd className="text-sm text-gray-900">{selectedVenue?.name}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Location</dt>
-              <dd className="text-sm text-gray-900">{selectedVenue?.location}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Address</dt>
-              <dd className="text-sm text-gray-900">{selectedVenue?.address}</dd>
-            </div>
-            {selectedVenue?.capacity && (
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Capacity</dt>
-                <dd className="text-sm text-gray-900">{selectedVenue.capacity}</dd>
-              </div>
-            )}
-          </dl>
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Your Role at this Venue *
-          </label>
-          <select
-            value={userRole}
-            onChange={(e) => setUserRole(e.target.value)}
-            className="form-select w-full"
-          >
-            <option value="owner">Owner</option>
-            <option value="manager">Manager</option>
-            <option value="staff">Staff</option>
-            <option value="promoter">Promoter</option>
-          </select>
-        </div>
-
-        <div className="flex justify-between">
-          <button
-            onClick={() => setCurrentStep('search')}
-            className="btn-secondary"
-          >
-            Back to Search
-          </button>
-
-          <button
-            onClick={handleAssociateWithVenue}
-            disabled={isLoading}
-            className="btn-primary disabled:opacity-50"
-          >
-            {isLoading ? 'Associating...' : 'Confirm Association'}
           </button>
         </div>
       </div>
@@ -420,11 +224,12 @@ const Verification = () => {
       </div>
       
       <h3 className="text-2xl font-bold text-gray-900 mb-4">
-        Verification Complete!
+        Venue Created Successfully!
       </h3>
       
       <p className="text-gray-600 mb-8">
-        You're now associated with a venue and can start adding events to our database.
+        Your venue has been added to our database and you're now associated with it. 
+        You can start adding events and contributing to the music community.
       </p>
       
       <button
@@ -438,12 +243,8 @@ const Verification = () => {
 
   const renderCurrentStep = () => {
     switch (currentStep) {
-      case 'search':
-        return renderSearchStep();
       case 'create':
         return renderCreateStep();
-      case 'associate':
-        return renderAssociateStep();
       case 'complete':
         return renderCompleteStep();
       default:

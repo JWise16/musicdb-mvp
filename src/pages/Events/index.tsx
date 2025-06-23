@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useOnboarding } from '../../hooks/useOnboarding';
 import { EventService, type EventFilters as EventFiltersType, type EventWithDetails } from '../../services/eventService';
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
@@ -9,6 +10,7 @@ import EventFiltersComponent from '../../components/features/events/EventFilters
 
 const Events = () => {
   const { user } = useAuth();
+  const { progress } = useOnboarding();
   const navigate = useNavigate();
   const [filteredEvents, setFilteredEvents] = useState<EventWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -175,7 +177,7 @@ const Events = () => {
     );
   }
 
-  // Show add event prompt if user's venue has no events
+  // Show onboarding completion prompt if user's venue has no events
   if (!hasVenueEvents) {
     return (
       <div className="min-h-screen bg-[#F6F6F3] flex">
@@ -183,18 +185,33 @@ const Events = () => {
         <main className="flex-1 ml-64 p-8">
           <div className="rounded-3xl bg-white shadow-soft p-8 min-h-[90vh]">
             <div className="text-center py-16">
-              <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Your First Event</h3>
-              <p className="text-gray-600 mb-6">
-                Your venue is verified! Add your first event to start contributing to our events database 
-                and see events from other venues.
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Complete Your Onboarding</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Great! Your venue is verified. Now add your first {progress.totalEventsRequired} events to unlock access to the full events database and see events from other venues.
               </p>
+              
+              <div className="bg-purple-50 rounded-lg p-4 mb-6 max-w-md mx-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-purple-800">Progress</span>
+                  <span className="text-sm text-purple-600">
+                    {progress.eventsReported} / {progress.totalEventsRequired}
+                  </span>
+                </div>
+                <div className="w-full bg-purple-200 rounded-full h-2">
+                  <div 
+                    className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min((progress.eventsReported / progress.totalEventsRequired) * 100, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+              
               <Link to="/add-event" className="btn-primary">
-                Add an Event
+                Add Your First Event
               </Link>
             </div>
           </div>
@@ -203,7 +220,72 @@ const Events = () => {
     );
   }
 
-  // Show events page (normal behavior)
+  // Show limited access message if user hasn't completed onboarding
+  if (!progress.isComplete) {
+    return (
+      <div className="min-h-screen bg-[#F6F6F3] flex">
+        <Sidebar />
+        <main className="flex-1 ml-64 p-8">
+          <div className="rounded-3xl bg-white shadow-soft p-8 min-h-[90vh]">
+            <div className="mb-8">
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                      Almost There! 🎯
+                    </h3>
+                    <p className="text-gray-600">
+                      You're making great progress! Add {progress.totalEventsRequired - progress.eventsReported} more event{progress.totalEventsRequired - progress.eventsReported !== 1 ? 's' : ''} to unlock full access.
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {Math.round((progress.eventsReported / progress.totalEventsRequired) * 100)}%
+                    </div>
+                    <div className="text-sm text-gray-500">Complete</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-gray-900">
+                        Events reported: {progress.eventsReported}/{progress.totalEventsRequired}
+                      </span>
+                    </div>
+                    <div className="w-full bg-purple-200 rounded-full h-2">
+                      <div 
+                        className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min((progress.eventsReported / progress.totalEventsRequired) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <Link to="/add-event" className="btn-primary text-sm px-4 py-2">
+                    Add Event
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Show limited events preview */}
+            <div className="text-center py-16">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Events Database Preview</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Complete your onboarding to access the full events database with thousands of events from venues across the country.
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show full events page for completed users
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
       <Sidebar />
@@ -212,33 +294,27 @@ const Events = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-1">Events</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-1">Events Database</h2>
               <p className="text-gray-600">
-                Discover music events from venues across the country
+                Browse and discover events from venues across the country
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">
-                {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
-              </span>
-              <button
-                onClick={() => setFilters({})}
-                className="btn-secondary text-sm"
-                disabled={Object.keys(filters).length === 0}
-              >
-                Clear Filters
-              </button>
-            </div>
+            <Link to="/add-event" className="btn-primary flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Event
+            </Link>
           </div>
 
           {/* Filters */}
           <EventFiltersComponent
             filters={filters}
-            filterOptions={filterOptions}
             onFilterChange={handleFilterChange}
+            filterOptions={filterOptions}
           />
 
-          {/* Events Grid */}
+          {/* Events List */}
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
@@ -246,30 +322,7 @@ const Events = () => {
                 <p className="text-gray-600">Loading events...</p>
               </div>
             </div>
-          ) : filteredEvents.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No events found</h3>
-              <p className="text-gray-600 mb-6">
-                {Object.keys(filters).length > 0 
-                  ? "Try adjusting your filters to see more events."
-                  : "There are no events in the database yet."
-                }
-              </p>
-              {Object.keys(filters).length > 0 && (
-                <button
-                  onClick={() => setFilters({})}
-                  className="btn-primary"
-                >
-                  Clear All Filters
-                </button>
-              )}
-            </div>
-          ) : (
+          ) : filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map(event => (
                 <EventCard
@@ -278,6 +331,21 @@ const Events = () => {
                   onClick={() => handleEventClick(event.id)}
                 />
               ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No events found</h3>
+              <p className="text-gray-600 mb-6">
+                Try adjusting your filters or add some events to get started.
+              </p>
+              <Link to="/add-event" className="btn-primary">
+                Add an Event
+              </Link>
             </div>
           )}
         </div>
