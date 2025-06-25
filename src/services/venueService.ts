@@ -239,7 +239,7 @@ export class VenueService {
   }
 
   // Delete venue image
-  static async deleteVenueImage(venueId: string, imageUrl: string): Promise<{ success: boolean; error: string | null }> {
+  static async deleteVenueImage(_venueId: string, imageUrl: string): Promise<{ success: boolean; error: string | null }> {
     try {
       // Extract filename from URL
       const urlParts = imageUrl.split('/');

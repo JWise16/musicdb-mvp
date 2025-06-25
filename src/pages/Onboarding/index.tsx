@@ -4,11 +4,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useVenue } from '../../contexts/VenueContext';
 import { VenueService } from '../../services/venueService';
-import { EventService } from '../../services/eventService';
 import { UserProfileService } from '../../services/userProfileService';
 import OnboardingWizard from '../../components/features/onboarding/OnboardingWizard';
 import Sidebar from '../../components/layout/Sidebar';
-import { supabase } from '../../supabaseClient';
 
 type OnboardingStep = 'welcome' | 'profile' | 'venue' | 'events' | 'complete';
 
@@ -94,7 +92,7 @@ export default function Onboarding() {
     checkProgress();
   }, [user, profile, currentVenue]);
 
-  const handleStepComplete = async (step: OnboardingStep) => {
+  const handleStepComplete = async () => {
     setShowWizard(false);
     
     // Add a small delay to ensure database updates are reflected
@@ -307,7 +305,7 @@ export default function Onboarding() {
       {/* Onboarding Wizard */}
       <OnboardingWizard 
         isOpen={showWizard} 
-        onClose={() => handleStepComplete(progress.currentStep)}
+        onClose={handleStepComplete}
         step={wizardStep}
         prefillData={{
           full_name: profile?.full_name || user?.user_metadata?.full_name || '',

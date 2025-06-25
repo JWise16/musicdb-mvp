@@ -1,6 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../../supabaseClient';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { UserProfileService } from '../../../services/userProfileService';
 import { VenueService } from '../../../services/venueService';
@@ -59,7 +57,6 @@ interface EventData {
 }
 
 export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 'profile' }: OnboardingWizardProps) {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
