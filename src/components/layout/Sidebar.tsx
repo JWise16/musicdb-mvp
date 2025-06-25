@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useUserProfile } from '../../hooks/useUserProfile';
 import { supabase } from '../../supabaseClient';
 import { formatRole } from '../../utils/roleUtils';
+import Avatar from '../common/Avatar';
 import logoImage from '../../assets/logo.png';
 
 type UserVenue = {
@@ -22,11 +24,15 @@ const navLinks = [
   { name: 'Find Talent', to: '/find-talent', icon: (
     <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7a4 4 0 118 0 4 4 0 01-8 0zm8 8a6 6 0 00-12 0v1a2 2 0 002 2h8a2 2 0 002-2v-1z" /></svg>
   ) },
+  { name: 'Profile', to: '/profile', icon: (
+    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+  ) },
 ];
 
 const Sidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const [userVenue, setUserVenue] = useState<UserVenue | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -69,12 +75,26 @@ const Sidebar = () => {
     fetchUserVenue();
   }, [user]);
 
-  // Get user initials for avatar
-  const getUserInitials = () => {
-    if (!user?.email) return 'U';
-    const email = user.email;
-    const name = email.split('@')[0];
-    return name.charAt(0).toUpperCase();
+  // Get display name from profile or fallback to email
+  const getDisplayName = () => {
+    if (profile?.full_name) {
+      return profile.full_name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
+  // Get role display text
+  const getRoleDisplay = () => {
+    if (profile?.role) {
+      return profile.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+    if (userVenue) {
+      return `${formatRole(userVenue.role)} at ${userVenue.venue.name}`;
+    }
+    return 'No role assigned';
   };
 
   return (
@@ -107,15 +127,17 @@ const Sidebar = () => {
       <div>
         {/* User Profile */}
         <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-full bg-accent-600 flex items-center justify-center text-white font-semibold text-sm">
-            {getUserInitials()}
-          </div>
-          <div className="flex-1">
-            <div className="font-semibold text-gray-900 text-sm">
-              {user?.email ? user.email.split('@')[0] : 'User'}
+          <Avatar 
+            src={profile?.avatar_url} 
+            size="sm" 
+            fallback={getDisplayName()}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-gray-900 text-sm truncate">
+              {getDisplayName()}
             </div>
-            <div className="text-xs text-gray-500">
-              {loading ? 'Loading...' : userVenue ? `${formatRole(userVenue.role)} at ${userVenue.venue.name}` : 'No venue assigned'}
+            <div className="text-xs text-gray-500 truncate">
+              {loading ? 'Loading...' : getRoleDisplay()}
             </div>
           </div>
         </div>

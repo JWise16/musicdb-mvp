@@ -25,14 +25,26 @@ const Signup = () => {
     setLoading(true);
     setError('');
     
-    const { error } = await supabase.auth.signUp({ email, password });
+    console.log('Signup: Starting signup process...');
+    
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: {
+          full_name: name
+        }
+      }
+    });
     
     if (error) {
+      console.error('Signup: Error during signup:', error);
       setError(error.message);
       setLoading(false);
     } else {
+      console.log('Signup: Signup successful, showing email confirmation message');
       setError('');
-      alert('Check your email for the confirmation link!');
+      alert('Check your email for the confirmation link!\n\nLook for an email from "Supabase Auth" with the subject "Confirm Your Email Address for MusicDB".');
       setLoading(false);
     }
   };
@@ -72,6 +84,7 @@ const Signup = () => {
                 onChange={(e) => setName(e.target.value)}
                 className="input-field"
                 placeholder="Enter your full name"
+                required
               />
             </div>
             
@@ -140,4 +153,5 @@ const Signup = () => {
     </div>
   );
 };
+
 export default Signup;

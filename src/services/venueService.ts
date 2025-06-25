@@ -9,6 +9,7 @@ export type VenueData = {
   contact_email?: string;
   contact_phone?: string;
   description?: string;
+  image_url?: string;
 };
 
 export type UserVenueData = {
@@ -192,6 +193,118 @@ export class VenueService {
     } catch (error) {
       console.error('Error in getVenueById:', error);
       return null;
+    }
+  }
+
+  // Upload venue image
+  static async uploadVenueImage(venueId: string, file: File): Promise<{ url: string | null; error: string | null }> {
+    try {
+      console.log('Starting venue image upload for venue:', venueId);
+      console.log('File details:', { name: file.name, size: file.size, type: file.type });
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${venueId}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      console.log('Uploading to path:', filePath);
+
+      // Upload file to Supabase Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('venue-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Allow overwriting existing files
+        });
+
+      if (uploadError) {
+        console.error('Error uploading venue image:', uploadError);
+        return { url: null, error: uploadError.message };
+      }
+
+      console.log('Upload successful, data:', data);
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('venue-images')
+        .getPublicUrl(filePath);
+
+      console.log('Public URL:', urlData.publicUrl);
+
+      return { url: urlData.publicUrl, error: null };
+    } catch (error) {
+      console.error('Error in uploadVenueImage:', error);
+      return { url: null, error: 'Failed to upload venue image' };
+    }
+  }
+
+  // Delete venue image
+  static async deleteVenueImage(venueId: string, imageUrl: string): Promise<{ success: boolean; error: string | null }> {
+    try {
+      // Extract filename from URL
+      const urlParts = imageUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      const filePath = `${fileName}`;
+
+      // Delete file from Supabase Storage
+      const { error } = await supabase.storage
+        .from('venue-images')
+        .remove([filePath]);
+
+      if (error) {
+        console.error('Error deleting venue image:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, error: null };
+    } catch (error) {
+      console.error('Error in deleteVenueImage:', error);
+      return { success: false, error: 'Failed to delete venue image' };
+    }
+  }
+
+  // Create venue with image
+  static async createVenueWithImage(
+    venueData: VenueData, 
+    imageFile?: File
+  ): Promise<{ success: boolean; venueId?: string; error?: string }> {
+    try {
+      let imageUrl = venueData.image_url;
+
+      // Upload image if provided
+      if (imageFile) {
+        // First create the venue to get the ID
+        const createResult = await this.createVenue(venueData);
+        if (!createResult.success || !createResult.venueId) {
+          return createResult;
+        }
+
+        // Upload image using the venue ID
+        const uploadResult = await this.uploadVenueImage(createResult.venueId, imageFile);
+        if (uploadResult.error) {
+          return { success: false, error: uploadResult.error };
+        }
+        imageUrl = uploadResult.url || undefined;
+
+        // Update venue with image URL
+        const { error: updateError } = await supabase
+          .from('venues')
+          .update({ image_url: imageUrl })
+          .eq('id', createResult.venueId);
+
+        if (updateError) {
+          console.error('Error updating venue with image URL:', updateError);
+          return { success: false, error: updateError.message };
+        }
+
+        return { success: true, venueId: createResult.venueId };
+      } else {
+        // No image, just create venue
+        return await this.createVenue(venueData);
+      }
+    } catch (error) {
+      console.error('Error in createVenueWithImage:', error);
+      return { success: false, error: 'Failed to create venue with image' };
     }
   }
 
