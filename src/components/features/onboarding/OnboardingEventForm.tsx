@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { useVenue } from '../../../contexts/VenueContext';
 import { EventService, type EventFormData } from '../../../services/eventService';
-import { VenueService } from '../../../services/venueService';
 import type { Tables } from '../../../types/database.types';
 
 interface OnboardingEventFormProps {
@@ -18,8 +18,8 @@ export default function OnboardingEventForm({
   totalEventsRequired 
 }: OnboardingEventFormProps) {
   const { user } = useAuth();
+  const { currentVenue, userVenues } = useVenue();
   const [isLoading, setIsLoading] = useState(false);
-  const [userVenues, setUserVenues] = useState<Tables<'venues'>[]>([]);
   const [priceType, setPriceType] = useState<'single' | 'range' | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     name: '',
@@ -43,24 +43,12 @@ export default function OnboardingEventForm({
     ]
   });
 
-  // Load user venues on component mount
+  // Set venue_id when currentVenue changes
   useEffect(() => {
-    const loadVenues = async () => {
-      if (!user) return;
-      
-      try {
-        const venues = await VenueService.getUserVenues(user.id);
-        setUserVenues(venues);
-        if (venues.length > 0) {
-          setFormData(prev => ({ ...prev, venue_id: venues[0].id }));
-        }
-      } catch (error) {
-        console.error('Error loading venues:', error);
-      }
-    };
-
-    loadVenues();
-  }, [user]);
+    if (currentVenue) {
+      setFormData(prev => ({ ...prev, venue_id: currentVenue.id }));
+    }
+  }, [currentVenue]);
 
   const handleInputChange = (field: keyof EventFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -207,7 +195,7 @@ export default function OnboardingEventForm({
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 className="form-input w-full"
-                placeholder="e.g., Rock Night with The Band"
+                placeholder="e.g., Summer Concert Series"
                 required
               />
             </div>
@@ -281,85 +269,82 @@ export default function OnboardingEventForm({
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Pricing</h3>
           
-          <div className="space-y-4">
-            {/* Single Price Option */}
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="single-price"
-                name="price-type"
-                checked={priceType === 'single'}
-                onChange={() => {
-                  setPriceType('single');
-                  handleInputChange('ticket_price_min', undefined);
-                  handleInputChange('ticket_price_max', undefined);
-                }}
-                className="form-radio"
-              />
-              <label htmlFor="single-price" className="ml-3 text-sm font-medium text-gray-700">
+          <div className="mb-4">
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="priceType"
+                  value="single"
+                  checked={priceType === 'single'}
+                  onChange={() => setPriceType('single')}
+                  className="mr-2"
+                />
                 Single Price
               </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="priceType"
+                  value="range"
+                  checked={priceType === 'range'}
+                  onChange={() => setPriceType('range')}
+                  className="mr-2"
+                />
+                Price Range
+              </label>
             </div>
-            {priceType === 'single' && (
-              <div className="ml-6">
+          </div>
+
+          {priceType === 'single' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ticket Price ($)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.ticket_price || ''}
+                onChange={(e) => handleInputChange('ticket_price', parseFloat(e.target.value) || undefined)}
+                className="form-input w-full"
+                placeholder="25.00"
+              />
+            </div>
+          )}
+
+          {priceType === 'range' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Minimum Price ($)
+                </label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.ticket_price || ''}
-                  onChange={(e) => handleInputChange('ticket_price', parseFloat(e.target.value) || undefined)}
-                  className="form-input w-full max-w-xs"
-                  placeholder="25.00"
+                  value={formData.ticket_price_min || ''}
+                  onChange={(e) => handleInputChange('ticket_price_min', parseFloat(e.target.value) || undefined)}
+                  className="form-input w-full"
+                  placeholder="20.00"
                 />
               </div>
-            )}
-
-            {/* Price Range Option */}
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="price-range"
-                name="price-type"
-                checked={priceType === 'range'}
-                onChange={() => {
-                  setPriceType('range');
-                  handleInputChange('ticket_price', undefined);
-                }}
-                className="form-radio"
-              />
-              <label htmlFor="price-range" className="ml-3 text-sm font-medium text-gray-700">
-                Price Range
-              </label>
-            </div>
-            {priceType === 'range' && (
-              <div className="ml-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Minimum Price</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.ticket_price_min || ''}
-                    onChange={(e) => handleInputChange('ticket_price_min', parseFloat(e.target.value) || undefined)}
-                    className="form-input w-full"
-                    placeholder="20.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Maximum Price</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.ticket_price_max || ''}
-                    onChange={(e) => handleInputChange('ticket_price_max', parseFloat(e.target.value) || undefined)}
-                    className="form-input w-full"
-                    placeholder="35.00"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Maximum Price ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.ticket_price_max || ''}
+                  onChange={(e) => handleInputChange('ticket_price_max', parseFloat(e.target.value) || undefined)}
+                  className="form-input w-full"
+                  placeholder="50.00"
+                />
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Revenue Tracking */}
@@ -404,81 +389,90 @@ export default function OnboardingEventForm({
 
         {/* Artists */}
         <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Artists/Performers</h3>
-            <button
-              type="button"
-              onClick={addArtist}
-              className="btn-secondary text-sm px-3 py-1"
-            >
-              + Add Artist
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {formData.artists.map((artist, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700">
-                    Artist {index + 1}
-                  </span>
-                  {formData.artists.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeArtist(index)}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      Remove
-                    </button>
-                  )}
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Artists</h3>
+          
+          {formData.artists.map((artist, index) => (
+            <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-medium text-gray-900">
+                  Artist {index + 1} {artist.is_headliner && '(Headliner)'}
+                </h4>
+                {formData.artists.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeArtist(index)}
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Artist Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={artist.name}
+                    onChange={(e) => handleArtistChange(index, 'name', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="e.g., The Rolling Stones"
+                    required
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={artist.name}
-                      onChange={(e) => handleArtistChange(index, 'name', e.target.value)}
-                      className="form-input w-full"
-                      placeholder="Artist/Band name"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Genre
-                    </label>
-                    <input
-                      type="text"
-                      value={artist.genre || ''}
-                      onChange={(e) => handleArtistChange(index, 'genre', e.target.value)}
-                      className="form-input w-full"
-                      placeholder="Rock, Pop, Jazz, etc."
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={artist.is_headliner}
-                        onChange={(e) => handleArtistChange(index, 'is_headliner', e.target.checked)}
-                        className="form-checkbox"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Headliner</span>
-                    </label>
-                  </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Genre
+                  </label>
+                  <input
+                    type="text"
+                    value={artist.genre}
+                    onChange={(e) => handleArtistChange(index, 'genre', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="e.g., Rock"
+                  />
                 </div>
               </div>
-            ))}
-          </div>
+              
+              <div className="mt-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={artist.is_headliner}
+                    onChange={(e) => handleArtistChange(index, 'is_headliner', e.target.checked)}
+                    className="mr-2"
+                  />
+                  This is the headliner
+                </label>
+              </div>
+            </div>
+          ))}
+          
+          <button
+            type="button"
+            onClick={addArtist}
+            className="btn-secondary w-full py-3"
+          >
+            + Add Another Artist
+          </button>
         </div>
 
-        {/* Action Buttons */}
+        {/* Notes */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Notes</h3>
+          <textarea
+            value={formData.notes}
+            onChange={(e) => handleInputChange('notes', e.target.value)}
+            className="form-textarea w-full"
+            rows={3}
+            placeholder="Any additional notes about this event..."
+          />
+        </div>
+
+        {/* Submit */}
         <div className="flex justify-between items-center">
           <button
             type="button"

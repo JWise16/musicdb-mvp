@@ -16,6 +16,7 @@ export type Database = {
           description: string | null
           genre: string | null
           id: string
+          is_admin_added: boolean | null
           name: string
           social_media: Json | null
           updated_at: string | null
@@ -26,6 +27,7 @@ export type Database = {
           description?: string | null
           genre?: string | null
           id?: string
+          is_admin_added?: boolean | null
           name: string
           social_media?: Json | null
           updated_at?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           description?: string | null
           genre?: string | null
           id?: string
+          is_admin_added?: boolean | null
           name?: string
           social_media?: Json | null
           updated_at?: string | null
@@ -48,6 +51,7 @@ export type Database = {
           created_at: string | null
           event_id: string | null
           id: string
+          is_admin_added: boolean | null
           is_headliner: boolean | null
           performance_order: number | null
         }
@@ -56,6 +60,7 @@ export type Database = {
           created_at?: string | null
           event_id?: string | null
           id?: string
+          is_admin_added?: boolean | null
           is_headliner?: boolean | null
           performance_order?: number | null
         }
@@ -64,6 +69,7 @@ export type Database = {
           created_at?: string | null
           event_id?: string | null
           id?: string
+          is_admin_added?: boolean | null
           is_headliner?: boolean | null
           performance_order?: number | null
         }
@@ -91,6 +97,7 @@ export type Database = {
           created_at: string | null
           event_id: string | null
           id: string
+          is_admin_added: boolean | null
           is_public: boolean | null
           ticket_revenue: number | null
           total_revenue: number | null
@@ -102,6 +109,7 @@ export type Database = {
           created_at?: string | null
           event_id?: string | null
           id?: string
+          is_admin_added?: boolean | null
           is_public?: boolean | null
           ticket_revenue?: number | null
           total_revenue?: number | null
@@ -113,6 +121,7 @@ export type Database = {
           created_at?: string | null
           event_id?: string | null
           id?: string
+          is_admin_added?: boolean | null
           is_public?: boolean | null
           ticket_revenue?: number | null
           total_revenue?: number | null
@@ -134,9 +143,10 @@ export type Database = {
           created_at: string | null
           date: string
           id: string
+          is_admin_added: boolean | null
           name: string
           notes: string | null
-          ticket_price: number
+          ticket_price: number | null
           ticket_price_max: number | null
           ticket_price_min: number | null
           tickets_sold: number | null
@@ -150,6 +160,7 @@ export type Database = {
           created_at?: string | null
           date: string
           id?: string
+          is_admin_added?: boolean | null
           name: string
           notes?: string | null
           ticket_price?: number | null
@@ -166,9 +177,10 @@ export type Database = {
           created_at?: string | null
           date?: string
           id?: string
+          is_admin_added?: boolean | null
           name?: string
           notes?: string | null
-          ticket_price?: number
+          ticket_price?: number | null
           ticket_price_max?: number | null
           ticket_price_min?: number | null
           tickets_sold?: number | null
@@ -228,6 +240,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_admin_added: boolean | null
           location: string
           name: string
           updated_at: string | null
@@ -240,6 +253,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_admin_added?: boolean | null
           location: string
           name: string
           updated_at?: string | null
@@ -252,6 +266,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_admin_added?: boolean | null
           location?: string
           name?: string
           updated_at?: string | null

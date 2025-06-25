@@ -11,7 +11,7 @@ export interface OnboardingProgress {
 }
 
 // List of public routes where onboarding should not show
-const PUBLIC_ROUTES = ['/', '/login', '/signup', '/about', '/verification', '/add-event'];
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/about', '/verification', '/add-event', '/add-venue'];
 
 export const useOnboarding = () => {
   const { user } = useAuth();
