@@ -106,8 +106,11 @@ const AddEvent = () => {
       case 'manual':
         return (
           <ManualEventForm
-            onBack={handleBack}
-            onComplete={handleComplete}
+            onEventCreated={(eventId) => {
+              console.log('Event created:', eventId);
+              handleComplete();
+            }}
+            onCancel={handleBack}
           />
         );
       case 'upload':

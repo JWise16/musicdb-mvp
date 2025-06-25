@@ -14,7 +14,7 @@ import YourShows from '../../components/features/dashboard/YourShows';
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { progress } = useOnboarding();
-  const { currentVenue, userVenues, isLoading: venueLoading } = useVenue();
+  const { currentVenue, isLoading: venueLoading } = useVenue();
   const navigate = useNavigate();
   const [hasVenues, setHasVenues] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);

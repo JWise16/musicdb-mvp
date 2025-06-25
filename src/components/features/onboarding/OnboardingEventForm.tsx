@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useVenue } from '../../../contexts/VenueContext';
 import { EventService, type EventFormData } from '../../../services/eventService';
-import type { Tables } from '../../../types/database.types';
 
 interface OnboardingEventFormProps {
   onEventAdded: () => void;

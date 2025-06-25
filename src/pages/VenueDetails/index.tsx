@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 import { useVenue } from '../../contexts/VenueContext';
 import { VenueService, type VenueAnalytics, type VenueEvent } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
@@ -13,8 +12,7 @@ import type { Tables } from '../../types/database.types';
 
 const VenueDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const { currentVenue, userVenues } = useVenue();
+  const { userVenues } = useVenue();
   const navigate = useNavigate();
   const [venue, setVenue] = useState<Tables<'venues'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
