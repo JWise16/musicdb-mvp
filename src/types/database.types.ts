@@ -204,6 +204,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          email: string | null
           full_name: string
           id: string
           role: string | null
@@ -214,6 +215,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          email?: string | null
           full_name: string
           id?: string
           role?: string | null
@@ -224,6 +226,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          email?: string | null
           full_name?: string
           id?: string
           role?: string | null
@@ -273,6 +276,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          image_url: string | null
           is_admin_added: boolean | null
           location: string
           name: string
@@ -286,6 +290,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          image_url?: string | null
           is_admin_added?: boolean | null
           location: string
           name: string
@@ -299,6 +304,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          image_url?: string | null
           is_admin_added?: boolean | null
           location?: string
           name?: string

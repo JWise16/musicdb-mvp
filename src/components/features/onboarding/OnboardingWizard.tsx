@@ -13,6 +13,7 @@ interface OnboardingWizardProps {
     email?: string;
   };
   step?: 'profile' | 'venue' | 'events';
+  eventNumber?: number; // Track which event we're creating (1, 2, or 3)
 }
 
 interface UserProfile {
@@ -56,13 +57,13 @@ interface EventData {
   }>;
 }
 
-export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 'profile' }: OnboardingWizardProps) {
+export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 'profile', eventNumber = 1 }: OnboardingWizardProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  console.log('OnboardingWizard: isOpen =', isOpen, 'user =', user?.email, 'prefillData =', prefillData, 'step =', step);
+  console.log('OnboardingWizard: isOpen =', isOpen, 'user =', user?.email, 'prefillData =', prefillData, 'step =', step, 'eventNumber =', eventNumber);
   
   const [profile, setProfile] = useState<UserProfile>({
     full_name: '',
@@ -114,6 +115,26 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       });
     }
   }, [prefillData]);
+
+  // Reset event form when eventNumber changes
+  useEffect(() => {
+    if (step === 'events') {
+      setEvent({
+        name: '',
+        date: '',
+        ticket_price: undefined,
+        ticket_price_min: undefined,
+        ticket_price_max: undefined,
+        total_ticket_revenue: undefined,
+        total_tickets: 0,
+        tickets_sold: undefined,
+        bar_sales: undefined,
+        notes: '',
+        artists: [{ name: '', is_headliner: true, performance_order: 1 }]
+      });
+      setPriceType('single');
+    }
+  }, [step, eventNumber]);
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
@@ -263,85 +284,40 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         case 'events':
           // Get user's venue
           const userVenues = await VenueService.getUserVenues(user.id);
+          console.log('OnboardingWizard: User venues found:', userVenues.length);
+          
           if (userVenues.length === 0) {
             setError('No venue found. Please add a venue first.');
             return;
           }
 
           const venueId = userVenues[0].id;
-          console.log('OnboardingWizard: Creating events for venue:', venueId);
+          console.log(`OnboardingWizard: Creating event ${eventNumber} for venue:`, venueId);
           console.log('OnboardingWizard: Event data:', event);
           console.log('OnboardingWizard: Price type:', priceType);
           
-          // Create 3 sample events to complete onboarding
-          const sampleEvents = [
-            {
-              ...event,
-              name: event.name || 'Sample Event 1',
-              date: event.date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
-              venue_id: venueId,
-              ticket_price: priceType === 'range' ? undefined : (event.ticket_price || 25),
-              ticket_price_min: priceType === 'range' ? (event.ticket_price_min || 20) : undefined,
-              ticket_price_max: priceType === 'range' ? (event.ticket_price_max || 30) : undefined,
-              total_tickets: event.total_tickets || 100,
-              artists: event.artists.length > 0 ? event.artists : [{
-                name: 'Sample Artist 1',
-                genre: 'Rock',
-                is_headliner: true,
-                performance_order: 1
-              }]
-            },
-            {
-              ...event,
-              name: event.name ? `${event.name} - Part 2` : 'Sample Event 2',
-              date: event.date || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 weeks from now
-              venue_id: venueId,
-              ticket_price: priceType === 'range' ? undefined : (event.ticket_price || 30),
-              ticket_price_min: priceType === 'range' ? (event.ticket_price_min || 25) : undefined,
-              ticket_price_max: priceType === 'range' ? (event.ticket_price_max || 35) : undefined,
-              total_tickets: event.total_tickets || 150,
-              artists: event.artists.length > 0 ? event.artists.map(a => ({ ...a, name: `${a.name} (Part 2)` })) : [{
-                name: 'Sample Artist 2',
-                genre: 'Jazz',
-                is_headliner: true,
-                performance_order: 1
-              }]
-            },
-            {
-              ...event,
-              name: event.name ? `${event.name} - Part 3` : 'Sample Event 3',
-              date: event.date || new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 weeks from now
-              venue_id: venueId,
-              ticket_price: priceType === 'range' ? undefined : (event.ticket_price || 35),
-              ticket_price_min: priceType === 'range' ? (event.ticket_price_min || 30) : undefined,
-              ticket_price_max: priceType === 'range' ? (event.ticket_price_max || 40) : undefined,
-              total_tickets: event.total_tickets || 200,
-              artists: event.artists.length > 0 ? event.artists.map(a => ({ ...a, name: `${a.name} (Part 3)` })) : [{
-                name: 'Sample Artist 3',
-                genre: 'Pop',
-                is_headliner: true,
-                performance_order: 1
-              }]
-            }
-          ];
+          // Create single event
+          const eventData = {
+            ...event,
+            venue_id: venueId,
+            ticket_price: priceType === 'range' ? undefined : event.ticket_price,
+            ticket_price_min: priceType === 'range' ? event.ticket_price_min : undefined,
+            ticket_price_max: priceType === 'range' ? event.ticket_price_max : undefined,
+          };
 
-          // Create all 3 events
-          for (let i = 0; i < sampleEvents.length; i++) {
-            const eventData = sampleEvents[i];
-            console.log(`OnboardingWizard: Creating event ${i + 1}:`, eventData);
-            
-            const eventResult = await EventService.createEvent(eventData);
+          console.log(`OnboardingWizard: Final event data for creation:`, eventData);
+          
+          const eventResult = await EventService.createEvent(eventData);
 
-            if (eventResult.error) {
-              console.error(`OnboardingWizard: Event ${i + 1} creation error:`, eventResult.error);
-              setError(`Failed to create event ${i + 1}: ${eventResult.error}`);
-              return;
-            }
+          console.log(`OnboardingWizard: Event creation result:`, eventResult);
 
-            console.log(`OnboardingWizard: Event ${i + 1} created successfully:`, eventResult.eventId);
+          if (eventResult.error) {
+            console.error(`OnboardingWizard: Event ${eventNumber} creation error:`, eventResult.error);
+            setError(`Failed to create event ${eventNumber}: ${eventResult.error}`);
+            return;
           }
 
-          console.log('OnboardingWizard: All 3 events created successfully');
+          console.log(`OnboardingWizard: Event ${eventNumber} created successfully:`, eventResult.eventId);
           break;
       }
 
@@ -362,7 +338,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       case 'venue':
         return 'Add Your Venue';
       case 'events':
-        return 'Add Your First Events';
+        return `Add Event ${eventNumber}`;
       default:
         return 'Onboarding';
     }
@@ -375,7 +351,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       case 'venue':
         return 'Tell us about your venue';
       case 'events':
-        return 'Add your first event details - we\'ll create 3 sample events to get you started';
+        return `Create your ${eventNumber === 1 ? 'first' : eventNumber === 2 ? 'second' : 'third'} event`;
       default:
         return '';
     }
@@ -641,8 +617,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const renderEventStep = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Your First Events</h3>
-        <p className="text-gray-600">Tell us about your typical event - we'll create 3 sample events to get you started</p>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Event {eventNumber}</h3>
+        <p className="text-gray-600">Create your {eventNumber === 1 ? 'first' : eventNumber === 2 ? 'second' : 'third'} event</p>
       </div>
       
       <div className="space-y-4">
@@ -1182,7 +1158,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                   Completing...
                 </div>
               ) : (
-                'Complete Step'
+                step === 'events' ? `Create Event ${eventNumber}` : 'Complete Step'
               )}
             </button>
           </div>

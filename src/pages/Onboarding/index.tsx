@@ -31,6 +31,7 @@ export default function Onboarding() {
   });
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState<'profile' | 'venue' | 'events'>('profile');
+  const [currentEventNumber, setCurrentEventNumber] = useState(1);
 
   // Check onboarding progress
   useEffect(() => {
@@ -47,13 +48,21 @@ export default function Onboarding() {
         const hasVenue = await VenueService.hasUserVenues(user.id);
         console.log('Onboarding: Venue check:', { hasVenue });
 
-        // Check events count
+        // Get all user venues and count all events
         let eventsCount = 0;
-        if (hasVenue && currentVenue) {
-          const events = await VenueService.getVenueEvents(currentVenue.id);
-          eventsCount = events.upcoming.length + events.past.length;
-          console.log('Onboarding: Events check:', { eventsCount, currentVenue: currentVenue.id });
+        if (hasVenue) {
+          const userVenues = await VenueService.getUserVenues(user.id);
+          console.log('Onboarding: Found user venues:', userVenues.length);
+          
+          for (const venue of userVenues) {
+            const events = await VenueService.getVenueEvents(venue.id);
+            const venueEventCount = events.upcoming.length + events.past.length;
+            eventsCount += venueEventCount;
+            console.log(`Onboarding: Venue ${venue.name} (${venue.id}) has ${venueEventCount} events`);
+          }
         }
+
+        console.log('Onboarding: Total events count for user venues:', eventsCount);
 
         // Determine current step
         let currentStep: OnboardingStep = 'welcome';
@@ -63,6 +72,7 @@ export default function Onboarding() {
           currentStep = 'venue';
         } else if (eventsCount < 3) {
           currentStep = 'events';
+          setCurrentEventNumber(eventsCount + 1);
         } else {
           currentStep = 'complete';
         }
@@ -96,7 +106,7 @@ export default function Onboarding() {
     setShowWizard(false);
     
     // Add a small delay to ensure database updates are reflected
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Refresh progress
     if (user) {
@@ -105,20 +115,34 @@ export default function Onboarding() {
       
       const hasProfile = !!(refreshedProfile?.full_name && refreshedProfile?.role);
       const hasVenue = await VenueService.hasUserVenues(user.id);
+      
+      // Get all user venues and count all events
       let eventsCount = 0;
-      if (hasVenue && currentVenue) {
-        const events = await VenueService.getVenueEvents(currentVenue.id);
-        eventsCount = events.upcoming.length + events.past.length;
+      if (hasVenue) {
+        const userVenues = await VenueService.getUserVenues(user.id);
+        console.log('Onboarding: Found user venues:', userVenues.length);
+        
+        for (const venue of userVenues) {
+          const events = await VenueService.getVenueEvents(venue.id);
+          const venueEventCount = events.upcoming.length + events.past.length;
+          eventsCount += venueEventCount;
+          console.log(`Onboarding: Venue ${venue.name} (${venue.id}) has ${venueEventCount} events`);
+        }
       }
+
+      console.log('Onboarding: Total events count for user venues:', eventsCount);
 
       // Determine next step
       let nextStep: OnboardingStep = 'welcome';
+      let nextEventNumber = 1;
+      
       if (!hasProfile) {
         nextStep = 'profile';
       } else if (!hasVenue) {
         nextStep = 'venue';
       } else if (eventsCount < 3) {
         nextStep = 'events';
+        nextEventNumber = eventsCount + 1;
       } else {
         nextStep = 'complete';
       }
@@ -127,7 +151,8 @@ export default function Onboarding() {
         hasProfile,
         hasVenue,
         eventsCount,
-        refreshedProfile
+        refreshedProfile,
+        nextEventNumber
       });
 
       setProgress({
@@ -140,6 +165,7 @@ export default function Onboarding() {
       // Show wizard for next step
       if (nextStep === 'profile' || nextStep === 'venue' || nextStep === 'events') {
         setWizardStep(nextStep);
+        setCurrentEventNumber(nextEventNumber);
         setShowWizard(true);
       }
     }
@@ -175,7 +201,7 @@ export default function Onboarding() {
           </div>
           <div className="flex items-center">
             <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">3</div>
-            <span className="text-gray-700">Add at least 3 events to get started</span>
+            <span className="text-gray-700">Add 3 events to get started</span>
           </div>
         </div>
       </div>
@@ -307,6 +333,7 @@ export default function Onboarding() {
         isOpen={showWizard} 
         onClose={handleStepComplete}
         step={wizardStep}
+        eventNumber={currentEventNumber}
         prefillData={{
           full_name: profile?.full_name || user?.user_metadata?.full_name || '',
           email: user?.email || ''
