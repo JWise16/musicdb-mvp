@@ -332,32 +332,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     }
   };
 
-  const getStepTitle = () => {
-    switch (step) {
-      case 'profile':
-        return 'Personal Information';
-      case 'venue':
-        return 'Add Your Venue';
-      case 'events':
-        return `Add Event ${eventNumber}`;
-      default:
-        return 'Onboarding';
-    }
-  };
-
-  const getStepDescription = () => {
-    switch (step) {
-      case 'profile':
-        return 'Let\'s start with your basic information';
-      case 'venue':
-        return 'Tell us about your venue';
-      case 'events':
-        return `Create your ${eventNumber === 1 ? 'first' : eventNumber === 2 ? 'second' : 'third'} event`;
-      default:
-        return '';
-    }
-  };
-
   const renderProfileStep = () => (
     <div className="space-y-6">
       <div>
