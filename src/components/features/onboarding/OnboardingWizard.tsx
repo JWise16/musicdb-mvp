@@ -4,6 +4,7 @@ import { UserProfileService } from '../../../services/userProfileService';
 import { VenueService } from '../../../services/venueService';
 import { EventService } from '../../../services/eventService';
 import Avatar from '../../common/Avatar';
+import logo from '../../../assets/logo.png';
 
 interface OnboardingWizardProps {
   isOpen: boolean;
@@ -1102,19 +1103,11 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       <div className="bg-white rounded-2xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="border-b border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">{getStepTitle()}</h2>
-              <p className="text-gray-600">{getStepDescription()}</p>
+          <div className="flex items-center justify-center">
+            <div className="flex items-center space-x-3">
+              <img src={logo} alt="MusicDB Logo" className="w-12 h-12" />
+              <h2 className="text-3xl font-bold text-gray-900">MusicDB</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -1139,18 +1132,11 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
         {/* Footer */}
         <div className="border-t border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            
+          <div className="flex items-center justify-end">
             <button
               onClick={handleComplete}
               disabled={isLoading || !isStepValid()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {isLoading ? (
                 <div className="flex items-center">
