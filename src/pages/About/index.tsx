@@ -158,6 +158,24 @@ export function AboutPage() {
           </h2>
           
           <div className="space-y-12">
+            {/* The Motivation */}
+            <div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-6 border-b-2 border-accent-600 inline-block pb-1">
+                The Motivation
+              </h3>
+              <div className="prose prose-lg text-gray-600 space-y-4">
+                <p>
+                  The National Independent Venue Association (NIVA) revealed that 64% of independent venues in the U.S. were not profitable in 2024. Nearly half saw a drop in revenue, and over two-thirds faced rising costs, driven by inflation, insurance spikes, and labor shortages.
+                </p>
+                <p>
+                  Meanwhile, large corporate-backed venues like Live Nation and AEG have access to more data, technology, and resources, making it even harder for independent spaces to compete.
+                </p>
+                <p>
+                  Now more than ever, we believe the future of live music depends on independent venues working together. That's why we're building a tool designed to help them collaborate, share insights, and thrive.
+                </p>
+              </div>
+            </div>
+
             {/* The Problem */}
             <div>
               <h3 className="text-2xl font-semibold text-gray-900 mb-6 border-b-2 border-accent-600 inline-block pb-1">
