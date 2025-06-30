@@ -10,6 +10,7 @@ import TimeFrameSelector from '../../components/features/dashboard/TimeFrameSele
 import AnalyticsCards from '../../components/features/dashboard/AnalyticsCards';
 import EventAnalytics from '../../components/features/dashboard/EventAnalytics';
 import YourShows from '../../components/features/dashboard/YourShows';
+import logo from '../../assets/logo.png';
 
 const Dashboard = () => {
   console.log('Dashboard: Component rendered - START');
@@ -47,6 +48,13 @@ const Dashboard = () => {
 
   // Check if user needs onboarding
   useEffect(() => {
+    // Set a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.error('Dashboard: Loading timeout reached, forcing navigation to onboarding');
+      setHasVenues(false);
+      navigate('/onboarding');
+    }, 15000); // 15 second timeout
+
     const checkOnboardingNeeded = async () => {
       console.log('Dashboard: Starting onboarding check', { 
         user: !!user, 
@@ -57,6 +65,7 @@ const Dashboard = () => {
       
       if (!user) {
         console.log('Dashboard: No user, redirecting to login');
+        clearTimeout(timeout);
         navigate('/login');
         return;
       }
@@ -73,6 +82,7 @@ const Dashboard = () => {
       
       if (!hasProfile) {
         console.log('Dashboard: Profile incomplete, redirecting to onboarding');
+        clearTimeout(timeout);
         navigate('/onboarding');
         return;
       }
@@ -83,50 +93,66 @@ const Dashboard = () => {
         return;
       }
 
-      // Check if user has venues
-      const hasVenues = await VenueService.hasUserVenues(user.id);
-      console.log('Dashboard: Venue check', { hasVenues, userId: user.id });
-      
-      if (!hasVenues) {
-        console.log('Dashboard: No venues found, redirecting to onboarding');
-        navigate('/onboarding');
-        return;
-      }
-
-      // Check if user has at least 3 events across all their venues
-      const userVenues = await VenueService.getUserVenues(user.id);
-      console.log('Dashboard: User venues', { userVenues: userVenues.map(v => ({ id: v.id, name: v.name })) });
-      
-      let totalEvents = 0;
-      
-      for (const venue of userVenues) {
-        try {
-          const venueEvents = await VenueService.getVenueEvents(venue.id);
-          const venueEventCount = venueEvents.upcoming.length + venueEvents.past.length;
-          totalEvents += venueEventCount;
-          console.log(`Dashboard: Venue ${venue.name} has ${venueEventCount} events`);
-        } catch (error) {
-          console.error(`Error fetching events for venue ${venue.id}:`, error);
+      try {
+        // Check if user has venues
+        const hasVenues = await VenueService.hasUserVenues(user.id);
+        console.log('Dashboard: Venue check', { hasVenues, userId: user.id });
+        
+        if (!hasVenues) {
+          console.log('Dashboard: No venues found, redirecting to onboarding');
+          clearTimeout(timeout);
+          navigate('/onboarding');
+          return;
         }
-      }
-      
-      console.log('Dashboard: Total events found:', totalEvents);
-      
-      if (totalEvents < 3) {
-        console.log('Dashboard: Less than 3 events found, redirecting to onboarding');
-        navigate('/onboarding');
-        return;
-      }
 
-      // If we get here, onboarding is complete
-      console.log('Dashboard: Onboarding complete, setting hasVenues to true');
-      setHasVenues(hasVenues);
+        // Check if user has at least 3 events across all their venues
+        const userVenues = await VenueService.getUserVenues(user.id);
+        console.log('Dashboard: User venues', { userVenues: userVenues.map(v => ({ id: v.id, name: v.name })) });
+        
+        let totalEvents = 0;
+        
+        for (const venue of userVenues) {
+          try {
+            const venueEvents = await VenueService.getVenueEvents(venue.id);
+            const venueEventCount = venueEvents.upcoming.length + venueEvents.past.length;
+            totalEvents += venueEventCount;
+            console.log(`Dashboard: Venue ${venue.name} has ${venueEventCount} events`);
+          } catch (error) {
+            console.error(`Error fetching events for venue ${venue.id}:`, error);
+          }
+        }
+        
+        console.log('Dashboard: Total events found:', totalEvents);
+        
+        if (totalEvents < 3) {
+          console.log('Dashboard: Less than 3 events found, redirecting to onboarding');
+          clearTimeout(timeout);
+          navigate('/onboarding');
+          return;
+        }
+
+        // If we get here, onboarding is complete
+        console.log('Dashboard: Onboarding complete, setting hasVenues to true');
+        clearTimeout(timeout);
+        setHasVenues(hasVenues);
+      } catch (error) {
+        console.error('Dashboard: Error during onboarding check:', error);
+        clearTimeout(timeout);
+        // If there's an error, we might want to redirect to onboarding or show an error
+        // For now, let's set hasVenues to false to prevent infinite loading
+        setHasVenues(false);
+      }
     };
 
     // Only proceed if we have a user and venue loading is complete
     if (user && !venueLoading && !profileLoading) {
       checkOnboardingNeeded();
     }
+
+    // Cleanup timeout on unmount
+    return () => {
+      clearTimeout(timeout);
+    };
   }, [user, profile, venueLoading, profileLoading, navigate]);
 
   // Load dashboard data
@@ -169,7 +195,7 @@ const Dashboard = () => {
       <div className="min-h-screen bg-[#F6F6F3] flex items-center justify-center">
         <div className="text-center">
           <img 
-            src="/src/assets/logo.png" 
+            src={logo} 
             alt="MusicDB Logo" 
             className="w-24 h-24 mx-auto mb-4"
           />
