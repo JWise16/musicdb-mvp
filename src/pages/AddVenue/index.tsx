@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useVenue } from '../../contexts/VenueContext';
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
-import { formatRole, isValidRole, ROLE_OPTIONS } from '../../utils/roleUtils';
+import { isValidRole, ROLE_OPTIONS } from '../../utils/roleUtils';
 
 interface VenueFormData {
   name: string;
