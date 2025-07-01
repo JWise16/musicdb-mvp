@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useVenue } from '../../contexts/VenueContext';
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
-import { formatRole, isValidRole } from '../../utils/roleUtils';
+import { formatRole, isValidRole, ROLE_OPTIONS } from '../../utils/roleUtils';
 
 interface VenueFormData {
   name: string;
@@ -33,19 +33,8 @@ const AddVenue = () => {
     role: ''
   });
 
-  // Available roles
-  const availableRoles = [
-    'owner',
-    'manager',
-    'promoter',
-    'booking_agent',
-    'event_coordinator',
-    'marketing_manager',
-    'operations_manager',
-    'general_manager',
-    'assistant_manager',
-    'coordinator'
-  ];
+  // Available roles - using the same roles as onboarding profile setup
+  const availableRoles = ROLE_OPTIONS;
 
   const handleInputChange = (field: keyof VenueFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -234,8 +223,8 @@ const AddVenue = () => {
                 >
                   <option value="">Select your role</option>
                   {availableRoles.map(role => (
-                    <option key={role} value={role}>
-                      {formatRole(role)}
+                    <option key={role.value} value={role.value}>
+                      {role.label}
                     </option>
                   ))}
                 </select>

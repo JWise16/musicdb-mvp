@@ -10,6 +10,7 @@ import TimeFrameSelector from '../../components/features/dashboard/TimeFrameSele
 import AnalyticsCards from '../../components/features/dashboard/AnalyticsCards';
 import EventAnalytics from '../../components/features/dashboard/EventAnalytics';
 import YourShows from '../../components/features/dashboard/YourShows';
+import { Button } from '../../components/common/Button';
 import logo from '../../assets/logo.png';
 
 const Dashboard = () => {
@@ -209,39 +210,51 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
       <Sidebar />
-      <main className="flex-1 ml-64 p-8">
-        <div className="rounded-3xl bg-white shadow-soft p-8 min-h-[90vh]">
+      <main className="flex-1 ml-64 p-4 lg:p-8 overflow-hidden">
+        <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 min-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-1">Dashboard</h2>
-              <p className="text-gray-600">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 lg:mb-8">
+            <div className="min-w-0">
+              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 truncate">Dashboard</h2>
+              <p className="text-gray-600 truncate">
                 {currentVenue 
                   ? `Analytics for ${currentVenue.name}`
                   : 'Welcome to your music venue dashboard'
                 }
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:gap-4 min-w-0">
               <VenueSelector />
               <TimeFrameSelector 
                 timeFrame={timeFrame} 
                 onTimeFrameChange={handleTimeFrameChange} 
               />
+              <Button 
+                onClick={() => navigate('/add-event')}
+                className="px-3 lg:px-4 py-2 bg-black hover:bg-gray-800 text-white focus:ring-gray-500 text-sm whitespace-nowrap"
+              >
+                + Add Event
+              </Button>
             </div>
           </div>
 
           {/* Analytics Cards */}
-          <AnalyticsCards analytics={analytics} />
+          <div className="overflow-hidden">
+            <AnalyticsCards analytics={analytics} />
+          </div>
 
           {/* Charts and Events */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-            <EventAnalytics analytics={analytics} />
-            <YourShows 
-              upcoming={events.upcoming}
-              past={events.past}
-              onEventClick={handleEventClick}
-            />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8 mt-6 lg:mt-8 overflow-hidden">
+            <div className="min-w-0">
+              <EventAnalytics analytics={analytics} />
+            </div>
+            <div className="min-w-0">
+              <YourShows 
+                upcoming={events.upcoming}
+                past={events.past}
+                onEventClick={handleEventClick}
+              />
+            </div>
           </div>
         </div>
       </main>

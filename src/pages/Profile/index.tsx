@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import Avatar from '../../components/common/Avatar';
+import Sidebar from '../../components/layout/Sidebar';
 
 export default function Profile() {
   const { profile, loading, updateProfileWithAvatar } = useUserProfile();
@@ -101,26 +102,25 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow">
+    <div className="min-h-screen bg-[#F6F6F3] flex">
+      <Sidebar />
+      <main className="flex-1 ml-64 p-8">
+        <div className="rounded-3xl bg-white shadow-soft p-8 min-h-[90vh]">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Edit Profile
-                </button>
-              )}
-            </div>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Edit Profile
+              </button>
+            )}
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div>
             {error && (
               <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-sm text-red-700">{error}</p>
@@ -249,7 +249,7 @@ export default function Profile() {
                     <button
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {isSaving ? (
                         <div className="flex items-center">
@@ -266,7 +266,7 @@ export default function Profile() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 } 

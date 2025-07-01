@@ -68,14 +68,14 @@ export default function VenueSelector() {
           <div className="p-2">
             {/* Current Venue */}
             {currentVenue && (
-              <div className="px-3 py-2 bg-blue-50 rounded-md mb-2">
-                <div className="text-sm font-medium text-blue-900">
+              <div className="px-3 py-2 bg-gray-200 rounded-md mb-2">
+                <div className="text-sm font-medium text-black">
                   {currentVenue.name}
                 </div>
-                <div className="text-xs text-blue-700">
+                <div className="text-xs text-gray-700">
                   {currentVenue.location}
                 </div>
-                <div className="text-xs text-blue-600 mt-1">
+                <div className="text-xs text-gray-600 mt-1">
                   ✓ Currently selected
                 </div>
               </div>
@@ -113,7 +113,7 @@ export default function VenueSelector() {
                 setIsOpen(false);
                 navigate('/add-venue');
               }}
-              className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-md transition-colors text-sm text-blue-600 font-medium"
+              className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-md transition-colors text-sm text-black font-medium"
             >
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

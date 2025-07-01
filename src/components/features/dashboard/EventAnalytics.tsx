@@ -45,21 +45,21 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
   ];
 
   return (
-    <div className="mb-8">
-      <h3 className="text-xl font-bold text-gray-900 mb-6">Event Analytics</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="mb-6 lg:mb-8 overflow-hidden">
+      <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-4 lg:mb-6 truncate">Event Analytics</h3>
+      <div className="space-y-4 lg:space-y-6 overflow-hidden">
         {analyticsItems.map((item, index) => (
-          <div key={index} className="card">
-            <div className="flex items-start space-x-4">
-              <div className={`p-3 rounded-lg ${item.color} bg-opacity-10`}>
-                <div className={item.textColor}>
+          <div key={index} className="card p-5 lg:p-6 min-w-0 hover:shadow-medium transition-shadow duration-200">
+            <div className="flex items-start space-x-4 min-w-0">
+              <div className={`p-3 rounded-xl ${item.color} bg-opacity-10 flex-shrink-0`}>
+                <div className={`${item.textColor} w-7 h-7 lg:w-8 lg:h-8`}>
                   {item.icon}
                 </div>
               </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-gray-600 mb-1">{item.title}</h4>
-                <p className="text-lg font-semibold text-gray-900 mb-1">{item.value}</p>
-                <p className="text-sm text-gray-500">{item.subtitle}</p>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm lg:text-sm font-medium text-gray-600 mb-2 truncate">{item.title}</h4>
+                <p className="text-base lg:text-lg font-semibold text-gray-900 mb-1 truncate">{item.value}</p>
+                <p className="text-sm text-gray-500 truncate">{item.subtitle}</p>
               </div>
             </div>
           </div>

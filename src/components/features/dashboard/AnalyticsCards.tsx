@@ -52,12 +52,12 @@ const AnalyticsCards = ({ analytics }: AnalyticsCardsProps) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6 mb-6 lg:mb-8 overflow-hidden">
       {cards.map((card, index) => (
-        <div key={index} className="card">
-          <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
-            <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+        <div key={index} className="card p-4 lg:p-6 min-w-0">
+          <div className="min-w-0">
+            <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">{card.title}</p>
+            <p className="text-lg lg:text-2xl font-bold text-gray-900 truncate">{card.value}</p>
           </div>
         </div>
       ))}
