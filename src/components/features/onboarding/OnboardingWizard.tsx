@@ -44,7 +44,7 @@ interface EventData {
   ticket_price_min?: number;
   ticket_price_max?: number;
   total_ticket_revenue?: number;
-  total_tickets: number;
+  total_tickets?: number;
   tickets_sold?: number;
   bar_sales?: number;
   notes?: string;
@@ -52,6 +52,7 @@ interface EventData {
     name: string;
     genre?: string;
     is_headliner: boolean;
+    is_opener: boolean;
     performance_order: number;
     contact_info?: string;
     social_media?: any;
@@ -62,6 +63,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   console.log('OnboardingWizard: isOpen =', isOpen, 'user =', user?.email, 'prefillData =', prefillData, 'step =', step, 'eventNumber =', eventNumber);
@@ -92,11 +94,11 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     ticket_price_min: undefined,
     ticket_price_max: undefined,
     total_ticket_revenue: undefined,
-    total_tickets: 0,
+    total_tickets: undefined,
     tickets_sold: undefined,
     bar_sales: undefined,
     notes: '',
-    artists: [{ name: '', is_headliner: true, performance_order: 1 }]
+    artists: [{ name: '', is_headliner: true, is_opener: false, performance_order: 1 }]
   });
 
   const [priceType, setPriceType] = useState<'single' | 'range'>('single');
@@ -127,11 +129,11 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         ticket_price_min: undefined,
         ticket_price_max: undefined,
         total_ticket_revenue: undefined,
-        total_tickets: 0,
+        total_tickets: undefined,
         tickets_sold: undefined,
         bar_sales: undefined,
         notes: '',
-        artists: [{ name: '', is_headliner: true, performance_order: 1 }]
+        artists: [{ name: '', is_headliner: true, is_opener: false, performance_order: 1 }]
       });
       setPriceType('single');
     }
@@ -145,23 +147,74 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
   const handleProfileChange = (field: keyof UserProfile, value: any) => {
     setProfile(prev => ({ ...prev, [field]: value }));
+    
+    // Clear validation errors for this field when user starts typing
+    if (field === 'full_name' && value.trim()) {
+      setValidationErrors(prev => ({ ...prev, profile_full_name: false }));
+    }
+    if (field === 'email' && value.trim()) {
+      setValidationErrors(prev => ({ ...prev, profile_email: false }));
+    }
+    if (field === 'role' && value) {
+      setValidationErrors(prev => ({ ...prev, profile_role: false }));
+    }
+    if (field === 'custom_role' && value.trim()) {
+      setValidationErrors(prev => ({ ...prev, profile_custom_role: false }));
+    }
   };
 
   const handleVenueChange = (field: keyof VenueData, value: any) => {
     setVenue(prev => ({ ...prev, [field]: value }));
+    
+    // Clear validation errors for this field when user starts typing
+    if (field === 'name' && value.trim()) {
+      setValidationErrors(prev => ({ ...prev, venue_name: false }));
+    }
+    if (field === 'location' && value.trim()) {
+      setValidationErrors(prev => ({ ...prev, venue_location: false }));
+    }
+    if (field === 'address' && value.trim()) {
+      setValidationErrors(prev => ({ ...prev, venue_address: false }));
+    }
+    if (field === 'capacity' && value && value > 0) {
+      setValidationErrors(prev => ({ ...prev, venue_capacity: false }));
+    }
   };
 
   const handleEventChange = (field: keyof EventData, value: any) => {
     setEvent(prev => ({ ...prev, [field]: value }));
+    
+    // Clear validation errors for this field when user starts typing
+    if (field === 'name' && value.trim()) {
+      setValidationErrors(prev => ({ ...prev, event_name: false }));
+    }
+    if (field === 'date' && value) {
+      setValidationErrors(prev => ({ ...prev, event_date: false }));
+    }
+    if (field === 'total_tickets' && value && value > 0) {
+      setValidationErrors(prev => ({ ...prev, event_total_tickets: false }));
+    }
   };
 
   const handleArtistChange = (index: number, field: string, value: any) => {
     setEvent(prev => ({
       ...prev,
-      artists: prev.artists.map((artist, i) => 
-        i === index ? { ...artist, [field]: value } : artist
-      )
+      artists: prev.artists.map((artist, i) => {
+        if (i !== index) return artist;
+        if (field === 'is_headliner' && value) {
+          return { ...artist, is_headliner: true, is_opener: false };
+        }
+        if (field === 'is_opener' && value) {
+          return { ...artist, is_headliner: false, is_opener: true };
+        }
+        return { ...artist, [field]: value };
+      })
     }));
+    
+    // Clear validation errors for artist names when user starts typing
+    if (field === 'name' && value.trim()) {
+      setValidationErrors(prev => ({ ...prev, event_artists: false }));
+    }
   };
 
   const addArtist = () => {
@@ -170,6 +223,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       artists: [...prev.artists, { 
         name: '', 
         is_headliner: false, 
+        is_opener: false, 
         performance_order: prev.artists.length + 1 
       }]
     }));
@@ -206,6 +260,49 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     }
   };
 
+  const getStepLabel = () => {
+    switch (step) {
+      case 'profile':
+        return 'Profile Setup';
+      case 'venue':
+        return 'Add Venue';
+      case 'events':
+        return `Event ${eventNumber}`;
+      default:
+        return '';
+    }
+  };
+
+  const validateCurrentStep = () => {
+    const errors: {[key: string]: boolean} = {};
+    
+    switch (step) {
+      case 'profile':
+        if (!profile.full_name.trim()) errors.profile_full_name = true;
+        if (!profile.email.trim()) errors.profile_email = true;
+        if (!profile.role) errors.profile_role = true;
+        if (profile.role === 'other' && (!profile.custom_role || !profile.custom_role.trim())) errors.profile_custom_role = true;
+        break;
+        
+      case 'venue':
+        if (!venue.name.trim()) errors.venue_name = true;
+        if (!venue.location.trim()) errors.venue_location = true;
+        if (!venue.address.trim()) errors.venue_address = true;
+        if (!venue.capacity || venue.capacity <= 0) errors.venue_capacity = true;
+        break;
+        
+      case 'events':
+        if (!event.name.trim()) errors.event_name = true;
+        if (!event.date) errors.event_date = true;
+        if (!event.total_tickets || event.total_tickets <= 0) errors.event_total_tickets = true;
+        if (!event.artists.some(artist => artist.name.trim())) errors.event_artists = true;
+        break;
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleComplete = async () => {
     if (!user) {
       console.log('OnboardingWizard: User not authenticated');
@@ -213,8 +310,15 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       return;
     }
 
+    // Validate current step first
+    if (!validateCurrentStep()) {
+      setError('Please complete all required fields before proceeding.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
+    setValidationErrors({});
 
     try {
       console.log('OnboardingWizard: Starting step completion for step:', step);
@@ -301,6 +405,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           const eventData = {
             ...event,
             venue_id: venueId,
+            total_tickets: event.total_tickets || 0,
             ticket_price: priceType === 'range' ? undefined : event.ticket_price,
             ticket_price_min: priceType === 'range' ? event.ticket_price_min : undefined,
             ticket_price_max: priceType === 'range' ? event.ticket_price_max : undefined,
@@ -335,7 +440,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const renderProfileStep = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Personal Information</h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Profile Setup</h3>
         <p className="text-gray-600">Let's start with your basic information</p>
       </div>
       
@@ -348,7 +453,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             type="text"
             value={profile.full_name}
             onChange={(e) => handleProfileChange('full_name', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.profile_full_name ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Enter your full name"
             required
           />
@@ -362,7 +469,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             type="email"
             value={profile.email}
             onChange={(e) => handleProfileChange('email', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.profile_email ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Enter your email"
             required
           />
@@ -414,11 +523,12 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           </label>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { value: 'venue_owner', label: 'Venue Owner', icon: '🏢' },
-              { value: 'promoter', label: 'Promoter', icon: '🎫' },
-              { value: 'artist_manager', label: 'Artist Manager', icon: '🎤' },
-              { value: 'event_coordinator', label: 'Event Coordinator', icon: '🎪' },
-              { value: 'other', label: 'Other', icon: '✨' }
+              { value: 'talent_buyer', label: 'Talent Buyer' },
+              { value: 'owner', label: 'Owner' },
+              { value: 'general_manager', label: 'General Manager' },
+              { value: 'operations_manager', label: 'Operations Manager' },
+              { value: 'promoter', label: 'Promoter' },
+              { value: 'other', label: 'Other' }
             ].map((role) => (
               <button
                 key={role.value}
@@ -430,7 +540,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <div className="text-2xl mb-2">{role.icon}</div>
                 <div className="font-medium text-gray-900">{role.label}</div>
               </button>
             ))}
@@ -446,7 +555,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 type="text"
                 value={profile.custom_role}
                 onChange={(e) => handleProfileChange('custom_role', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  validationErrors.profile_custom_role ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="e.g., Sound Engineer, Booking Agent, etc."
                 required
               />
@@ -473,7 +584,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             type="text"
             value={venue.name}
             onChange={(e) => handleVenueChange('name', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.venue_name ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Enter venue name"
             required
           />
@@ -487,7 +600,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             type="text"
             value={venue.location}
             onChange={(e) => handleVenueChange('location', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.venue_location ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Enter city or location"
             required
           />
@@ -501,7 +616,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             type="text"
             value={venue.address}
             onChange={(e) => handleVenueChange('address', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.venue_address ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Enter full address"
             required
           />
@@ -509,14 +626,18 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Capacity
+            Capacity *
           </label>
           <input
             type="number"
             value={venue.capacity || ''}
             onChange={(e) => handleVenueChange('capacity', e.target.value ? parseInt(e.target.value) : undefined)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.venue_capacity ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Enter venue capacity"
+            min="1"
+            required
           />
         </div>
 
@@ -593,7 +714,11 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     <div className="space-y-6">
       <div>
         <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Event {eventNumber}</h3>
-        <p className="text-gray-600">Create your {eventNumber === 1 ? 'first' : eventNumber === 2 ? 'second' : 'third'} event</p>
+        <p className="text-gray-600">
+          {eventNumber === 1
+            ? 'Report your first event - this will be how you access the tool during future logins'
+            : `Create your ${eventNumber === 2 ? 'second' : 'third'} event – if possible, report a show from this week or month so your dashboard is up to date.`}
+        </p>
       </div>
       
       <div className="space-y-4">
@@ -605,7 +730,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             type="text"
             value={event.name}
             onChange={(e) => handleEventChange('name', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.event_name ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Enter event name"
             required
           />
@@ -619,7 +746,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             type="date"
             value={event.date}
             onChange={(e) => handleEventChange('date', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.event_date ? 'border-red-500' : 'border-gray-300'
+            }`}
             required
           />
         </div>
@@ -631,9 +760,11 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             </label>
             <input
               type="number"
-              value={event.total_tickets}
-              onChange={(e) => handleEventChange('total_tickets', parseInt(e.target.value) || 0)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={event.total_tickets || ''}
+              onChange={(e) => handleEventChange('total_tickets', e.target.value ? parseInt(e.target.value) : undefined)}
+              className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                validationErrors.event_total_tickets ? 'border-red-500' : 'border-gray-300'
+              }`}
               placeholder="Enter total tickets available"
               min="1"
               required
@@ -700,6 +831,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
               min="0"
               step="0.01"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Any additional details you report—like bar sales or show notes—are completely private. They're optional and only visible to you on your dashboard for your own reference.
+            </p>
           </div>
         </div>
 
@@ -729,7 +863,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 type="number"
                 value={event.ticket_price_min || ''}
                 onChange={(e) => handleEventChange('ticket_price_min', e.target.value ? parseFloat(e.target.value) : undefined)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   priceType === 'range' && event.ticket_price_min && event.ticket_price_max && 
                   event.ticket_price_min > event.ticket_price_max 
                     ? 'border-red-300' 
@@ -748,7 +882,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 type="number"
                 value={event.ticket_price_max || ''}
                 onChange={(e) => handleEventChange('ticket_price_max', e.target.value ? parseFloat(e.target.value) : undefined)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   priceType === 'range' && event.ticket_price_min && event.ticket_price_max && 
                   event.ticket_price_min > event.ticket_price_max 
                     ? 'border-red-300' 
@@ -798,7 +932,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           
           <div className="space-y-4">
             {event.artists.map((artist, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
+              <div key={index} className={`border-2 rounded-lg p-4 ${
+                validationErrors.event_artists && !artist.name.trim() ? 'border-red-500' : 'border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-medium text-gray-700">Artist {index + 1}</span>
                   {event.artists.length > 1 && (
@@ -819,7 +955,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                       type="text"
                       value={artist.name}
                       onChange={(e) => handleArtistChange(index, 'name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        validationErrors.event_artists && !artist.name.trim() ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder="Artist name"
                       required
                     />
@@ -837,7 +975,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                   </div>
                 </div>
                 
-                <div className="mt-3">
+                <div className="mt-3 flex items-center gap-6">
                   <label className="flex items-center">
                     <input
                       type="checkbox"
@@ -846,6 +984,15 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700">Headliner</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={artist.is_opener}
+                      onChange={(e) => handleArtistChange(index, 'is_opener', e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Opener</span>
                   </label>
                 </div>
               </div>
@@ -984,7 +1131,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm font-medium text-gray-700 mb-1">Total Tickets</div>
-                  <div className="text-sm text-gray-900">{event.total_tickets.toLocaleString()}</div>
+                  <div className="text-sm text-gray-900">{event.total_tickets ? event.total_tickets.toLocaleString() : 'Not specified'}</div>
                 </div>
                 
                 {event.tickets_sold !== undefined && (
@@ -1052,7 +1199,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         return profile.full_name && profile.email && profile.role && 
                (profile.role !== 'other' || profile.custom_role);
       case 'venue':
-        return venue.name && venue.location && venue.address;
+        return venue.name && venue.location && venue.address && venue.capacity && venue.capacity > 0;
       case 'events':
         const hasValidArtists = event.artists.some(artist => artist.name.trim()) &&
                                event.artists.every(artist => artist.name.trim());
@@ -1063,10 +1210,23 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
            (!event.ticket_price_min || !event.ticket_price_max || 
             event.ticket_price_min <= event.ticket_price_max));
         
-        return event.name && event.date && event.total_tickets > 0 && 
+        return event.name && event.date && event.total_tickets && event.total_tickets > 0 && 
                hasValidArtists && hasValidPriceRange;
       default:
         return false;
+    }
+  };
+
+  const getProgressPercentage = () => {
+    switch (step) {
+      case 'profile':
+        return 20;
+      case 'venue':
+        return 40;
+      case 'events':
+        return 40 + (eventNumber * 20); // 60%, 80%, 100%
+      default:
+        return 0;
     }
   };
 
@@ -1083,18 +1243,26 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
               <h2 className="text-3xl font-bold text-gray-900">MusicDB</h2>
             </div>
           </div>
+          
+          {/* Progress Bar */}
+          <div className="mt-6 max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">{getStepLabel()}</span>
+              <span className="text-sm text-gray-500">{getProgressPercentage()}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-gray-400 to-black h-2 rounded-full transition-all duration-300 ease-in-out"
+                style={{ width: `${getProgressPercentage()}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="flex h-[calc(90vh-200px)]">
+        <div className="flex h-[calc(90vh-280px)]">
           {/* Left Panel - Form */}
           <div className="flex-1 p-6 overflow-y-auto">
-            {error && (
-              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            )}
-            
             {renderStepContent()}
           </div>
 
@@ -1106,11 +1274,35 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
         {/* Footer */}
         <div className="border-t border-gray-200 p-6">
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between">
+            {Object.keys(validationErrors).length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-w-md">
+                <p className="text-sm text-red-700 font-medium mb-2">Please complete the following required fields:</p>
+                <ul className="text-sm text-red-600 space-y-1">
+                  {validationErrors.profile_full_name && <li>• Full Name</li>}
+                  {validationErrors.profile_email && <li>• Email</li>}
+                  {validationErrors.profile_role && <li>• Your Role</li>}
+                  {validationErrors.profile_custom_role && <li>• Custom Role</li>}
+                  {validationErrors.venue_name && <li>• Venue Name</li>}
+                  {validationErrors.venue_location && <li>• Location/City</li>}
+                  {validationErrors.venue_address && <li>• Address</li>}
+                  {validationErrors.venue_capacity && <li>• Capacity</li>}
+                  {validationErrors.event_name && <li>• Event Name</li>}
+                  {validationErrors.event_date && <li>• Date</li>}
+                  {validationErrors.event_total_tickets && <li>• Total Tickets</li>}
+                  {validationErrors.event_artists && <li>• At least one Artist Name</li>}
+                </ul>
+              </div>
+            )}
+            
             <button
               onClick={handleComplete}
-              disabled={isLoading || !isStepValid()}
-              className="px-8 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              disabled={isLoading}
+              className={`px-8 py-3 rounded-lg font-medium transition-all ${
+                isLoading 
+                  ? 'bg-gray-400 text-white opacity-50 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
             >
               {isLoading ? (
                 <div className="flex items-center">
