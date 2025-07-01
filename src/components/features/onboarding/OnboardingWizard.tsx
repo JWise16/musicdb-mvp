@@ -62,8 +62,8 @@ interface EventData {
 export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 'profile', eventNumber = 1 }: OnboardingWizardProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
+  const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   console.log('OnboardingWizard: isOpen =', isOpen, 'user =', user?.email, 'prefillData =', prefillData, 'step =', step, 'eventNumber =', eventNumber);
@@ -306,19 +306,18 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const handleComplete = async () => {
     if (!user) {
       console.log('OnboardingWizard: User not authenticated');
-      setError('Please wait while we complete your account setup...');
       return;
     }
 
     // Validate current step first
     if (!validateCurrentStep()) {
-      setError('Please complete all required fields before proceeding.');
+      setHasAttemptedValidation(true);
       return;
     }
 
     setIsLoading(true);
-    setError('');
     setValidationErrors({});
+    setHasAttemptedValidation(false);
 
     try {
       console.log('OnboardingWizard: Starting step completion for step:', step);
@@ -352,12 +351,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
               );
               
               if (retryResult.error) {
-                setError(retryResult.error);
                 return;
               }
-            } else {
-              setError(profileResult.error);
-              return;
             }
           }
           break;
@@ -367,7 +362,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           const venueResult = await VenueService.createVenueWithImage(venue, venueImageFile || undefined);
           if (venueResult.error) {
             console.error('OnboardingWizard: Venue creation error:', venueResult.error);
-            setError(venueResult.error);
             return;
           }
 
@@ -380,7 +374,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
             if (associateResult.error) {
               console.error('OnboardingWizard: Venue association error:', associateResult.error);
-              setError(associateResult.error);
               return;
             }
           }
@@ -392,7 +385,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           console.log('OnboardingWizard: User venues found:', userVenues.length);
           
           if (userVenues.length === 0) {
-            setError('No venue found. Please add a venue first.');
             return;
           }
 
@@ -419,7 +411,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
           if (eventResult.error) {
             console.error(`OnboardingWizard: Event ${eventNumber} creation error:`, eventResult.error);
-            setError(`Failed to create event ${eventNumber}: ${eventResult.error}`);
             return;
           }
 
@@ -431,7 +422,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       onClose();
     } catch (error) {
       console.error('Error completing onboarding step:', error);
-      setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -1193,30 +1183,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     }
   };
 
-  const isStepValid = () => {
-    switch (step) {
-      case 'profile':
-        return profile.full_name && profile.email && profile.role && 
-               (profile.role !== 'other' || profile.custom_role);
-      case 'venue':
-        return venue.name && venue.location && venue.address && venue.capacity && venue.capacity > 0;
-      case 'events':
-        const hasValidArtists = event.artists.some(artist => artist.name.trim()) &&
-                               event.artists.every(artist => artist.name.trim());
-        
-        // Check price range validation
-        const hasValidPriceRange = priceType === 'single' || 
-          (priceType === 'range' && 
-           (!event.ticket_price_min || !event.ticket_price_max || 
-            event.ticket_price_min <= event.ticket_price_max));
-        
-        return event.name && event.date && event.total_tickets && event.total_tickets > 0 && 
-               hasValidArtists && hasValidPriceRange;
-      default:
-        return false;
-    }
-  };
-
   const getProgressPercentage = () => {
     switch (step) {
       case 'profile':
@@ -1260,7 +1226,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         {/* Content */}
-        <div className="flex h-[calc(90vh-280px)]">
+        <div className="flex h-[calc(90vh-320px)]">
           {/* Left Panel - Form */}
           <div className="flex-1 p-6 overflow-y-auto">
             {renderStepContent()}
@@ -1273,32 +1239,34 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            {Object.keys(validationErrors).length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-w-md">
-                <p className="text-sm text-red-700 font-medium mb-2">Please complete the following required fields:</p>
-                <ul className="text-sm text-red-600 space-y-1">
-                  {validationErrors.profile_full_name && <li>• Full Name</li>}
-                  {validationErrors.profile_email && <li>• Email</li>}
-                  {validationErrors.profile_role && <li>• Your Role</li>}
-                  {validationErrors.profile_custom_role && <li>• Custom Role</li>}
-                  {validationErrors.venue_name && <li>• Venue Name</li>}
-                  {validationErrors.venue_location && <li>• Location/City</li>}
-                  {validationErrors.venue_address && <li>• Address</li>}
-                  {validationErrors.venue_capacity && <li>• Capacity</li>}
-                  {validationErrors.event_name && <li>• Event Name</li>}
-                  {validationErrors.event_date && <li>• Date</li>}
-                  {validationErrors.event_total_tickets && <li>• Total Tickets</li>}
-                  {validationErrors.event_artists && <li>• At least one Artist Name</li>}
-                </ul>
-              </div>
-            )}
+        <div className="border-t border-gray-200 p-4 overflow-hidden">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              {hasAttemptedValidation && Object.keys(validationErrors).length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-2 max-w-md overflow-y-auto max-h-24">
+                  <p className="text-sm text-red-700 font-medium mb-1">Please complete the following required fields:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {validationErrors.profile_full_name && <span className="text-sm text-red-600">• Full Name</span>}
+                    {validationErrors.profile_email && <span className="text-sm text-red-600">• Email</span>}
+                    {validationErrors.profile_role && <span className="text-sm text-red-600">• Your Role</span>}
+                    {validationErrors.profile_custom_role && <span className="text-sm text-red-600">• Custom Role</span>}
+                    {validationErrors.venue_name && <span className="text-sm text-red-600">• Venue Name</span>}
+                    {validationErrors.venue_location && <span className="text-sm text-red-600">• Location/City</span>}
+                    {validationErrors.venue_address && <span className="text-sm text-red-600">• Address</span>}
+                    {validationErrors.venue_capacity && <span className="text-sm text-red-600">• Capacity</span>}
+                    {validationErrors.event_name && <span className="text-sm text-red-600">• Event Name</span>}
+                    {validationErrors.event_date && <span className="text-sm text-red-600">• Date</span>}
+                    {validationErrors.event_total_tickets && <span className="text-sm text-red-600">• Total Tickets</span>}
+                    {validationErrors.event_artists && <span className="text-sm text-red-600">• At least one Artist Name</span>}
+                  </div>
+                </div>
+              )}
+            </div>
             
             <button
               onClick={handleComplete}
               disabled={isLoading}
-              className={`px-8 py-3 rounded-lg font-medium transition-all ${
+              className={`px-6 py-2 rounded-lg font-medium transition-all flex-shrink-0 ${
                 isLoading 
                   ? 'bg-gray-400 text-white opacity-50 cursor-not-allowed'
                   : 'bg-black text-white hover:bg-gray-800'
