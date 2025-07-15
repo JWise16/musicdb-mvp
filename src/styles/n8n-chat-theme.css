@@ -1,0 +1,132 @@
+/* Custom theming for n8n chat widget to match MusicDB design */
+:root {
+  /* Primary colors - matching your app's black/gray theme */
+  --chat--color-primary: #000000;
+  --chat--color-primary-shade-50: #1a1a1a;
+  --chat--color-primary-shade-100: #333333;
+  
+  /* Secondary colors - using your app's light background */
+  --chat--color-secondary: #F6F6F3;
+  --chat--color-secondary-shade-50: #e6e6e3;
+  
+  /* Base colors */
+  --chat--color-white: #ffffff;
+  --chat--color-light: #F6F6F3;
+  --chat--color-light-shade-50: #e6e9f1;
+  --chat--color-light-shade-100: #d1d5db;
+  --chat--color-medium: #9ca3af;
+  --chat--color-dark: #000000;
+  --chat--color-disabled: #6b7280;
+  --chat--color-typing: #4b5563;
+
+  /* Layout */
+  --chat--spacing: 1rem;
+  --chat--border-radius: 0.75rem; /* Matching your rounded-3xl */
+  --chat--transition-duration: 0.15s;
+
+  /* Window dimensions */
+  --chat--window--width: 100%;
+  --chat--window--height: 100%;
+
+  /* Header styling */
+  --chat--header-height: auto;
+  --chat--header--padding: var(--chat--spacing);
+  --chat--header--background: var(--chat--color-dark);
+  --chat--header--color: var(--chat--color-white);
+  --chat--header--border-top: none;
+  --chat--header--border-bottom: 1px solid #e5e7eb;
+  --chat--heading--font-size: 1.5rem;
+  --chat--subtitle--font-size: 0.875rem;
+  --chat--subtitle--line-height: 1.6;
+
+  /* Input styling */
+  --chat--textarea--height: 48px;
+
+  /* Message styling */
+  --chat--message--font-size: 0.875rem;
+  --chat--message--padding: 0.75rem 1rem;
+  --chat--message--border-radius: 0.5rem;
+  --chat--message-line-height: 1.6;
+  
+  /* Bot messages */
+  --chat--message--bot--background: #f9fafb;
+  --chat--message--bot--color: var(--chat--color-dark);
+  --chat--message--bot--border: 1px solid #e5e7eb;
+  
+  /* User messages */
+  --chat--message--user--background: var(--chat--color-primary);
+  --chat--message--user--color: var(--chat--color-white);
+  --chat--message--user--border: none;
+  
+  /* Code blocks */
+  --chat--message--pre--background: rgba(0, 0, 0, 0.05);
+
+  /* Toggle button (for window mode) */
+  --chat--toggle--background: var(--chat--color-primary);
+  --chat--toggle--hover--background: var(--chat--color-primary-shade-50);
+  --chat--toggle--active--background: var(--chat--color-primary-shade-100);
+  --chat--toggle--color: var(--chat--color-white);
+  --chat--toggle--size: 64px;
+}
+
+/* Additional custom styles for better integration */
+#n8n-chat-container {
+  font-family: inherit; /* Use the same font as your app */
+  border-radius: var(--chat--border-radius);
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Ensure fullscreen mode takes full container */
+#n8n-chat-container[data-mode="fullscreen"] {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Custom scrollbar styling to match your app */
+#n8n-chat-container ::-webkit-scrollbar {
+  width: 6px;
+}
+
+#n8n-chat-container ::-webkit-scrollbar-track {
+  background: var(--chat--color-light);
+}
+
+#n8n-chat-container ::-webkit-scrollbar-thumb {
+  background: var(--chat--color-medium);
+  border-radius: 3px;
+}
+
+#n8n-chat-container ::-webkit-scrollbar-thumb:hover {
+  background: var(--chat--color-disabled);
+}
+
+/* Ensure proper spacing and typography consistency */
+#n8n-chat-container * {
+  box-sizing: border-box;
+}
+
+/* Input field styling to match your app's inputs */
+#n8n-chat-container input,
+#n8n-chat-container textarea {
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Button styling consistency */
+#n8n-chat-container button {
+  font-family: inherit;
+  font-weight: 500;
+  transition: all var(--chat--transition-duration) ease-in-out;
+}
+
+/* Focus states for accessibility */
+#n8n-chat-container input:focus,
+#n8n-chat-container textarea:focus,
+#n8n-chat-container button:focus {
+  outline: 2px solid var(--chat--color-primary);
+  outline-offset: 2px;
+} 
