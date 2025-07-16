@@ -8,7 +8,7 @@ import { UserProfileService } from '../../services/userProfileService';
 import OnboardingWizard from '../../components/features/onboarding/OnboardingWizard';
 import logo from '../../assets/logo.png';
 
-type OnboardingStep = 'welcome' | 'profile' | 'venue' | 'events' | 'complete';
+type OnboardingStep = 'welcome' | 'profile' | 'venue' | 'early-access' | 'events' | 'complete';
 
 interface OnboardingProgress {
   hasProfile: boolean;
@@ -32,7 +32,7 @@ export default function Onboarding() {
     currentStep: 'welcome'
   });
   const [showWizard, setShowWizard] = useState(false);
-  const [wizardStep, setWizardStep] = useState<'profile' | 'venue' | 'events'>('profile');
+  const [wizardStep, setWizardStep] = useState<'profile' | 'venue' | 'early-access' | 'events'>('profile');
   const [currentEventNumber, setCurrentEventNumber] = useState(1);
 
   // Check onboarding progress
@@ -144,6 +144,8 @@ export default function Onboarding() {
         nextStep = 'profile';
       } else if (!hasVenue) {
         nextStep = 'venue';
+      } else if (!localStorage.getItem('musicdb-early-access-validated')) {
+        nextStep = 'early-access';
       } else if (eventsCount < 3) {
         nextStep = 'events';
         nextEventNumber = eventsCount + 1;
@@ -167,7 +169,7 @@ export default function Onboarding() {
       });
 
       // Show wizard for next step
-      if (nextStep === 'profile' || nextStep === 'venue' || nextStep === 'events') {
+      if (nextStep === 'profile' || nextStep === 'venue' || nextStep === 'early-access' || nextStep === 'events') {
         setWizardStep(nextStep);
         setCurrentEventNumber(nextEventNumber);
         setShowWizard(true);
@@ -390,6 +392,15 @@ export default function Onboarding() {
                 <h1 className="text-3xl font-bold text-gray-900 mb-4">Venue Setup</h1>
                 <p className="text-xl text-gray-600">
                   Tell us about your venue. This is where all your events and analytics will be tracked.
+                </p>
+              </>
+            )}
+            
+            {wizardStep === 'early-access' && (
+              <>
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">Early Access</h1>
+                <p className="text-xl text-gray-600">
+                  Welcome to MusicDB's early access! Enter your code to unlock the platform and start building your music database.
                 </p>
               </>
             )}

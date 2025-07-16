@@ -4,6 +4,7 @@ import { UserProfileService } from '../../../services/userProfileService';
 import { VenueService } from '../../../services/venueService';
 import { EventService } from '../../../services/eventService';
 import Avatar from '../../common/Avatar';
+import OnboardingEarlyAccess from './OnboardingEarlyAccess';
 import logo from '../../../assets/logo.png';
 
 interface OnboardingWizardProps {
@@ -13,7 +14,7 @@ interface OnboardingWizardProps {
     full_name?: string;
     email?: string;
   };
-  step?: 'profile' | 'venue' | 'events';
+  step?: 'profile' | 'venue' | 'early-access' | 'events';
   eventNumber?: number; // Track which event we're creating (1, 2, or 3)
 }
 
@@ -64,6 +65,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+  const [earlyAccessError, setEarlyAccessError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   console.log('OnboardingWizard: isOpen =', isOpen, 'user =', user?.email, 'prefillData =', prefillData, 'step =', step, 'eventNumber =', eventNumber);
@@ -266,6 +268,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         return 'Profile Setup';
       case 'venue':
         return 'Add Venue';
+      case 'early-access':
+        return 'Early Access';
       case 'events':
         return `Event ${eventNumber}`;
       default:
@@ -290,6 +294,10 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         if (!venue.address.trim()) errors.venue_address = true;
         if (!venue.capacity || venue.capacity <= 0) errors.venue_capacity = true;
         break;
+        
+      case 'early-access':
+        // Early access validation is handled by the component itself
+        return true;
         
       case 'events':
         if (!event.name.trim()) errors.event_name = true;
@@ -700,6 +708,20 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     </div>
   );
 
+  const renderEarlyAccessStep = () => (
+    <OnboardingEarlyAccess
+      onValidCode={() => {
+        setEarlyAccessError('');
+        // Mark early access as validated
+        localStorage.setItem('musicdb-early-access-validated', 'true');
+        onClose();
+      }}
+      onError={(message) => {
+        setEarlyAccessError(message);
+      }}
+    />
+  );
+
   const renderEventStep = () => (
     <div className="space-y-6">
       <div>
@@ -999,6 +1021,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         return renderProfileStep();
       case 'venue':
         return renderVenueStep();
+      case 'early-access':
+        return renderEarlyAccessStep();
       case 'events':
         return renderEventStep();
       default:
@@ -1100,6 +1124,32 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           </div>
         );
 
+      case 'early-access':
+        return (
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Early Access</h3>
+            
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Enter your early access code to unlock the platform and continue setting up your events.
+                </div>
+              </div>
+              
+              {earlyAccessError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-700">{earlyAccessError}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
       case 'events':
         return (
           <div className="bg-gray-50 p-6 rounded-lg">
@@ -1189,8 +1239,10 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         return 20;
       case 'venue':
         return 40;
+      case 'early-access':
+        return 50;
       case 'events':
-        return 40 + (eventNumber * 20); // 60%, 80%, 100%
+        return Math.min(100, 50 + (eventNumber * 17)); // Cap at 100%
       default:
         return 0;
     }
@@ -1278,7 +1330,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                   Completing...
                 </div>
               ) : (
-                step === 'events' ? `Create Event ${eventNumber}` : 'Complete Step'
+                step === 'early-access' ? 'Continue' : step === 'events' ? `Create Event ${eventNumber}` : 'Complete Step'
               )}
             </button>
           </div>
