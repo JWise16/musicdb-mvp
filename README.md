@@ -1,140 +1,118 @@
 # MusicDB MVP
 
-A comprehensive music venue and event management platform that helps venues track their events, analyze performance, and discover insights from the broader music industry.
+A comprehensive platform for venue management, event tracking, and talent discovery in the music industry.
 
-## 🚀 New User Experience
+## Features
 
-We've implemented a streamlined onboarding process to help new users get started quickly:
+- **Venue Management**: Add and manage multiple venues with detailed information
+- **Event Tracking**: Report and analyze event data including ticket sales and artist information
+- **Analytics Dashboard**: View comprehensive analytics and insights for your venues
+- **Talent Discovery**: AI-powered assistant to help find suitable artists for your venue
+- **User Profiles**: Manage your profile and role information
 
-### Welcome Flow
-- **Welcome Modal**: New users see a friendly welcome message explaining the platform
-- **Step-by-Step Guidance**: Clear instructions for venue verification and event reporting
-- **Progress Tracking**: Visual progress indicators showing completion status
+## Tech Stack
 
-### Onboarding Requirements
-To unlock full platform access, users must:
-1. **Verify their venue** - Search for existing venues or create a new one
-2. **Report 3 events** - Add past or upcoming shows to the database
-3. **Access everything for free** - Unlock all features and insights
+- **Frontend**: React + TypeScript + Vite
+- **Styling**: Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **AI Chat**: n8n Chat Widget with custom context integration
 
-### Features
-- **Simplified Event Form**: Streamlined form specifically for onboarding with helpful tips
-- **Progress Visualization**: Real-time progress tracking with percentage completion
-- **Celebration Modal**: Congratulations screen when onboarding is complete
-- **Guided Navigation**: Clear calls-to-action directing users to next steps
+## AI Chat Integration
 
-## 🎯 Key Features
+The application includes an AI-powered talent discovery assistant that has access to your venue and user data for personalized recommendations.
 
-### For Venues
-- **Event Management**: Add, edit, and track events with detailed analytics
-- **Performance Insights**: View ticket sales, attendance, and revenue data
-- **Artist Management**: Track performers and their performance metrics
-- **Venue Analytics**: Comprehensive dashboard with key performance indicators
+### User Context Data Passed to AI
 
-### For the Industry
-- **Events Database**: Browse events from venues across the country
-- **Market Insights**: Discover trends and patterns in the music industry
-- **Networking**: Connect with other venues and industry professionals
+When you interact with the AI assistant on the Find Talent page, the following context data is automatically included:
 
-## 🛠 Tech Stack
+```typescript
+{
+  user: {
+    id: string;
+    email: string;
+    full_name?: string;
+    role?: string;
+    bio?: string;
+  },
+  venue: {
+    id: string;
+    name: string;
+    location?: string;
+    capacity?: number;
+    description?: string;
+  },
+  userVenues: Array<{
+    id: string;
+    name: string;
+    location?: string;
+  }>,
+  analytics: {
+    showsReported: number;
+    ticketSales: number;
+    barSales: number;
+    avgSelloutRate: number;
+    avgTicketPrice: number;
+    topGenre?: { genre: string; count: number };
+    topArtist?: { name: string; count: number };
+  },
+  recentEvents: Array<{
+    id: string;
+    name: string;
+    date: string;
+    venue_name?: string;
+  }>
+}
+```
 
-- **Frontend**: React 18 with TypeScript
-- **Styling**: Tailwind CSS with custom design system
-- **Backend**: Supabase (PostgreSQL + Auth + Real-time)
-- **Deployment**: Vite for development and build
+### Accessing User Context in n8n Workflow
 
-## 📁 Project Structure
+In your n8n Chat Trigger node, the user context data is available in the `metadata.userContext` field. You can access it in subsequent nodes using expressions like:
+
+- `{{ $json.metadata.userContext.user.full_name }}` - User's name
+- `{{ $json.metadata.userContext.venue.name }}` - Current venue name
+- `{{ $json.metadata.userContext.venue.capacity }}` - Venue capacity
+- `{{ $json.metadata.userContext.analytics.topGenre.genre }}` - Most popular genre
+- `{{ $json.metadata.userContext.recentEvents }}` - Recent events array
+
+### Example n8n Workflow Setup
+
+1. **Chat Trigger Node**: Receives the user message and context
+2. **Set Node**: Extract and format the user context for the AI prompt
+3. **AI Agent/Chain**: Use the context to provide personalized responses
+4. **Response**: Return contextualized recommendations
+
+Example system prompt enhancement:
+```
+You are a talent discovery assistant for music venues. 
+
+User Context:
+- Venue: {{ $json.metadata.userContext.venue.name }} (Capacity: {{ $json.metadata.userContext.venue.capacity }})
+- Location: {{ $json.metadata.userContext.venue.location }}
+- Most popular genre: {{ $json.metadata.userContext.analytics.topGenre.genre }}
+- Recent events: {{ $json.metadata.userContext.recentEvents.length }} shows
+- Average ticket price: ${{ $json.metadata.userContext.analytics.avgTicketPrice }}
+
+Please provide artist recommendations that fit this venue's profile and recent performance history.
+```
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Set up environment variables (see `.env.example`)
+4. Configure Supabase database
+5. Set up n8n workflow with Chat Trigger
+6. Start development server: `npm run dev`
+
+## Environment Variables
 
 ```
-src/
-├── components/
-│   ├── features/
-│   │   ├── onboarding/          # New onboarding components
-│   │   │   ├── OnboardingModal.tsx
-│   │   │   ├── OnboardingEventForm.tsx
-│   │   │   └── OnboardingComplete.tsx
-│   │   ├── dashboard/           # Dashboard analytics
-│   │   ├── events/              # Event management
-│   │   └── venues/              # Venue management
-│   ├── layout/                  # Layout components
-│   └── common/                  # Shared components
-├── hooks/
-│   ├── useAuth.ts              # Authentication
-│   └── useOnboarding.ts        # New onboarding state management
-├── pages/                      # Page components
-├── services/                   # API services
-└── types/                      # TypeScript definitions
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_PUBLIC_N8N_WEBHOOK_URL=your_n8n_webhook_url
 ```
 
-## 🚀 Getting Started
+## License
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd musicdb-mvp
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   Create a `.env` file with your Supabase credentials:
-   ```
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-4. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-## 🎨 Design System
-
-The platform uses a custom design system built with Tailwind CSS:
-
-- **Colors**: Custom accent colors for music industry branding
-- **Components**: Reusable UI components with consistent styling
-- **Typography**: Clean, readable fonts optimized for data display
-- **Spacing**: Consistent spacing system for layout harmony
-
-## 📊 Database Schema
-
-The platform uses Supabase with the following main tables:
-- `venues` - Venue information and details
-- `events` - Event data and financial metrics
-- `artists` - Performer information
-- `event_artists` - Many-to-many relationship between events and artists
-- `user_venues` - User associations with venues
-- `event_metrics` - Detailed performance metrics
-
-## 🔐 Authentication
-
-- Supabase Auth for user management
-- Protected routes for authenticated users
-- Role-based access control for venue associations
-
-## 📈 Analytics
-
-- Real-time dashboard with key metrics
-- Time-based filtering (YTD, MTD, All Time)
-- Performance comparisons and trends
-- Export capabilities for reporting
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Support
-
-For support or questions, please contact the development team or create an issue in the repository.
+This project is licensed under the MIT License.
