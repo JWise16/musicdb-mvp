@@ -17,23 +17,6 @@ const FindTalent = () => {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Test webhook connectivity
-  useEffect(() => {
-    const testWebhook = async () => {
-      try {
-        const response = await fetch('https://jwise16.app.n8n.cloud/webhook/de704005-f14f-4ddd-9fb6-1ca15825db62/chat', {
-          method: 'GET',
-          mode: 'cors'
-        });
-        console.log('Webhook test response:', response.status);
-      } catch (error) {
-        console.error('Webhook test error:', error);
-      }
-    };
-    
-    testWebhook();
-  }, []);
-
   useEffect(() => {
     const loadEventData = async () => {
       if (!user?.id) return;
@@ -233,20 +216,26 @@ const FindTalent = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      <main className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+          <div className="max-w-7xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-900">Find Talent</h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 mt-1">
               Discover the perfect artists for your venue with AI-powered recommendations
             </p>
           </div>
+        </div>
 
-          <div className="bg-white rounded-lg shadow-sm border h-[600px]">
-            <N8nChatWidget 
-              webhookUrl="https://jwise16.app.n8n.cloud/webhook/de704005-f14f-4ddd-9fb6-1ca15825db62/chat"
-              userContext={userContext}
-            />
+        {/* Chat Container */}
+        <div className="flex-1 p-6 overflow-hidden">
+          <div className="max-w-7xl mx-auto h-full">
+            <div className="bg-white rounded-lg shadow-sm border h-full">
+              <N8nChatWidget 
+                webhookUrl="https://jwise16.app.n8n.cloud/webhook/de704005-f14f-4ddd-9fb6-1ca15825db62/chat"
+                userContext={userContext}
+              />
+            </div>
           </div>
         </div>
       </main>

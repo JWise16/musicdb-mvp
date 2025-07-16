@@ -127,7 +127,7 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
         const config: ChatConfig = {
           webhookUrl,
           target: `#${containerId}`,
-          mode: 'window',
+          mode: 'fullscreen',
           metadata,
           showWelcomeScreen: true,
           defaultLanguage: 'en',
