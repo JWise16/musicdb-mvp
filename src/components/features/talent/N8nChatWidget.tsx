@@ -129,12 +129,12 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
           target: `#${containerId}`,
           mode: 'fullscreen',
           metadata,
-          showWelcomeScreen: true,
+          showWelcomeScreen: false,
           defaultLanguage: 'en',
           i18n: {
             en: {
-              title: 'Find Talent',
-              subtitle: 'AI assistant to help you discover the perfect artists for your venue',
+              title: '',
+              subtitle: '',
               footer: 'Powered by MusicDB',
               getStarted: 'Get Started',
               inputPlaceholder: 'Ask about artists, genres, booking recommendations...'

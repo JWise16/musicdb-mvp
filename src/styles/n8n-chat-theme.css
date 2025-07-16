@@ -163,4 +163,23 @@ div[id^="n8n-chat-container"] textarea:focus,
 div[id^="n8n-chat-container"] button:focus {
   outline: 2px solid var(--chat--color-primary);
   outline-offset: 2px;
+}
+
+/* Ensure proper sizing and visibility for chat components */
+#n8n-chat-container,
+div[id^="n8n-chat-container"] {
+  min-height: 500px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Make sure input area is always visible */
+#n8n-chat-container .chat-input,
+#n8n-chat-container .chat-input-wrapper,
+#n8n-chat-container .chat-messages,
+div[id^="n8n-chat-container"] .chat-input,
+div[id^="n8n-chat-container"] .chat-input-wrapper,
+div[id^="n8n-chat-container"] .chat-messages {
+  display: flex !important;
+  visibility: visible !important;
 } 
