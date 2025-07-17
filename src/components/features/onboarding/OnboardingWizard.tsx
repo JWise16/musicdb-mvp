@@ -723,98 +723,95 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   );
 
   const renderEventStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Event {eventNumber}</h3>
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Add Event {eventNumber}
+        </h2>
         <p className="text-gray-600">
           {eventNumber === 1
             ? 'Report your first event - this will be how you access the tool during future logins'
             : `Create your ${eventNumber === 2 ? 'second' : 'third'} event – if possible, report a show from this week or month so your dashboard is up to date.`}
         </p>
       </div>
-      
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Event Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={event.name}
-            onChange={(e) => handleEventChange('name', e.target.value)}
-            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.event_name ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="Enter event name"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Date <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="date"
-            value={event.date}
-            onChange={(e) => handleEventChange('date', e.target.value)}
-            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.event_date ? 'border-red-500' : 'border-gray-300'
-            }`}
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Total Tickets <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={event.total_tickets || ''}
-              onChange={(e) => handleEventChange('total_tickets', e.target.value ? parseInt(e.target.value) : undefined)}
-              className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                validationErrors.event_total_tickets ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter total tickets available"
-              min="1"
-              required
-            />
+      <form className="space-y-6" onSubmit={e => { e.preventDefault(); handleComplete(); }}>
+        {/* Event Details */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Event Name *
+              </label>
+              <input
+                type="text"
+                value={event.name}
+                onChange={e => handleEventChange('name', e.target.value)}
+                className="form-input w-full"
+                placeholder="e.g., Summer Concert Series"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date *
+              </label>
+              <input
+                type="date"
+                value={event.date}
+                onChange={e => handleEventChange('date', e.target.value)}
+                className="form-input w-full"
+                required
+              />
+            </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Tickets Sold
-            </label>
-            <input
-              type="number"
-              value={event.tickets_sold || ''}
-              onChange={(e) => handleEventChange('tickets_sold', e.target.value ? parseInt(e.target.value) : undefined)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="0"
-              min="0"
-              max={event.total_tickets}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Total Tickets
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={event.total_tickets || ''}
+                onChange={e => handleEventChange('total_tickets', parseInt(e.target.value) || 0)}
+                className="form-input w-full"
+                placeholder="0"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tickets Sold
+              </label>
+              <input
+                type="number"
+                min="0"
+                max={event.total_tickets}
+                value={event.tickets_sold || ''}
+                onChange={e => handleEventChange('tickets_sold', parseInt(e.target.value) || undefined)}
+                className="form-input w-full"
+                placeholder="0"
+              />
+            </div>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Ticket Price Type
-            </label>
-            <div className="flex space-x-4">
+        {/* Ticket Pricing */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Pricing</h3>
+          <div className="mb-4">
+            <div className="flex gap-4">
               <label className="flex items-center">
                 <input
                   type="radio"
                   name="priceType"
                   value="single"
                   checked={priceType === 'single'}
-                  onChange={(e) => setPriceType(e.target.value as 'single' | 'range')}
+                  onChange={() => setPriceType('single')}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700">Single Price</span>
+                Single Price
               </label>
               <label className="flex items-center">
                 <input
@@ -822,200 +819,198 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                   name="priceType"
                   value="range"
                   checked={priceType === 'range'}
-                  onChange={(e) => setPriceType(e.target.value as 'single' | 'range')}
+                  onChange={() => setPriceType('range')}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700">Price Range</span>
+                Price Range
               </label>
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Bar Sales ($)
-            </label>
-            <input
-              type="number"
-              value={event.bar_sales || ''}
-              onChange={(e) => handleEventChange('bar_sales', e.target.value ? parseFloat(e.target.value) : undefined)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Any additional details you report—like bar sales or show notes—are completely private. They're optional and only visible to you on your dashboard for your own reference.
-            </p>
-          </div>
-        </div>
-
-        {/* Conditional Price Fields */}
-        {priceType === 'single' ? (
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Ticket Price ($)
-            </label>
-            <input
-              type="number"
-              value={event.ticket_price || ''}
-              onChange={(e) => handleEventChange('ticket_price', e.target.value ? parseFloat(e.target.value) : undefined)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="25.00"
-              min="0"
-              step="0.01"
-            />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {priceType === 'single' && (
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Minimum Price ($)
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ticket Price ($)
               </label>
               <input
                 type="number"
-                value={event.ticket_price_min || ''}
-                onChange={(e) => handleEventChange('ticket_price_min', e.target.value ? parseFloat(e.target.value) : undefined)}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  priceType === 'range' && event.ticket_price_min && event.ticket_price_max && 
-                  event.ticket_price_min > event.ticket_price_max 
-                    ? 'border-red-300' 
-                    : 'border-gray-300'
-                }`}
-                placeholder="15.00"
                 min="0"
                 step="0.01"
+                value={event.ticket_price || ''}
+                onChange={e => handleEventChange('ticket_price', parseFloat(e.target.value) || undefined)}
+                className="form-input w-full"
+                placeholder="25.00"
               />
             </div>
+          )}
+          {priceType === 'range' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Minimum Price ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={event.ticket_price_min || ''}
+                  onChange={e => handleEventChange('ticket_price_min', parseFloat(e.target.value) || undefined)}
+                  className="form-input w-full"
+                  placeholder="20.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Maximum Price ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={event.ticket_price_max || ''}
+                  onChange={e => handleEventChange('ticket_price_max', parseFloat(e.target.value) || undefined)}
+                  className="form-input w-full"
+                  placeholder="50.00"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        {/* Revenue Tracking */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Tracking (Optional)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Maximum Price ($)
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Total Ticket Revenue
               </label>
               <input
                 type="number"
-                value={event.ticket_price_max || ''}
-                onChange={(e) => handleEventChange('ticket_price_max', e.target.value ? parseFloat(e.target.value) : undefined)}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  priceType === 'range' && event.ticket_price_min && event.ticket_price_max && 
-                  event.ticket_price_min > event.ticket_price_max 
-                    ? 'border-red-300' 
-                    : 'border-gray-300'
-                }`}
-                placeholder="75.00"
                 min="0"
                 step="0.01"
+                value={event.total_ticket_revenue || ''}
+                onChange={e => handleEventChange('total_ticket_revenue', parseFloat(e.target.value) || undefined)}
+                className="form-input w-full"
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Total revenue from all ticket sales
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Bar Sales ($)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={event.bar_sales || ''}
+                onChange={e => handleEventChange('bar_sales', parseFloat(e.target.value) || undefined)}
+                className="form-input w-full"
+                placeholder="0.00"
               />
             </div>
           </div>
-        )}
-        
-        {priceType === 'range' && event.ticket_price_min && event.ticket_price_max && 
-         event.ticket_price_min > event.ticket_price_max && (
-          <div className="text-red-600 text-sm">
-            Maximum price must be greater than minimum price
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Notes
-          </label>
-          <textarea
-            value={event.notes}
-            onChange={(e) => handleEventChange('notes', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Any additional notes about the event..."
-            rows={3}
-          />
+          <p className="text-xs text-gray-500 mt-4">
+            Any additional details you report—like bar sales or show notes—are completely private. They're optional and only visible to you on your dashboard for your own reference.
+          </p>
         </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <label className="block text-sm font-bold text-gray-700">
-              Artists/Performers <span className="text-red-500">*</span>
-            </label>
-            <button
-              type="button"
-              onClick={addArtist}
-              className="text-sm text-blue-600 hover:text-blue-700"
-            >
-              + Add Artist
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {event.artists.map((artist, index) => (
-              <div key={index} className={`border-2 rounded-lg p-4 ${
-                validationErrors.event_artists && !artist.name.trim() ? 'border-red-500' : 'border-gray-200'
-              }`}>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-bold text-gray-700">Artist {index + 1}</span>
-                  {event.artists.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeArtist(index)}
-                      className="text-red-600 hover:text-red-700 text-sm"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">
-                      Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={artist.name}
-                      onChange={(e) => handleArtistChange(index, 'name', e.target.value)}
-                      className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        validationErrors.event_artists && !artist.name.trim() ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Artist name"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">
-                      Genre
-                    </label>
-                    <input
-                      type="text"
-                      value={artist.genre || ''}
-                      onChange={(e) => handleArtistChange(index, 'genre', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Genre"
-                    />
-                  </div>
-                </div>
-                
-                <div className="mt-3 flex items-center gap-6">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={artist.is_headliner}
-                      onChange={(e) => handleArtistChange(index, 'is_headliner', e.target.checked)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm text-gray-700">Headliner</span>
+        {/* Artists */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Artists</h3>
+          {event.artists.map((artist, index) => (
+            <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-medium text-gray-900">
+                  Artist {index + 1} {artist.is_headliner && '(Headliner)'}
+                </h4>
+                {event.artists.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeArtist(index)}
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Artist Name *
                   </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={artist.is_opener}
-                      onChange={(e) => handleArtistChange(index, 'is_opener', e.target.checked)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm text-gray-700">Opener</span>
+                  <input
+                    type="text"
+                    value={artist.name}
+                    onChange={e => handleArtistChange(index, 'name', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="e.g., The Rolling Stones"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Genre
                   </label>
+                  <input
+                    type="text"
+                    value={artist.genre || ''}
+                    onChange={e => handleArtistChange(index, 'genre', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="e.g., Rock"
+                  />
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="mt-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={artist.is_headliner}
+                    onChange={e => handleArtistChange(index, 'is_headliner', e.target.checked)}
+                    className="mr-2"
+                  />
+                  This is the headliner
+                </label>
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addArtist}
+            className="btn-secondary w-full py-3"
+          >
+            + Add Another Artist
+          </button>
         </div>
-      </div>
+        {/* Notes */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Notes</h3>
+          <textarea
+            value={event.notes}
+            onChange={e => handleEventChange('notes', e.target.value)}
+            className="form-textarea w-full"
+            rows={3}
+            placeholder="Any additional notes about this event..."
+          />
+        </div>
+        {/* Submit Buttons */}
+        <div className="flex justify-end gap-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary px-6 py-3"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading || !event.name || !event.date || !event.total_tickets || !event.artists.some(a => a.name)}
+            className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Creating Event...' : `Create Event ${eventNumber}`}
+          </button>
+        </div>
+      </form>
     </div>
   );
 
@@ -1266,7 +1261,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
               <h2 className="text-3xl font-bold text-gray-900">MusicDB</h2>
             </div>
           </div>
-          
           {/* Progress Bar */}
           <div className="mt-6 max-w-md mx-auto">
             <div className="flex items-center justify-between mb-2">
@@ -1283,17 +1277,24 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         {/* Content */}
-        <div className="flex h-[calc(90vh-320px)]">
-          {/* Left Panel - Form */}
-          <div className="flex-1 p-6 overflow-y-auto">
-            {renderStepContent()}
+        {step === 'events' ? (
+          // Full-width event form, no preview panel
+          <div className="p-6 overflow-y-auto h-[calc(90vh-320px)]">
+            {renderEventStep()}
           </div>
-
-          {/* Right Panel - Preview */}
-          <div className="w-96 border-l border-gray-200 p-6 overflow-y-auto">
-            {renderPreview()}
+        ) : (
+          // Default: split panel with preview
+          <div className="flex h-[calc(90vh-320px)]">
+            {/* Left Panel - Form */}
+            <div className="flex-1 p-6 overflow-y-auto">
+              {renderStepContent()}
+            </div>
+            {/* Right Panel - Preview */}
+            <div className="w-96 border-l border-gray-200 p-6 overflow-y-auto">
+              {renderPreview()}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Footer */}
         <div className="border-t border-gray-200 p-4 overflow-hidden">
@@ -1319,7 +1320,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 </div>
               )}
             </div>
-            
             <button
               onClick={handleComplete}
               disabled={isLoading}
