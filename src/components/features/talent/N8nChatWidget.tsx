@@ -132,6 +132,10 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
           metadata,
           showWelcomeScreen: false,
           defaultLanguage: 'en',
+          initialMessages: [
+            'Welcome to MusicDB! 🎵',
+            'I\'m here to help you find the perfect talent for your venue. What can I assist you with today?'
+          ],
           i18n: {
             en: {
               title: '',
