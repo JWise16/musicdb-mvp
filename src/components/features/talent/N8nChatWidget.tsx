@@ -164,6 +164,65 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
 
   return (
     <div className="h-full w-full">
+      <style>
+        {`
+          /* Ensure user message styling and white backgrounds with component-level specificity */
+          #${containerId} {
+            --chat--message--user--background: #f3f4f6 !important;
+            --chat--message--user--color: #000000 !important;
+            --chat--message--user--border: 1px solid #e5e7eb !important;
+            
+            /* Bot message styling with black border */
+            --chat--message--bot--background: #ffffff !important;
+            --chat--message--bot--color: #000000 !important;
+            --chat--message--bot--border: 1px solid #000000 !important;
+            
+            /* Extra rounded chat bubbles */
+            --chat--border-radius: 1.5rem !important;
+            --chat--message--border-radius: 1.5rem !important;
+            
+            /* Ensure all chat backgrounds are pure white */
+            --chat--color-light: #ffffff !important;
+            --chat--color-white: #ffffff !important;
+            --chat--color-secondary: #ffffff !important;
+            --chat--header--background: #ffffff !important;
+            --chat--body--background: #ffffff !important;
+            
+            /* Additional background overrides */
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+          }
+          
+          /* Force white background on all child elements */
+          #${containerId} * {
+            background-color: #ffffff !important;
+          }
+          
+          /* Ensure bot messages have black borders and rounded edges */
+          #${containerId} [class*="message"][class*="bot"],
+          #${containerId} [data-direction="incoming"],
+          #${containerId} .message:not([data-direction="outgoing"]) {
+            border: 1px solid #000000 !important;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border-radius: 1.5rem !important;
+          }
+          
+          /* Ensure user messages also have rounded edges */
+          #${containerId} [class*="message"][class*="user"],
+          #${containerId} [data-direction="outgoing"] {
+            background-color: #f3f4f6 !important;
+            border-radius: 1.5rem !important;
+          }
+          
+          /* Apply rounded corners to all message-like elements */
+          #${containerId} [class*="message"],
+          #${containerId} [class*="bubble"],
+          #${containerId} [data-direction] {
+            border-radius: 1.5rem !important;
+          }
+        `}
+      </style>
       <div ref={chatContainerRef} className="h-full w-full" />
       {!isLoaded && (
         <div className="flex items-center justify-center h-full">
