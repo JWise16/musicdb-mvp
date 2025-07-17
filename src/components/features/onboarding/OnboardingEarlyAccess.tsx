@@ -44,8 +44,8 @@ export default function OnboardingEarlyAccess({ onValidCode, onError }: Onboardi
       <div className="max-w-md mx-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Access Code *
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Access Code <span className="text-red-500">*</span>
             </label>
             <input
               type="text"

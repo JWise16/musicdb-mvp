@@ -106,7 +106,7 @@ const Sidebar = () => {
           <img 
             src={logoImage} 
             alt="MusicDB Logo" 
-            className="w-8 h-8 ml-2 object-contain"
+            className="w-10 h-10 ml-2 object-contain"
           />
         </div>
         {/* Nav Links */}

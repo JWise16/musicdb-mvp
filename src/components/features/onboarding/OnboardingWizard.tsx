@@ -444,8 +444,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name *
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Full Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -460,8 +460,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email *
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Email <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
@@ -476,7 +476,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-gray-700 mb-2">
             Profile Picture (Optional)
           </label>
           <div className="flex items-center space-x-4">
@@ -503,7 +503,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-gray-700 mb-2">
             Bio (Optional)
           </label>
           <textarea
@@ -516,8 +516,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Your Role *
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Your Role <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 gap-4">
             {[
@@ -546,8 +546,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           {/* Custom role input */}
           {profile.role === 'other' && (
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Please specify your role *
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Please specify your role <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -575,8 +575,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Venue Name *
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Venue Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -591,8 +591,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Location/City *
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Location/City <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -607,8 +607,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Address *
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Address <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -623,8 +623,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Capacity *
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Capacity <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -640,8 +640,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Contact Email
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Contact Email (Optional)
           </label>
           <input
             type="email"
@@ -653,8 +653,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Contact Phone
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Contact Phone (Optional)
           </label>
           <input
             type="tel"
@@ -666,8 +666,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Description (Optional)
           </label>
           <textarea
             value={venue.description}
@@ -679,7 +679,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-gray-700 mb-2">
             Venue Image (Optional)
           </label>
           <div className="flex items-center space-x-4">
@@ -735,8 +735,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Event Name *
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Event Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -751,8 +751,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date *
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Date <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
@@ -767,8 +767,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Total Tickets *
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Total Tickets <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -784,7 +784,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Tickets Sold
             </label>
             <input
@@ -801,7 +801,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Ticket Price Type
             </label>
             <div className="flex space-x-4">
@@ -831,7 +831,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Bar Sales ($)
             </label>
             <input
@@ -852,7 +852,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         {/* Conditional Price Fields */}
         {priceType === 'single' ? (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Ticket Price ($)
             </label>
             <input
@@ -868,7 +868,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Minimum Price ($)
               </label>
               <input
@@ -887,7 +887,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Maximum Price ($)
               </label>
               <input
@@ -916,7 +916,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-gray-700 mb-2">
             Notes
           </label>
           <textarea
@@ -930,8 +930,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
         <div>
           <div className="flex items-center justify-between mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Artists/Performers *
+            <label className="block text-sm font-bold text-gray-700">
+              Artists/Performers <span className="text-red-500">*</span>
             </label>
             <button
               type="button"
@@ -948,7 +948,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 validationErrors.event_artists && !artist.name.trim() ? 'border-red-500' : 'border-gray-200'
               }`}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700">Artist {index + 1}</span>
+                  <span className="text-sm font-bold text-gray-700">Artist {index + 1}</span>
                   {event.artists.length > 1 && (
                     <button
                       type="button"
@@ -962,7 +962,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Name *</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       value={artist.name}
@@ -976,7 +978,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                   </div>
                   
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Genre</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Genre
+                    </label>
                     <input
                       type="text"
                       value={artist.genre || ''}
@@ -1038,13 +1042,14 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Preview</h3>
             
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
+              {/* Centered Avatar above name/email */}
+              <div className="flex flex-col items-center mb-2">
                 <Avatar 
                   src={avatarPreview} 
                   size="md" 
                   fallback={profile.full_name || 'Your Name'}
                 />
-                <div>
+                <div className="mt-3 text-center">
                   <div className="font-medium text-gray-900">
                     {profile.full_name || 'Your Name'}
                   </div>

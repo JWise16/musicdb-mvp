@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import logo from '../../assets/logo.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -62,6 +63,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
+          <img src={logo} alt="MusicDB Logo" className="mx-auto mb-6 w-32 h-32 object-contain" />
           <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
           <p className="mt-2 text-sm text-gray-600">
             Welcome back to MusicDB
