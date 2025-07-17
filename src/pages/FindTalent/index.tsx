@@ -5,6 +5,7 @@ import { useUserProfile } from '../../hooks/useUserProfile';
 import { useVenue } from '../../contexts/VenueContext';
 import { useState, useEffect } from 'react';
 import { VenueService, type VenueAnalytics, type VenueEvent } from '../../services/venueService';
+import logo from '../../assets/logo.png';
 
 const FindTalent = () => {
   const { user } = useAuth();
@@ -204,33 +205,38 @@ const FindTalent = () => {
 
   if (isLoading) {
     return (
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen bg-[#F6F6F3] flex items-center justify-center">
+        <div className="text-center">
+          <img 
+            src={logo} 
+            alt="MusicDB Logo" 
+            className="w-24 h-24 mx-auto mb-4"
+          />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading talent finder...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F6F6F3] flex">
       <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-          <div className="max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900">Find Talent</h1>
-            <p className="text-gray-600 mt-1">
-              Discover the perfect artists for your venue with AI-powered recommendations
-            </p>
+      <main className="flex-1 ml-64 p-4 lg:p-8 overflow-hidden">
+        <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 min-h-[90vh] overflow-hidden flex flex-col">
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 lg:mb-8">
+            <div className="min-w-0">
+              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 truncate">Find Talent</h2>
+              <p className="text-gray-600 truncate">
+                Discover the perfect artists for your venue with AI-powered recommendations
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Chat Container */}
-        <div className="flex-1 p-6 overflow-hidden">
-          <div className="max-w-7xl mx-auto h-full">
-            <div className="bg-white rounded-lg shadow-sm border h-full">
+          {/* Chat Container */}
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <N8nChatWidget 
                 webhookUrl="https://jwise16.app.n8n.cloud/webhook/de704005-f14f-4ddd-9fb6-1ca15825db62/chat"
                 userContext={userContext}

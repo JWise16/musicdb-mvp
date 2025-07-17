@@ -94,6 +94,7 @@ interface N8nChatWidgetProps {
 const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatInstanceRef = useRef<ChatInstance | null>(null);
+  const observerRef = useRef<MutationObserver | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   
   const containerId = 'n8n-chat-container-' + Math.random().toString(36).substr(2, 9);
@@ -147,6 +148,61 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
         const chatInstance = createChat(config);
         chatInstanceRef.current = chatInstance;
         setIsLoaded(true);
+
+        // Set up scroll to bottom behavior for new messages
+        const setupScrollBehavior = () => {
+          const chatContainer = document.querySelector(`#${containerId}`);
+          if (chatContainer) {
+            const messagesContainer = chatContainer.querySelector('[class*="messages"], [class*="body"]');
+            if (messagesContainer) {
+              // Function to scroll to bottom
+              const scrollToBottom = () => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+              };
+              
+              // Start at the bottom
+              scrollToBottom();
+              
+              // Observe for new messages and scroll to bottom
+              const observer = new MutationObserver((mutations) => {
+                let shouldScroll = false;
+                mutations.forEach((mutation) => {
+                  if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    // Check if new message elements were added
+                    mutation.addedNodes.forEach((node) => {
+                      if (node.nodeType === Node.ELEMENT_NODE) {
+                        const element = node as Element;
+                        if (element.matches('[class*="message"], .message') || 
+                            element.querySelector('[class*="message"], .message')) {
+                          shouldScroll = true;
+                        }
+                      }
+                    });
+                  }
+                });
+                
+                if (shouldScroll) {
+                  // Small delay to ensure content is rendered
+                  setTimeout(scrollToBottom, 100);
+                }
+              });
+              
+              observer.observe(messagesContainer, { 
+                childList: true, 
+                subtree: true 
+              });
+              
+              // Store observer for cleanup
+              observerRef.current = observer;
+              
+              // Also scroll on resize to maintain position
+              window.addEventListener('resize', scrollToBottom);
+            }
+          }
+        };
+
+        setTimeout(setupScrollBehavior, 1000);
+
       } catch (error) {
         console.error('Error initializing n8n chat:', error);
       }
@@ -159,11 +215,17 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
         chatInstanceRef.current = null;
         setIsLoaded(false);
       }
+      
+      // Clean up observer
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
     };
   }, [webhookUrl, userContext, containerId]);
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full flex flex-col overflow-hidden">
       <style>
         {`
           /* Ensure user message styling and white backgrounds with component-level specificity */
@@ -191,11 +253,34 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
             /* Additional background overrides */
             background: #ffffff !important;
             background-color: #ffffff !important;
+            
+            /* Ensure full height */
+            height: 100% !important;
+            min-height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
           }
           
           /* Force white background on all child elements */
           #${containerId} * {
             background-color: #ffffff !important;
+          }
+          
+          /* Make messages area start from bottom */
+          #${containerId} [class*="messages"], 
+          #${containerId} [class*="body"],
+          #${containerId} .chat-messages,
+          #${containerId} .chat-body {
+            flex-direction: column-reverse !important;
+            justify-content: flex-start !important;
+          }
+          
+          /* Make individual message containers display properly */
+          #${containerId} [class*="message-list"],
+          #${containerId} [class*="conversation"],
+          #${containerId} .message-list {
+            display: flex !important;
+            flex-direction: column-reverse !important;
           }
           
           /* Ensure bot messages have black borders and rounded edges */
@@ -221,12 +306,93 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
           #${containerId} [data-direction] {
             border-radius: 1.5rem !important;
           }
+          
+          /* Ensure the chat container expands to full height */
+          #${containerId} > div {
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          
+          /* Ensure the chat body takes remaining space and starts from bottom */
+          #${containerId} [class*="body"],
+          #${containerId} [class*="messages"] {
+            flex: 1 !important;
+            min-height: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+          }
+          
+          /* Remove red border from input text box when focused */
+          #${containerId} input,
+          #${containerId} textarea,
+          #${containerId} [class*="input"],
+          #${containerId} [class*="textarea"] {
+            border: 1px solid #e5e7eb !important;
+            outline: none !important;
+            box-shadow: none !important;
+          }
+          
+          #${containerId} input:focus,
+          #${containerId} textarea:focus,
+          #${containerId} [class*="input"]:focus,
+          #${containerId} [class*="textarea"]:focus {
+            border: 1px solid #9ca3af !important;
+            outline: none !important;
+            box-shadow: 0 0 0 0px transparent !important;
+            ring: none !important;
+          }
+          
+          /* Remove any focus rings or outlines */
+          #${containerId} *:focus {
+            outline: none !important;
+            box-shadow: none !important;
+          }
+          
+          /* Make send button always black */
+          #${containerId} [class*="send"],
+          #${containerId} [class*="submit"],
+          #${containerId} button[type="submit"],
+          #${containerId} .chat-input button,
+          #${containerId} .chat-input-wrapper button {
+            color: #000000 !important;
+            fill: #000000 !important;
+          }
+          
+          /* Ensure send button icon/text stays black on hover and focus */
+          #${containerId} [class*="send"]:hover,
+          #${containerId} [class*="submit"]:hover,
+          #${containerId} button[type="submit"]:hover,
+          #${containerId} .chat-input button:hover,
+          #${containerId} .chat-input-wrapper button:hover,
+          #${containerId} [class*="send"]:focus,
+          #${containerId} [class*="submit"]:focus,
+          #${containerId} button[type="submit"]:focus,
+          #${containerId} .chat-input button:focus,
+          #${containerId} .chat-input-wrapper button:focus {
+            color: #000000 !important;
+            fill: #000000 !important;
+          }
+          
+          /* Target SVG icons within send button */
+          #${containerId} [class*="send"] svg,
+          #${containerId} [class*="submit"] svg,
+          #${containerId} button[type="submit"] svg,
+          #${containerId} .chat-input button svg,
+          #${containerId} .chat-input-wrapper button svg {
+            fill: #000000 !important;
+            color: #000000 !important;
+          }
         `}
       </style>
-      <div ref={chatContainerRef} className="h-full w-full" />
+      <div ref={chatContainerRef} className="h-full w-full flex-1 min-h-0" />
       {!isLoaded && (
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <div className="absolute inset-0 flex items-center justify-center bg-white">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+            <p className="text-gray-600 text-sm">Loading AI assistant...</p>
+          </div>
         </div>
       )}
     </div>

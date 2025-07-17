@@ -148,6 +148,24 @@ div[id^="n8n-chat-container"] textarea {
   font-family: inherit;
   font-size: 0.875rem;
   line-height: 1.5;
+  border: 1px solid #e5e7eb !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove red border and focus styles from input elements */
+#n8n-chat-container input:focus,
+#n8n-chat-container textarea:focus,
+#n8n-chat-container [class*="input"]:focus,
+#n8n-chat-container [class*="textarea"]:focus,
+div[id^="n8n-chat-container"] input:focus,
+div[id^="n8n-chat-container"] textarea:focus,
+div[id^="n8n-chat-container"] [class*="input"]:focus,
+div[id^="n8n-chat-container"] [class*="textarea"]:focus {
+  border: 1px solid #9ca3af !important;
+  outline: none !important;
+  box-shadow: 0 0 0 0px transparent !important;
+  ring: none !important;
 }
 
 /* Button styling consistency */
@@ -158,35 +176,153 @@ div[id^="n8n-chat-container"] button {
   transition: all var(--chat--transition-duration) ease-in-out;
 }
 
-/* Focus states for accessibility */
+/* Focus states for accessibility - remove red borders */
 #n8n-chat-container input:focus,
 #n8n-chat-container textarea:focus,
 #n8n-chat-container button:focus,
 div[id^="n8n-chat-container"] input:focus,
 div[id^="n8n-chat-container"] textarea:focus,
 div[id^="n8n-chat-container"] button:focus {
-  outline: 2px solid var(--chat--color-primary);
-  outline-offset: 2px;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove any default focus styles */
+#n8n-chat-container *:focus,
+div[id^="n8n-chat-container"] *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Make send button always black */
+#n8n-chat-container [class*="send"],
+#n8n-chat-container [class*="submit"],
+#n8n-chat-container button[type="submit"],
+#n8n-chat-container .chat-input button,
+#n8n-chat-container .chat-input-wrapper button,
+div[id^="n8n-chat-container"] [class*="send"],
+div[id^="n8n-chat-container"] [class*="submit"],
+div[id^="n8n-chat-container"] button[type="submit"],
+div[id^="n8n-chat-container"] .chat-input button,
+div[id^="n8n-chat-container"] .chat-input-wrapper button {
+  color: #000000 !important;
+  fill: #000000 !important;
+}
+
+/* Ensure send button icon/text stays black on hover and focus */
+#n8n-chat-container [class*="send"]:hover,
+#n8n-chat-container [class*="submit"]:hover,
+#n8n-chat-container button[type="submit"]:hover,
+#n8n-chat-container .chat-input button:hover,
+#n8n-chat-container .chat-input-wrapper button:hover,
+#n8n-chat-container [class*="send"]:focus,
+#n8n-chat-container [class*="submit"]:focus,
+#n8n-chat-container button[type="submit"]:focus,
+#n8n-chat-container .chat-input button:focus,
+#n8n-chat-container .chat-input-wrapper button:focus,
+div[id^="n8n-chat-container"] [class*="send"]:hover,
+div[id^="n8n-chat-container"] [class*="submit"]:hover,
+div[id^="n8n-chat-container"] button[type="submit"]:hover,
+div[id^="n8n-chat-container"] .chat-input button:hover,
+div[id^="n8n-chat-container"] .chat-input-wrapper button:hover,
+div[id^="n8n-chat-container"] [class*="send"]:focus,
+div[id^="n8n-chat-container"] [class*="submit"]:focus,
+div[id^="n8n-chat-container"] button[type="submit"]:focus,
+div[id^="n8n-chat-container"] .chat-input button:focus,
+div[id^="n8n-chat-container"] .chat-input-wrapper button:focus {
+  color: #000000 !important;
+  fill: #000000 !important;
+}
+
+/* Target SVG icons within send button */
+#n8n-chat-container [class*="send"] svg,
+#n8n-chat-container [class*="submit"] svg,
+#n8n-chat-container button[type="submit"] svg,
+#n8n-chat-container .chat-input button svg,
+#n8n-chat-container .chat-input-wrapper button svg,
+div[id^="n8n-chat-container"] [class*="send"] svg,
+div[id^="n8n-chat-container"] [class*="submit"] svg,
+div[id^="n8n-chat-container"] button[type="submit"] svg,
+div[id^="n8n-chat-container"] .chat-input button svg,
+div[id^="n8n-chat-container"] .chat-input-wrapper button svg {
+  fill: #000000 !important;
+  color: #000000 !important;
 }
 
 /* Ensure proper sizing and visibility for chat components */
 #n8n-chat-container,
 div[id^="n8n-chat-container"] {
   min-height: 500px !important;
+  height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
 }
 
-/* Make sure input area is always visible */
+/* Ensure the chat window body takes up remaining space */
+#n8n-chat-container .chat-window,
+div[id^="n8n-chat-container"] .chat-window {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+/* Make sure messages area expands to fill available space and starts from bottom */
+#n8n-chat-container .chat-messages,
+#n8n-chat-container .chat-body,
+div[id^="n8n-chat-container"] .chat-messages,
+div[id^="n8n-chat-container"] .chat-body {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  min-height: 0 !important;
+  visibility: visible !important;
+  background: #ffffff !important;
+  overflow-y: auto !important;
+}
+
+/* Make messages container start from bottom */
+#n8n-chat-container [class*="message-list"],
+#n8n-chat-container [class*="conversation"], 
+#n8n-chat-container .message-list,
+div[id^="n8n-chat-container"] [class*="message-list"],
+div[id^="n8n-chat-container"] [class*="conversation"],
+div[id^="n8n-chat-container"] .message-list {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  min-height: 100% !important;
+  padding-bottom: 1rem !important;
+}
+
+/* Ensure messages appear from bottom up */
+#n8n-chat-container [class*="message"],
+#n8n-chat-container .message,
+div[id^="n8n-chat-container"] [class*="message"],
+div[id^="n8n-chat-container"] .message {
+  margin-bottom: 0.5rem !important;
+  order: 0 !important;
+}
+
+/* Make sure input area is always visible at bottom */
 #n8n-chat-container .chat-input,
 #n8n-chat-container .chat-input-wrapper,
-#n8n-chat-container .chat-messages,
 div[id^="n8n-chat-container"] .chat-input,
-div[id^="n8n-chat-container"] .chat-input-wrapper,
-div[id^="n8n-chat-container"] .chat-messages {
+div[id^="n8n-chat-container"] .chat-input-wrapper {
+  flex-shrink: 0 !important;
   display: flex !important;
   visibility: visible !important;
   background: #ffffff !important;
+  order: 1 !important;
+}
+
+/* Ensure all inner containers use flex properly */
+#n8n-chat-container > div,
+div[id^="n8n-chat-container"] > div {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 /* Ensure white background for chat elements */
