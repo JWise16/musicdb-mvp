@@ -3,6 +3,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { UserProfileService } from '../../../services/userProfileService';
 import { VenueService } from '../../../services/venueService';
 import { EventService } from '../../../services/eventService';
+import { formatSimpleDate } from '../../../utils/dateUtils';
 import Avatar from '../../common/Avatar';
 import OnboardingEarlyAccess from './OnboardingEarlyAccess';
 import logo from '../../../assets/logo.png';
@@ -1169,7 +1170,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
               <div>
                 <div className="text-sm font-medium text-gray-700 mb-1">Date</div>
                 <div className="text-sm text-gray-900">
-                  {event.date ? new Date(event.date).toLocaleDateString() : 'Select Date'}
+                  {event.date ? formatSimpleDate(event.date) : 'Select Date'}
                 </div>
               </div>
               

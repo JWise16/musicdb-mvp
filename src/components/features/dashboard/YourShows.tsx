@@ -1,4 +1,5 @@
 import { type VenueEvent } from '../../../services/venueService';
+import { formatSimpleDate } from '../../../utils/dateUtils';
 
 interface YourShowsProps {
   upcoming: VenueEvent[];
@@ -7,14 +8,6 @@ interface YourShowsProps {
 }
 
 const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
 
   const getHeadliners = (event: VenueEvent) => {
     return event.event_artists
@@ -49,7 +42,7 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
             {event.name}
           </h4>
           <p className="text-xs lg:text-sm text-gray-600 mb-2 truncate">
-            {formatDate(event.date)}
+            {formatSimpleDate(event.date)}
           </p>
           <p className="text-xs lg:text-sm text-gray-600 mb-2 truncate">
             {event.venues?.name} • {event.venues?.location}

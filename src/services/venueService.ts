@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import type { Tables } from '../types/database.types';
+import { parseEventDate } from '../utils/dateUtils';
 
 export type VenueData = {
   name: string;
@@ -373,7 +374,7 @@ export class VenueService {
         totalBarSales += barSales;
 
         // Month tracking
-        const eventDate = new Date(event.date);
+        const eventDate = parseEventDate(event.date);
         const monthKey = eventDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
         monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
 

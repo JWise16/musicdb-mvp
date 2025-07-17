@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import type { Tables } from '../types/database.types';
+import { isEventPast } from '../utils/dateUtils';
 
 export type EventFormData = {
   name: string;
@@ -435,7 +436,7 @@ export class EventService {
 
   // Check if an event needs updating (past event without financial data)
   static needsUpdate(event: EventWithDetails): boolean {
-    const isPastEvent = new Date(event.date) < new Date();
+    const isPastEvent = isEventPast(event.date);
     const hasFinancialData = event.tickets_sold !== null || event.bar_sales !== null;
     return isPastEvent && !hasFinancialData;
   }

@@ -5,6 +5,7 @@ import { useUserProfile } from '../../hooks/useUserProfile';
 import { useVenue } from '../../contexts/VenueContext';
 import { useState, useEffect } from 'react';
 import { VenueService, type VenueAnalytics, type VenueEvent } from '../../services/venueService';
+import { parseEventDate } from '../../utils/dateUtils';
 import logo from '../../assets/logo.png';
 
 const FindTalent = () => {
@@ -88,7 +89,7 @@ const FindTalent = () => {
 
     // Last 30 days
     const last30DaysEvents = pastEvents.filter(event => 
-      new Date(event.date) >= thirtyDaysAgo
+      parseEventDate(event.date) >= thirtyDaysAgo
     );
 
     const genreCounts30Days: { [key: string]: number } = {};
@@ -122,7 +123,7 @@ const FindTalent = () => {
 
     // Last 6 months
     const last6MonthsEvents = pastEvents.filter(event => 
-      new Date(event.date) >= sixMonthsAgo
+      parseEventDate(event.date) >= sixMonthsAgo
     );
 
     const totalRevenue6Months = last6MonthsEvents.reduce((sum, event) => sum + event.total_revenue, 0);
@@ -132,8 +133,8 @@ const FindTalent = () => {
 
     // Calculate trend (simple comparison of first half vs second half of 6 months)
     const threeMonthsAgo = new Date(now.getTime() - 3 * 30 * 24 * 60 * 60 * 1000);
-    const firstHalf = last6MonthsEvents.filter(event => new Date(event.date) < threeMonthsAgo);
-    const secondHalf = last6MonthsEvents.filter(event => new Date(event.date) >= threeMonthsAgo);
+    const firstHalf = last6MonthsEvents.filter(event => parseEventDate(event.date) < threeMonthsAgo);
+    const secondHalf = last6MonthsEvents.filter(event => parseEventDate(event.date) >= threeMonthsAgo);
     
     const firstHalfAvgRevenue = firstHalf.length > 0 
       ? firstHalf.reduce((sum, event) => sum + event.total_revenue, 0) / firstHalf.length 
