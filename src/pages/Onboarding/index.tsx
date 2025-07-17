@@ -72,6 +72,8 @@ export default function Onboarding() {
           currentStep = 'welcome'; // Changed from 'profile' to 'welcome'
         } else if (!hasVenue) {
           currentStep = 'venue';
+        } else if (!localStorage.getItem('musicdb-early-access-validated')) {
+          currentStep = 'early-access';
         } else if (eventsCount < 3) {
           currentStep = 'events';
           setCurrentEventNumber(eventsCount + 1);
@@ -90,7 +92,7 @@ export default function Onboarding() {
 
         // Only auto-show wizard if user has already completed welcome and needs to continue
         // For new users (no profile), they should see the welcome page first
-        if (hasProfile && (currentStep === 'venue' || currentStep === 'events')) {
+        if (hasProfile && (currentStep === 'venue' || currentStep === 'early-access' || currentStep === 'events')) {
           setWizardStep(currentStep);
           setShowWizard(true);
         }

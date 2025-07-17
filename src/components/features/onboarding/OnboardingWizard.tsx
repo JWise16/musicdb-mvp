@@ -387,6 +387,11 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           }
           break;
 
+        case 'early-access':
+          // Early access validation is handled by the OnboardingEarlyAccess component
+          // which calls onClose() directly when validation succeeds
+          break;
+
         case 'events':
           // Get user's venue
           const userVenues = await VenueService.getUserVenues(user.id);
@@ -1277,10 +1282,10 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         {/* Content */}
-        {step === 'events' ? (
-          // Full-width event form, no preview panel
+        {step === 'events' || step === 'early-access' ? (
+          // Full-width form, no preview panel
           <div className="p-6 overflow-y-auto h-[calc(90vh-320px)]">
-            {renderEventStep()}
+            {step === 'events' ? renderEventStep() : renderStepContent()}
           </div>
         ) : (
           // Default: split panel with preview
