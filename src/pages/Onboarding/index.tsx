@@ -6,6 +6,7 @@ import { useVenue } from '../../contexts/VenueContext';
 import { VenueService } from '../../services/venueService';
 import { UserProfileService } from '../../services/userProfileService';
 import OnboardingWizard from '../../components/features/onboarding/OnboardingWizard';
+import Confetti from 'react-confetti';
 import logo from '../../assets/logo.png';
 
 type OnboardingStep = 'welcome' | 'profile' | 'venue' | 'early-access' | 'events' | 'complete';
@@ -34,6 +35,36 @@ export default function Onboarding() {
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState<'profile' | 'venue' | 'early-access' | 'events'>('profile');
   const [currentEventNumber, setCurrentEventNumber] = useState(1);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [windowDimensions, setWindowDimensions] = useState({ 
+    width: typeof window !== 'undefined' ? window.innerWidth : 0, 
+    height: typeof window !== 'undefined' ? window.innerHeight : 0 
+  });
+
+  // Handle window resize for confetti
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Trigger confetti when reaching completion step
+  useEffect(() => {
+    if (progress.currentStep === 'complete') {
+      setShowConfetti(true);
+      // Stop confetti after 5 seconds
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [progress.currentStep]);
 
   // Check onboarding progress
   useEffect(() => {
@@ -239,17 +270,28 @@ export default function Onboarding() {
   );
 
   const renderCompleteStep = () => (
-    <div className="text-center max-w-2xl mx-auto">
-      <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-        <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-      
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">You're All Set!</h1>
-      <p className="text-xl text-gray-600 mb-8">
-        Congratulations! You've completed your MusicDB setup and are ready to start tracking your venue's success.
-      </p>
+    <>
+      {showConfetti && (
+        <Confetti
+          width={windowDimensions.width}
+          height={windowDimensions.height}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.3}
+          colors={['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899']}
+        />
+      )}
+      <div className="text-center max-w-2xl mx-auto">
+        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+          <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">🎉 You're All Set! 🎉</h1>
+        <p className="text-xl text-gray-600 mb-8">
+          Congratulations! You've completed your MusicDB setup and are ready to start tracking your venue's success.
+        </p>
       
       <div className="bg-green-50 rounded-lg p-6 mb-8">
         <h2 className="text-lg font-semibold text-green-900 mb-4">What you've accomplished:</h2>
@@ -276,6 +318,7 @@ export default function Onboarding() {
         Go to Dashboard
       </button>
     </div>
+    </>
   );
 
   const renderProgressBar = () => {

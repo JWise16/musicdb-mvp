@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import Confetti from 'react-confetti';
 
 interface OnboardingCompleteProps {
   onClose: () => void;
@@ -6,6 +8,32 @@ interface OnboardingCompleteProps {
 
 export default function OnboardingComplete({ onClose }: OnboardingCompleteProps) {
   const navigate = useNavigate();
+  const [showConfetti, setShowConfetti] = useState(true);
+  const [windowDimensions, setWindowDimensions] = useState({ 
+    width: typeof window !== 'undefined' ? window.innerWidth : 0, 
+    height: typeof window !== 'undefined' ? window.innerHeight : 0 
+  });
+
+  // Handle window resize for confetti
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Stop confetti after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowConfetti(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleExplore = () => {
     onClose();
@@ -19,6 +47,16 @@ export default function OnboardingComplete({ onClose }: OnboardingCompleteProps)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      {showConfetti && (
+        <Confetti
+          width={windowDimensions.width}
+          height={windowDimensions.height}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.3}
+          colors={['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899']}
+        />
+      )}
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full">
         <div className="p-8 text-center">
           {/* Celebration Animation */}
@@ -45,7 +83,7 @@ export default function OnboardingComplete({ onClose }: OnboardingCompleteProps)
           </div>
 
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            🎉 Congratulations!
+            🎉 Congratulations! 🎉
           </h2>
           
           <p className="text-lg text-gray-600 mb-8">
