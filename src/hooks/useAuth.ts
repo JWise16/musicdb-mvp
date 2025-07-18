@@ -8,14 +8,14 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('useAuth: Initializing auth state');
+    //console.log('useAuth: Initializing auth state');
     
     // Get initial session
     const getInitialSession = async () => {
-      console.log('useAuth: Getting initial session');
+      //console.log('useAuth: Getting initial session');
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('useAuth: Initial session:', session);
+        //console.log('useAuth: Initial session:', session);
         setUser(session?.user ?? null);
       } catch (error) {
         console.error('useAuth: Error getting initial session:', error);
@@ -28,7 +28,7 @@ export const useAuth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('useAuth: Auth state change:', event, session?.user?.email);
+      //console.log('useAuth: Auth state change:', event, session?.user?.email);
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -36,7 +36,7 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  console.log('useAuth: Current state:', { user: user?.email, loading });
+  //console.log('useAuth: Current state:', { user: user?.email, loading });
 
   return { user, loading };
 };

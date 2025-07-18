@@ -69,7 +69,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const [earlyAccessError, setEarlyAccessError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  console.log('OnboardingWizard: isOpen =', isOpen, 'user =', user?.email, 'prefillData =', prefillData, 'step =', step, 'eventNumber =', eventNumber);
+  //console.log('OnboardingWizard: isOpen =', isOpen, 'user =', user?.email, 'prefillData =', prefillData, 'step =', step, 'eventNumber =', eventNumber);
   
   const [profile, setProfile] = useState<UserProfile>({
     full_name: '',
@@ -108,7 +108,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
   // Update profile when prefillData changes or component mounts
   useEffect(() => {
-    console.log('OnboardingWizard: useEffect triggered with prefillData =', prefillData);
+    //console.log('OnboardingWizard: useEffect triggered with prefillData =', prefillData);
     if (prefillData) {
       setProfile(prev => {
         const updated = {
@@ -116,7 +116,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           full_name: prefillData.full_name || prev.full_name,
           email: prefillData.email || prev.email
         };
-        console.log('OnboardingWizard: Updated profile =', updated);
+        //console.log('OnboardingWizard: Updated profile =', updated);
         return updated;
       });
     }
@@ -314,7 +314,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
   const handleComplete = async () => {
     if (!user) {
-      console.log('OnboardingWizard: User not authenticated');
+      //console.log('OnboardingWizard: User not authenticated');
       return;
     }
 
@@ -329,7 +329,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     setHasAttemptedValidation(false);
 
     try {
-      console.log('OnboardingWizard: Starting step completion for step:', step);
+      //console.log('OnboardingWizard: Starting step completion for step:', step);
       
       switch (step) {
         case 'profile':
@@ -349,7 +349,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             
             // If avatar upload failed, try saving profile without avatar
             if (avatarFile && profileResult.error.includes('avatar')) {
-              console.log('OnboardingWizard: Retrying without avatar upload');
+              //console.log('OnboardingWizard: Retrying without avatar upload');
               const retryResult = await UserProfileService.updateProfileWithAvatar(
                 user.id,
                 {
@@ -396,16 +396,16 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         case 'events':
           // Get user's venue
           const userVenues = await VenueService.getUserVenues(user.id);
-          console.log('OnboardingWizard: User venues found:', userVenues.length);
+          //console.log('OnboardingWizard: User venues found:', userVenues.length);
           
           if (userVenues.length === 0) {
             return;
           }
 
           const venueId = userVenues[0].id;
-          console.log(`OnboardingWizard: Creating event ${eventNumber} for venue:`, venueId);
-          console.log('OnboardingWizard: Event data:', event);
-          console.log('OnboardingWizard: Price type:', priceType);
+          //console.log(`OnboardingWizard: Creating event ${eventNumber} for venue:`, venueId);
+          //console.log('OnboardingWizard: Event data:', event);
+          //console.log('OnboardingWizard: Price type:', priceType);
           
           // Create single event
           const eventData = {
@@ -417,22 +417,23 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             ticket_price_max: priceType === 'range' ? event.ticket_price_max : undefined,
           };
 
-          console.log(`OnboardingWizard: Final event data for creation:`, eventData);
+          //console.log(`OnboardingWizard: Final event data for creation:`, eventData);
           
           const eventResult = await EventService.createEvent(eventData);
 
-          console.log(`OnboardingWizard: Event creation result:`, eventResult);
+          //console.log(`OnboardingWizard: Event creation result:`, eventResult);
 
           if (eventResult.error) {
             console.error(`OnboardingWizard: Event ${eventNumber} creation error:`, eventResult.error);
             return;
           }
 
-          console.log(`OnboardingWizard: Event ${eventNumber} created successfully:`, eventResult.eventId);
+          //console.log(`OnboardingWizard: Event ${eventNumber} created successfully:`, eventResult.eventId);
           break;
       }
 
-      console.log('OnboardingWizard: Step completed successfully');
+      //
+      // console.log('OnboardingWizard: Step completed successfully');
       onClose();
     } catch (error) {
       console.error('Error completing onboarding step:', error);
