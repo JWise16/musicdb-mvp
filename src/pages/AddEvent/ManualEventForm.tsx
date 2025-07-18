@@ -14,7 +14,7 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
   const [isLoading, setIsLoading] = useState(false);
   const [priceType, setPriceType] = useState<'single' | 'range' | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
-    name: '',
+    name: 'Event',
     date: '',
     venue_id: currentVenue?.id || '',
     ticket_price: undefined,
@@ -121,35 +121,6 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Event Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className="form-input w-full"
-                placeholder="e.g., Summer Concert Series"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date *
-              </label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleInputChange('date', e.target.value)}
-                className="form-input w-full"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Venue *
               </label>
               <select
@@ -166,6 +137,22 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date *
+              </label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => handleInputChange('date', e.target.value)}
+                className="form-input w-full"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -440,7 +427,7 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
           </button>
           <button
             type="submit"
-            disabled={isLoading || !formData.name || !formData.date || !formData.venue_id}
+            disabled={isLoading || !formData.date || !formData.venue_id}
             className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Creating Event...' : 'Create Event'}

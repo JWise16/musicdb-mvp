@@ -21,7 +21,7 @@ export default function OnboardingEventForm({
   const [isLoading, setIsLoading] = useState(false);
   const [priceType, setPriceType] = useState<'single' | 'range' | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
-    name: '',
+    name: 'Event',
     date: '',
     venue_id: '',
     ticket_price: undefined,
@@ -98,7 +98,7 @@ export default function OnboardingEventForm({
         onEventAdded();
         // Reset form for next event
         setFormData({
-          name: '',
+          name: 'Event',
           date: '',
           venue_id: formData.venue_id, // Keep same venue
           ticket_price: undefined,
@@ -185,20 +185,6 @@ export default function OnboardingEventForm({
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Details</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Event Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className="form-input w-full"
-                placeholder="e.g., Summer Concert Series"
-                required
-              />
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Date *
@@ -503,7 +489,7 @@ export default function OnboardingEventForm({
           <div className="flex gap-4">
             <button
               type="submit"
-              disabled={isLoading || !formData.name || !formData.date || !formData.venue_id}
+              disabled={isLoading || !formData.date || !formData.venue_id}
               className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Adding Event...' : 'Add Event'}
