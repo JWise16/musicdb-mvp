@@ -437,15 +437,34 @@ export default function OnboardingEventForm({
               </div>
               
               <div className="mt-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={artist.is_headliner}
-                    onChange={(e) => handleArtistChange(index, 'is_headliner', e.target.checked)}
-                    className="mr-2"
-                  />
-                  This is the headliner
-                </label>
+                <div className="flex gap-6">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={artist.is_headliner}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArtistChange(index, 'is_headliner', true);
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    Headliner
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={!artist.is_headliner}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArtistChange(index, 'is_headliner', false);
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    Supporting
+                  </label>
+                </div>
               </div>
             </div>
           ))}
