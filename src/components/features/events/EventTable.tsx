@@ -110,6 +110,9 @@ const EventTable = ({ events, onEventClick }: EventTableProps) => {
               Tickets Sold
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              % Sold
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Ticket Price
             </th>
           </tr>
@@ -222,6 +225,17 @@ const EventTable = ({ events, onEventClick }: EventTableProps) => {
                   <div className="text-sm font-medium text-gray-900">
                     {event.tickets_sold !== null ? (
                       event.tickets_sold.toLocaleString()
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </div>
+                </td>
+
+                {/* % Sold */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">
+                    {event.tickets_sold !== null && event.venues?.capacity ? (
+                      `${Math.round((event.tickets_sold / event.venues.capacity) * 100)}%`
                     ) : (
                       <span className="text-gray-400">—</span>
                     )}
