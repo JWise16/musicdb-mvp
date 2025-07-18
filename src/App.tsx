@@ -23,8 +23,8 @@ function App() {
   const { user } = useAuth();
 
   // Test Supabase configuration
-  console.log('App: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-  console.log('App: Supabase Anon Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+  //console.log('App: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+  //console.log('App: Supabase Anon Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
   console.log('App: Current user:', user?.email);
 
   return (
