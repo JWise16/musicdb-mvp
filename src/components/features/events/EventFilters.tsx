@@ -27,10 +27,6 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
     onFilterChange({ venueSize: size as 'small' | 'medium' | 'large' || undefined });
   };
 
-  const handleTimeFrameChange = (timeFrame: string) => {
-    onFilterChange({ timeFrame: timeFrame as 'upcoming' | 'past' | 'all' || undefined });
-  };
-
   const handlePercentageSoldChange = (percentage: string) => {
     onFilterChange({ percentageSold: percentage as 'low' | 'medium' | 'high' || undefined });
   };
@@ -70,7 +66,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
       </div>
 
       {/* Filter Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Genre Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Genre</label>
@@ -115,20 +111,6 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
                 {size.label} ({size.count})
               </option>
             ))}
-          </select>
-        </div>
-
-        {/* Time Frame Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Time Frame</label>
-          <select
-            value={filters.timeFrame || ''}
-            onChange={(e) => handleTimeFrameChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
-          >
-            <option value="">All Events</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="past">Past</option>
           </select>
         </div>
 
@@ -207,19 +189,6 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
             </span>
           )}
           
-          {filters.timeFrame && (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
-              Time: {filters.timeFrame}
-              <button
-                onClick={() => clearFilter('timeFrame')}
-                className="ml-2 text-yellow-500 hover:text-yellow-700"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </span>
-          )}
           
           {filters.percentageSold && (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-700">

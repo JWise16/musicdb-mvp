@@ -14,7 +14,7 @@ import { Button } from '../../components/common/Button';
 import logo from '../../assets/logo.png';
 
 const Dashboard = () => {
-  console.log('Dashboard: Component rendered - START');
+  //console.log('Dashboard: Component rendered - START');
   
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();

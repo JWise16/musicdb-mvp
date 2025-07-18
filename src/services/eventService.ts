@@ -248,6 +248,40 @@ export class EventService {
   // Get all events with full details and filtering
   static async getEventsWithFilters(filters: EventFilters = {}): Promise<EventWithDetails[]> {
     try {
+      // Debug: Test direct query to event_artists table
+      const { data: testEventArtists, error: testError } = await supabase
+        .from('event_artists')
+        .select('*, artists(*), events(*)')
+        .limit(10);
+        
+      // Debug: Also try without the joins to see if that's the issue
+      const { data: simpleEventArtists, error: simpleError } = await supabase
+        .from('event_artists')
+        .select('*')
+        .limit(10);
+      
+        console.log('Direct event_artists query result:', testEventArtists);
+        console.log('Direct event_artists query error:', testError);
+        console.log('Simple event_artists query result:', simpleEventArtists);
+        console.log('Simple event_artists query error:', simpleError);
+      
+      // Show which events have artists
+      if (testEventArtists) {
+        testEventArtists.forEach(ea => {
+          console.log(`Event "${ea.events?.name}" has artist "${ea.artists?.name}" (headliner: ${ea.is_headliner})`);
+        });
+      }
+      
+      // Debug: Count total event_artists vs events with artists
+      const { count: totalEventArtists } = await supabase
+        .from('event_artists')
+        .select('*', { count: 'exact', head: true });
+      
+      const { count: totalEvents } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true });
+        
+      console.log(`Total event_artists records: ${totalEventArtists}, Total events: ${totalEvents}`);
       let query = supabase
         .from('events')
         .select(`
@@ -300,6 +334,10 @@ export class EventService {
         console.error('Error fetching events:', error);
         return [];
       }
+
+      // Debug: Log the raw data from the database
+      console.log('Raw events from database:', events);
+      console.log('First event event_artists:', events?.[0]?.event_artists);
 
       // Process events to add calculated fields and apply remaining filters
       let processedEvents = events?.map(event => {

@@ -5,7 +5,7 @@ import { useOnboarding } from '../../hooks/useOnboarding';
 import { EventService, type EventFilters as EventFiltersType, type EventWithDetails } from '../../services/eventService';
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
-import EventCard from '../../components/features/events/EventCard';
+import EventTable from '../../components/features/events/EventTable';
 import EventFiltersComponent from '../../components/features/events/EventFilters';
 
 const Events = () => {
@@ -94,7 +94,8 @@ const Events = () => {
 
       setIsLoading(true);
       try {
-        const eventsData = await EventService.getEventsWithFilters();
+        // Always force timeFrame to 'past' to exclude upcoming events
+        const eventsData = await EventService.getEventsWithFilters({ timeFrame: 'past' });
         
         setFilteredEvents(eventsData);
       } catch (error) {
@@ -114,7 +115,9 @@ const Events = () => {
       
       setIsLoading(true);
       try {
-        const filteredData = await EventService.getEventsWithFilters(filters);
+        // Always force timeFrame to 'past' to exclude upcoming events, regardless of user selection
+        const filtersWithPastOnly = { ...filters, timeFrame: 'past' as const };
+        const filteredData = await EventService.getEventsWithFilters(filtersWithPastOnly);
         setFilteredEvents(filteredData);
       } catch (error) {
         console.error('Error applying filters:', error);
@@ -323,15 +326,10 @@ const Events = () => {
               </div>
             </div>
           ) : filteredEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.map(event => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  onClick={() => handleEventClick(event.id)}
-                />
-              ))}
-            </div>
+            <EventTable
+              events={filteredEvents}
+              onEventClick={handleEventClick}
+            />
           ) : (
             <div className="text-center py-16">
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">

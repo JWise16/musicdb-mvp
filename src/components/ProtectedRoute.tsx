@@ -5,10 +5,10 @@ import { useAuth } from '../hooks/useAuth';
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { user, loading } = useAuth();
   
-  console.log('ProtectedRoute: State:', { user: user?.email, loading });
+  //console.log('ProtectedRoute: State:', { user: user?.email, loading });
   
   if (loading) {
-    console.log('ProtectedRoute: Loading, showing loading component');
+    //console.log('ProtectedRoute: Loading, showing loading component');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -20,11 +20,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   }
   
   if (!user) {
-    console.log('ProtectedRoute: No user, redirecting to login');
+    //console.log('ProtectedRoute: No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
-  console.log('ProtectedRoute: User authenticated, rendering children');
+  //console.log('ProtectedRoute: User authenticated, rendering children');
   return children;
 };
 

@@ -12,10 +12,10 @@ export const useUserProfile = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = async () => {
-    console.log('useUserProfile: fetchProfile called', { user: user?.email });
+    //console.log('useUserProfile: fetchProfile called', { user: user?.email });
     
     if (!user) {
-      console.log('useUserProfile: No user, setting profile to null');
+      //console.log('useUserProfile: No user, setting profile to null');
       setProfile(null);
       setLoading(false);
       return;
@@ -25,17 +25,18 @@ export const useUserProfile = () => {
     setError(null);
 
     try {
-      console.log('useUserProfile: Fetching profile for user:', user.id);
+      //console.log('useUserProfile: Fetching profile for user:', user.id);
       const result = await UserProfileService.getUserProfile(user.id);
       
-      console.log('useUserProfile: Profile fetch result:', result);
+      //console.log('useUserProfile: Profile fetch result:', result);
       
       if (result.error) {
-        console.log('useUserProfile: Profile fetch error:', result.error);
+        //console.log('useUserProfile: Profile fetch error:', result.error);
         setError(result.error);
         setProfile(null);
       } else {
-        console.log('useUserProfile: Profile fetched successfully:', result.data);
+        //
+        // console.log('useUserProfile: Profile fetched successfully:', result.data);
         setProfile(result.data);
       }
     } catch (err) {
