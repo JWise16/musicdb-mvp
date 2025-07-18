@@ -999,23 +999,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             placeholder="Any additional notes about this event..."
           />
         </div>
-        {/* Submit Buttons */}
-        <div className="flex justify-end gap-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn-secondary px-6 py-3"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading || !event.name || !event.date || !event.total_tickets || !event.artists.some(a => a.name)}
-            className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Creating Event...' : `Create Event ${eventNumber}`}
-          </button>
-        </div>
       </form>
     </div>
   );
