@@ -31,6 +31,14 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
     onFilterChange({ percentageSold: percentage as 'low' | 'medium' | 'high' || undefined });
   };
 
+  const handleDateFromChange = (date: string) => {
+    onFilterChange({ dateFrom: date || undefined });
+  };
+
+  const handleDateToChange = (date: string) => {
+    onFilterChange({ dateTo: date || undefined });
+  };
+
   const clearFilter = (filterKey: keyof EventFilters) => {
     onFilterChange({ [filterKey]: undefined });
   };
@@ -130,6 +138,28 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
         </div>
       </div>
 
+      {/* Date Range Filters */}
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+          <input
+            type="date"
+            value={filters.dateFrom || ''}
+            onChange={(e) => handleDateFromChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+          <input
+            type="date"
+            value={filters.dateTo || ''}
+            onChange={(e) => handleDateToChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+          />
+        </div>
+      </div>
+
       {/* Active Filters Display */}
       {hasActiveFilters && (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -199,6 +229,34 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
               <button
                 onClick={() => clearFilter('percentageSold')}
                 className="ml-2 text-red-500 hover:text-red-700"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          )}
+
+          {filters.dateFrom && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-700">
+              From: {new Date(filters.dateFrom).toLocaleDateString()}
+              <button
+                onClick={() => clearFilter('dateFrom')}
+                className="ml-2 text-indigo-500 hover:text-indigo-700"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          )}
+
+          {filters.dateTo && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-700">
+              To: {new Date(filters.dateTo).toLocaleDateString()}
+              <button
+                onClick={() => clearFilter('dateTo')}
+                className="ml-2 text-indigo-500 hover:text-indigo-700"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

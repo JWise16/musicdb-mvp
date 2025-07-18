@@ -38,6 +38,8 @@ export type EventFilters = {
   timeFrame?: 'upcoming' | 'past' | 'all';
   percentageSold?: 'low' | 'medium' | 'high';
   searchQuery?: string;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export type EventWithDetails = Tables<'events'> & {
@@ -326,6 +328,18 @@ export class EventService {
             break;
           // 'all' doesn't need any filter
         }
+      }
+
+      // Apply date range filters
+      if (filters.dateFrom) {
+        query = query.gte('date', filters.dateFrom);
+      }
+
+      if (filters.dateTo) {
+        // Add time to the end of the day to include events on the 'to' date
+        const dateToEndOfDay = new Date(filters.dateTo);
+        dateToEndOfDay.setHours(23, 59, 59, 999);
+        query = query.lte('date', dateToEndOfDay.toISOString());
       }
 
       const { data: events, error } = await query;
