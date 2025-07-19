@@ -1,5 +1,5 @@
 import { type EventWithDetails } from '../../../services/eventService';
-import { formatEventDate, isEventPast } from '../../../utils/dateUtils';
+import { formatEventDate } from '../../../utils/dateUtils';
 
 interface EventTableProps {
   events: EventWithDetails[];
@@ -119,7 +119,6 @@ const EventTable = ({ events, onEventClick }: EventTableProps) => {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {events.map((event) => {
-            const isPastEvent = isEventPast(event.date);
             const headliners = getHeadliners(event);
             const supportingActs = getSupportingActs(event);
             const genres = getEventGenres(event);
