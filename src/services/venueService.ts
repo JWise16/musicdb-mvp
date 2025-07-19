@@ -35,6 +35,18 @@ export type VenueAnalytics = {
     avgSelloutRate: { value: number }[];
     avgTicketPrice: { value: number }[];
   };
+  monthlyPercentageSold: Array<{
+    month: string;
+    percentage: number;
+  }>;
+  quarterlyPercentageSold: Array<{
+    quarter: string;
+    percentage: number;
+  }>;
+  yearlyPercentageSold: Array<{
+    year: string;
+    percentage: number;
+  }>;
 };
 
 export type VenueEvent = Tables<'events'> & {
@@ -412,6 +424,11 @@ export class VenueService {
 
       // Calculate trends (last 6 months or periods)
       const trends = this.calculateTrends(events, timeFrame);
+      
+      // Calculate percentage sold data for different time periods
+      const monthlyPercentageSold = this.calculateMonthlyPercentageSold(events);
+      const quarterlyPercentageSold = this.calculateQuarterlyPercentageSold(events);
+      const yearlyPercentageSold = this.calculateYearlyPercentageSold(events);
 
       return {
         showsReported,
@@ -422,7 +439,10 @@ export class VenueService {
         topMonth: { month: topMonth[0], count: topMonth[1] },
         topGenre: { genre: topGenre[0], count: topGenre[1] },
         topArtist: { name: topArtist[0], count: topArtist[1] },
-        trends
+        trends,
+        monthlyPercentageSold,
+        quarterlyPercentageSold,
+        yearlyPercentageSold
       };
     } catch (error) {
       console.error('Error in getVenueAnalytics:', error);
@@ -530,7 +550,19 @@ export class VenueService {
           avgTicketPrice: acc.trends.avgTicketPrice.map((point, index) => ({
             value: point.value + (analytics.trends.avgTicketPrice[index]?.value || 0)
           }))
-        }
+        },
+        monthlyPercentageSold: acc.monthlyPercentageSold.map((monthData, index) => ({
+          month: monthData.month,
+          percentage: monthData.percentage + (analytics.monthlyPercentageSold[index]?.percentage || 0)
+        })),
+        quarterlyPercentageSold: acc.quarterlyPercentageSold.map((quarterData, index) => ({
+          quarter: quarterData.quarter,
+          percentage: quarterData.percentage + (analytics.quarterlyPercentageSold[index]?.percentage || 0)
+        })),
+        yearlyPercentageSold: acc.yearlyPercentageSold.map((yearData, index) => ({
+          year: yearData.year,
+          percentage: yearData.percentage + (analytics.yearlyPercentageSold[index]?.percentage || 0)
+        }))
       }), this.getDefaultAnalytics());
 
       // Calculate averages
@@ -545,6 +577,24 @@ export class VenueService {
         }));
         combined.trends.avgTicketPrice = combined.trends.avgTicketPrice.map(point => ({
           value: point.value / venueCount
+        }));
+        
+        // Average the monthly percentage sold data
+        combined.monthlyPercentageSold = combined.monthlyPercentageSold.map(monthData => ({
+          month: monthData.month,
+          percentage: Math.round(monthData.percentage / venueCount)
+        }));
+        
+        // Average the quarterly percentage sold data
+        combined.quarterlyPercentageSold = combined.quarterlyPercentageSold.map(quarterData => ({
+          quarter: quarterData.quarter,
+          percentage: Math.round(quarterData.percentage / venueCount)
+        }));
+        
+        // Average the yearly percentage sold data
+        combined.yearlyPercentageSold = combined.yearlyPercentageSold.map(yearData => ({
+          year: yearData.year,
+          percentage: Math.round(yearData.percentage / venueCount)
         }));
       }
 
@@ -588,6 +638,124 @@ export class VenueService {
       console.error('Error in getUserVenuesEvents:', error);
       return { upcoming: [], past: [] };
     }
+  }
+
+  // Calculate monthly percentage sold for the past 12 months
+  private static calculateMonthlyPercentageSold(events: any[]): Array<{ month: string; percentage: number }> {
+    const now = new Date();
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    
+    // Generate 12 month periods (current year)
+    const monthlyData = months.map((monthName, index) => {
+      const monthStart = new Date(now.getFullYear(), index, 1);
+      const monthEnd = new Date(now.getFullYear(), index + 1, 0);
+      
+      const monthEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return eventDate >= monthStart && eventDate <= monthEnd;
+      });
+
+      let totalTicketsSold = 0;
+      let totalTicketsAvailable = 0;
+
+      monthEvents.forEach(event => {
+        const ticketsSold = event.tickets_sold || 0;
+        const totalTickets = event.total_tickets || 0;
+        totalTicketsSold += ticketsSold;
+        totalTicketsAvailable += totalTickets;
+      });
+
+      const percentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
+
+      return {
+        month: monthName,
+        percentage: Math.round(percentage)
+      };
+    });
+
+    return monthlyData;
+  }
+
+  // Calculate quarterly percentage sold for the current year
+  private static calculateQuarterlyPercentageSold(events: any[]): Array<{ quarter: string; percentage: number }> {
+    const now = new Date();
+    const quarters = [
+      { quarter: 'Q1', months: [0, 1, 2], label: 'Q1' },
+      { quarter: 'Q2', months: [3, 4, 5], label: 'Q2' },
+      { quarter: 'Q3', months: [6, 7, 8], label: 'Q3' },
+      { quarter: 'Q4', months: [9, 10, 11], label: 'Q4' }
+    ];
+
+    const quarterlyData = quarters.map(q => {
+      let totalTicketsSold = 0;
+      let totalTicketsAvailable = 0;
+
+      q.months.forEach(monthIndex => {
+        const monthStart = new Date(now.getFullYear(), monthIndex, 1);
+        const monthEnd = new Date(now.getFullYear(), monthIndex + 1, 0);
+        
+        const monthEvents = events.filter(event => {
+          const eventDate = parseEventDate(event.date);
+          return eventDate >= monthStart && eventDate <= monthEnd;
+        });
+
+        monthEvents.forEach(event => {
+          const ticketsSold = event.tickets_sold || 0;
+          const totalTickets = event.total_tickets || 0;
+          totalTicketsSold += ticketsSold;
+          totalTicketsAvailable += totalTickets;
+        });
+      });
+
+      const percentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
+
+      return {
+        quarter: q.label,
+        percentage: Math.round(percentage)
+      };
+    });
+
+    return quarterlyData;
+  }
+
+  // Calculate yearly percentage sold for the last 5 years
+  private static calculateYearlyPercentageSold(events: any[]): Array<{ year: string; percentage: number }> {
+    const now = new Date();
+    const years = [];
+    
+    // Generate last 5 years including current year
+    for (let i = 4; i >= 0; i--) {
+      years.push(now.getFullYear() - i);
+    }
+
+    const yearlyData = years.map(year => {
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      
+      const yearEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return eventDate >= yearStart && eventDate <= yearEnd;
+      });
+
+      let totalTicketsSold = 0;
+      let totalTicketsAvailable = 0;
+
+      yearEvents.forEach(event => {
+        const ticketsSold = event.tickets_sold || 0;
+        const totalTickets = event.total_tickets || 0;
+        totalTicketsSold += ticketsSold;
+        totalTicketsAvailable += totalTickets;
+      });
+
+      const percentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
+
+      return {
+        year: year.toString(),
+        percentage: Math.round(percentage)
+      };
+    });
+
+    return yearlyData;
   }
 
   // Calculate trends for analytics metrics
@@ -652,6 +820,19 @@ export class VenueService {
   // Default analytics for empty state
   private static getDefaultAnalytics(): VenueAnalytics {
     const emptyTrend = [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }];
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const emptyMonthlyData = months.map(month => ({ month, percentage: 0 }));
+    
+    const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+    const emptyQuarterlyData = quarters.map(quarter => ({ quarter, percentage: 0 }));
+    
+    const now = new Date();
+    const years = [];
+    for (let i = 4; i >= 0; i--) {
+      years.push((now.getFullYear() - i).toString());
+    }
+    const emptyYearlyData = years.map(year => ({ year, percentage: 0 }));
+    
     return {
       showsReported: 0,
       ticketSales: 0,
@@ -667,7 +848,10 @@ export class VenueService {
         barSales: emptyTrend,
         avgSelloutRate: emptyTrend,
         avgTicketPrice: emptyTrend
-      }
+      },
+      monthlyPercentageSold: emptyMonthlyData,
+      quarterlyPercentageSold: emptyQuarterlyData,
+      yearlyPercentageSold: emptyYearlyData
     };
   }
 } 
