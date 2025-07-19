@@ -25,7 +25,14 @@ const VenueDetails = () => {
     avgTicketPrice: 0,
     topMonth: { month: 'N/A', count: 0 },
     topGenre: { genre: 'N/A', count: 0 },
-    topArtist: { name: 'N/A', count: 0 }
+    topArtist: { name: 'N/A', count: 0 },
+    trends: {
+      showsReported: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }],
+      ticketSales: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }],
+      barSales: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }],
+      avgSelloutRate: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }],
+      avgTicketPrice: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }]
+    }
   });
   const [events, setEvents] = useState<{ upcoming: VenueEvent[]; past: VenueEvent[] }>({
     upcoming: [],

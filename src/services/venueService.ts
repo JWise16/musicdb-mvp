@@ -28,6 +28,13 @@ export type VenueAnalytics = {
   topMonth: { month: string; count: number };
   topGenre: { genre: string; count: number };
   topArtist: { name: string; count: number };
+  trends: {
+    showsReported: { value: number }[];
+    ticketSales: { value: number }[];
+    barSales: { value: number }[];
+    avgSelloutRate: { value: number }[];
+    avgTicketPrice: { value: number }[];
+  };
 };
 
 export type VenueEvent = Tables<'events'> & {
@@ -403,6 +410,9 @@ export class VenueService {
       const topArtist = Object.entries(artistCounts)
         .sort(([,a], [,b]) => b - a)[0] || { name: 'N/A', count: 0 };
 
+      // Calculate trends (last 6 months or periods)
+      const trends = this.calculateTrends(events, timeFrame);
+
       return {
         showsReported,
         ticketSales: totalTicketRevenue,
@@ -411,7 +421,8 @@ export class VenueService {
         avgTicketPrice,
         topMonth: { month: topMonth[0], count: topMonth[1] },
         topGenre: { genre: topGenre[0], count: topGenre[1] },
-        topArtist: { name: topArtist[0], count: topArtist[1] }
+        topArtist: { name: topArtist[0], count: topArtist[1] },
+        trends
       };
     } catch (error) {
       console.error('Error in getVenueAnalytics:', error);
@@ -503,6 +514,23 @@ export class VenueService {
         topMonth: analytics.topMonth.count > acc.topMonth.count ? analytics.topMonth : acc.topMonth,
         topGenre: analytics.topGenre.count > acc.topGenre.count ? analytics.topGenre : acc.topGenre,
         topArtist: analytics.topArtist.count > acc.topArtist.count ? analytics.topArtist : acc.topArtist,
+        trends: {
+          showsReported: acc.trends.showsReported.map((point, index) => ({
+            value: point.value + (analytics.trends.showsReported[index]?.value || 0)
+          })),
+          ticketSales: acc.trends.ticketSales.map((point, index) => ({
+            value: point.value + (analytics.trends.ticketSales[index]?.value || 0)
+          })),
+          barSales: acc.trends.barSales.map((point, index) => ({
+            value: point.value + (analytics.trends.barSales[index]?.value || 0)
+          })),
+          avgSelloutRate: acc.trends.avgSelloutRate.map((point, index) => ({
+            value: point.value + (analytics.trends.avgSelloutRate[index]?.value || 0)
+          })),
+          avgTicketPrice: acc.trends.avgTicketPrice.map((point, index) => ({
+            value: point.value + (analytics.trends.avgTicketPrice[index]?.value || 0)
+          }))
+        }
       }), this.getDefaultAnalytics());
 
       // Calculate averages
@@ -510,6 +538,14 @@ export class VenueService {
       if (venueCount > 0) {
         combined.avgSelloutRate = combined.avgSelloutRate / venueCount;
         combined.avgTicketPrice = combined.avgTicketPrice / venueCount;
+        
+        // Average the trend data for rate-based metrics
+        combined.trends.avgSelloutRate = combined.trends.avgSelloutRate.map(point => ({
+          value: point.value / venueCount
+        }));
+        combined.trends.avgTicketPrice = combined.trends.avgTicketPrice.map(point => ({
+          value: point.value / venueCount
+        }));
       }
 
       return combined;
@@ -554,8 +590,68 @@ export class VenueService {
     }
   }
 
+  // Calculate trends for analytics metrics
+  private static calculateTrends(events: any[], _timeFrame: 'YTD' | 'MTD' | 'ALL'): VenueAnalytics['trends'] {
+    // Group events by month for the last 6 months
+    const now = new Date();
+    const periods: Date[] = [];
+    
+    // Generate 6 month periods
+    for (let i = 5; i >= 0; i--) {
+      const periodDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      periods.push(periodDate);
+    }
+
+    const periodData = periods.map(period => {
+      const periodEnd = new Date(period.getFullYear(), period.getMonth() + 1, 0);
+      const periodEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return eventDate >= period && eventDate <= periodEnd;
+      });
+
+      let totalTicketSales = 0;
+      let totalBarSales = 0;
+      let totalTicketsSold = 0;
+      let totalTicketsAvailable = 0;
+      let totalTicketRevenue = 0;
+
+      periodEvents.forEach(event => {
+        const ticketsSold = event.tickets_sold || 0;
+        const ticketPrice = event.ticket_price || 0;
+        const barSales = event.bar_sales || 0;
+        const totalTickets = event.total_tickets || 0;
+
+        totalTicketsSold += ticketsSold;
+        totalTicketsAvailable += totalTickets;
+        totalTicketRevenue += ticketsSold * ticketPrice;
+        totalBarSales += barSales;
+        totalTicketSales += ticketsSold * ticketPrice;
+      });
+
+      const avgSelloutRate = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
+      const avgTicketPrice = totalTicketsSold > 0 ? totalTicketRevenue / totalTicketsSold : 0;
+
+      return {
+        showsReported: periodEvents.length,
+        ticketSales: totalTicketSales,
+        barSales: totalBarSales,
+        avgSelloutRate,
+        avgTicketPrice
+      };
+    });
+
+    return {
+      showsReported: periodData.map(p => ({ value: p.showsReported })),
+      ticketSales: periodData.map(p => ({ value: p.ticketSales })),
+      barSales: periodData.map(p => ({ value: p.barSales })),
+      avgSelloutRate: periodData.map(p => ({ value: p.avgSelloutRate })),
+      avgTicketPrice: periodData.map(p => ({ value: p.avgTicketPrice }))
+    };
+  }
+
   // Default analytics for empty state
   private static getDefaultAnalytics(): VenueAnalytics {
+    const emptyTrend = [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }];
     return {
       showsReported: 0,
       ticketSales: 0,
@@ -564,7 +660,14 @@ export class VenueService {
       avgTicketPrice: 0,
       topMonth: { month: 'N/A', count: 0 },
       topGenre: { genre: 'N/A', count: 0 },
-      topArtist: { name: 'N/A', count: 0 }
+      topArtist: { name: 'N/A', count: 0 },
+      trends: {
+        showsReported: emptyTrend,
+        ticketSales: emptyTrend,
+        barSales: emptyTrend,
+        avgSelloutRate: emptyTrend,
+        avgTicketPrice: emptyTrend
+      }
     };
   }
 } 
