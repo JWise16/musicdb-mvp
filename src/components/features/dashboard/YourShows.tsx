@@ -2,12 +2,11 @@ import { type VenueEvent } from '../../../services/venueService';
 import { formatSimpleDate } from '../../../utils/dateUtils';
 
 interface YourShowsProps {
-  upcoming: VenueEvent[];
   past: VenueEvent[];
   onEventClick: (eventId: string) => void;
 }
 
-const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
+const YourShows = ({ past, onEventClick }: YourShowsProps) => {
 
   const getHeadliners = (event: VenueEvent) => {
     return event.event_artists
@@ -107,34 +106,8 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
     <div className="mb-6 lg:mb-8 overflow-hidden">
       <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-4 lg:mb-6 truncate">Your Shows</h3>
       
-      {/* Upcoming Shows */}
-      <div className="mb-6 lg:mb-8">
-        <div className="flex items-center justify-between mb-3 lg:mb-4 min-w-0">
-          <h4 className="text-base lg:text-lg font-semibold text-gray-900 truncate">Upcoming Shows</h4>
-          <span className="text-xs lg:text-sm text-gray-500 flex-shrink-0">{upcoming.length} show{upcoming.length !== 1 ? 's' : ''}</span>
-        </div>
-        
-        {upcoming.length === 0 ? (
-          <div className="text-center py-6 lg:py-8 bg-gray-50 rounded-lg">
-            <svg className="w-8 h-8 lg:w-12 lg:h-12 text-gray-400 mx-auto mb-3 lg:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <p className="text-sm lg:text-base text-gray-600">No upcoming shows scheduled</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 overflow-hidden">
-            {upcoming.slice(0, 6).map(event => renderEventCard(event, true))}
-          </div>
-        )}
-      </div>
-
       {/* Past Shows */}
       <div>
-        <div className="flex items-center justify-between mb-3 lg:mb-4 min-w-0">
-          <h4 className="text-base lg:text-lg font-semibold text-gray-900 truncate">Recent Shows</h4>
-          <span className="text-xs lg:text-sm text-gray-500 flex-shrink-0">{past.length} show{past.length !== 1 ? 's' : ''}</span>
-        </div>
-        
         {past.length === 0 ? (
           <div className="text-center py-6 lg:py-8 bg-gray-50 rounded-lg">
             <svg className="w-8 h-8 lg:w-12 lg:h-12 text-gray-400 mx-auto mb-3 lg:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

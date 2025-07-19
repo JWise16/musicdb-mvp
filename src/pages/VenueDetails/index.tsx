@@ -245,7 +245,6 @@ const VenueDetails = () => {
 
               {/* Your Shows */}
               <YourShows 
-                upcoming={events.upcoming}
                 past={events.past}
                 onEventClick={handleEventClick}
               />
