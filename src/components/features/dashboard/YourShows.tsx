@@ -8,14 +8,6 @@ interface YourShowsProps {
 
 const YourShows = ({ past, onEventClick }: YourShowsProps) => {
 
-  const getHeadliners = (event: VenueEvent) => {
-    return event.event_artists
-      ?.filter(ea => ea.is_headliner)
-      .map(ea => ea.artists?.name)
-      .filter(Boolean)
-      .join(', ') || 'TBA';
-  };
-
   const formatTicketPrice = (event: VenueEvent) => {
     // Check if it's a price range
     if (event.ticket_price_min && event.ticket_price_max) {
@@ -29,78 +21,91 @@ const YourShows = ({ past, onEventClick }: YourShowsProps) => {
     return 'TBA';
   };
 
-  const renderEventCard = (event: VenueEvent, isUpcoming: boolean) => (
-    <div 
-      key={event.id}
-      className="card p-4 lg:p-6 hover:shadow-medium transition-all duration-200 cursor-pointer group min-w-0"
-      onClick={() => onEventClick(event.id)}
-    >
-      <div className="flex items-start justify-between mb-3 min-w-0">
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm lg:text-lg font-semibold text-gray-900 group-hover:text-accent-600 transition-colors line-clamp-2 mb-1 truncate">
-            {event.name}
-          </h4>
-          <p className="text-xs lg:text-sm text-gray-600 mb-2 truncate">
-            {formatSimpleDate(event.date)}
-          </p>
-          <p className="text-xs lg:text-sm text-gray-600 mb-2 truncate">
-            {event.venues?.name} • {event.venues?.location}
-          </p>
-          <p className="text-xs lg:text-sm font-medium text-gray-900 truncate">
-            Artist: {getHeadliners(event)}
-          </p>
+  const renderEventCard = (event: VenueEvent, isUpcoming: boolean) => {
+    const headliners = event.event_artists
+      ?.filter(ea => ea.is_headliner)
+      .map(ea => ea.artists?.name)
+      .filter(Boolean) || [];
+    
+    const supporting = event.event_artists
+      ?.filter(ea => !ea.is_headliner)
+      .map(ea => ea.artists?.name)
+      .filter(Boolean) || [];
+
+    const formatCurrency = (amount: number) => {
+      if (amount >= 1000) {
+        return `$${(amount / 1000).toFixed(1)}K`;
+      }
+      return `$${amount.toLocaleString()}`;
+    };
+
+    return (
+      <div 
+        key={event.id}
+        className="card p-4 hover:shadow-medium transition-all duration-200 cursor-pointer group"
+        onClick={() => onEventClick(event.id)}
+      >
+        {/* Square Image Placeholder */}
+        <div className="w-full aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
+          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
         </div>
-        <div className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${
-          isUpcoming ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-        }`}>
-          {isUpcoming ? 'Upcoming' : 'Past'}
-        </div>
-      </div>
 
-      {/* Ticket Price */}
-      <div className="flex items-center justify-between text-xs lg:text-sm mb-2 min-w-0">
-        <div className="flex items-center min-w-0">
-          <span className="text-gray-600 flex-shrink-0">Ticket Price:</span>
-          <span className="ml-1 font-medium truncate">{formatTicketPrice(event)}</span>
-        </div>
-      </div>
+        {/* Venue Name and Location */}
+        <h4 className="font-semibold text-gray-900 mb-1 truncate">
+          {event.venues?.name} - {event.venues?.location}
+        </h4>
 
-      {/* Revenue Information for Past Events */}
-      {!isUpcoming && (
-        <div className="space-y-1">
-          {/* Tickets Sold */}
-          {event.tickets_sold && (
-            <div className="text-xs lg:text-sm min-w-0">
-              <span className="text-gray-600 flex-shrink-0">Tickets Sold: </span>
-              <span className="font-medium text-gray-900 truncate">
-                {event.tickets_sold.toLocaleString()} / {event.total_tickets.toLocaleString()}
-              </span>
-            </div>
-          )}
+        {/* Lineup + Date */}
+        <p className="text-sm text-gray-600 mb-2">
+          Lineup {formatSimpleDate(event.date)}
+        </p>
 
-          {/* Total Ticket Revenue */}
-          {event.total_ticket_revenue && event.total_ticket_revenue > 0 && (
-            <div className="text-xs lg:text-sm min-w-0">
-              <span className="text-gray-600 flex-shrink-0">Ticket Revenue: </span>
-              <span className="font-medium text-blue-600 truncate">
-                ${event.total_ticket_revenue.toLocaleString()}
-              </span>
-            </div>
-          )}
+        {/* Headliner */}
+        {headliners.length > 0 && (
+          <p className="text-sm font-medium text-gray-900 mb-1 truncate">
+            {headliners.join(', ')}
+          </p>
+        )}
 
+        {/* Supporting */}
+        {supporting.length > 0 && (
+          <p className="text-sm text-gray-600 mb-3 truncate">
+            {supporting.join(', ')}
+          </p>
+        )}
+
+        {/* Sales and Pricing */}
+        <div className="space-y-1 text-sm">
           {/* Bar Sales */}
-          {event.bar_sales && event.bar_sales > 0 && (
-            <div className="text-xs lg:text-sm min-w-0">
-              <span className="text-gray-600 flex-shrink-0">Bar Sales: </span>
-              <span className="font-medium text-purple-600 truncate">
-                ${event.bar_sales.toLocaleString()}
-              </span>
-            </div>
-          )}
+          <div className="flex justify-between">
+            <span className="text-gray-600">Bar Sales:</span>
+            <span className="font-medium">
+              {event.bar_sales ? formatCurrency(event.bar_sales) : '$0'}
+            </span>
+          </div>
+
+          {/* Ticket Sales */}
+          <div className="flex justify-between">
+            <span className="text-gray-600">Ticket Sales:</span>
+            <span className="font-medium">
+              {event.tickets_sold && event.total_tickets 
+                ? `${event.tickets_sold}/${event.total_tickets}`
+                : 'N/A'
+              }
+            </span>
+          </div>
+
+          {/* Ticket Price */}
+          <div className="flex justify-between">
+            <span className="text-gray-600">Ticket Price:</span>
+            <span className="font-medium">{formatTicketPrice(event)}</span>
+          </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  };
 
   return (
     <div className="mb-6 lg:mb-8 overflow-hidden">
