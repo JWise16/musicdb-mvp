@@ -2,11 +2,12 @@ import { type VenueEvent } from '../../../services/venueService';
 import { formatSimpleDate } from '../../../utils/dateUtils';
 
 interface YourShowsProps {
+  upcoming: VenueEvent[];
   past: VenueEvent[];
   onEventClick: (eventId: string) => void;
 }
 
-const YourShows = ({ past, onEventClick }: YourShowsProps) => {
+const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
 
   const formatTicketPrice = (event: VenueEvent) => {
     // Check if it's a price range
@@ -21,7 +22,7 @@ const YourShows = ({ past, onEventClick }: YourShowsProps) => {
     return 'TBA';
   };
 
-  const renderEventCard = (event: VenueEvent, isUpcoming: boolean) => {
+  const renderEventCard = (event: VenueEvent) => {
     const headliners = event.event_artists
       ?.filter(ea => ea.is_headliner)
       .map(ea => ea.artists?.name)
@@ -111,8 +112,19 @@ const YourShows = ({ past, onEventClick }: YourShowsProps) => {
     <div className="mb-6 lg:mb-8 overflow-hidden">
       <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-4 lg:mb-6 truncate">Your Shows</h3>
       
+      {/* Upcoming Shows */}
+      {upcoming.length > 0 && (
+        <div className="mb-6">
+          <h4 className="text-md font-semibold text-gray-800 mb-3">Upcoming</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 overflow-hidden">
+            {upcoming.slice(0, 3).map(event => renderEventCard(event))}
+          </div>
+        </div>
+      )}
+      
       {/* Past Shows */}
       <div>
+        <h4 className="text-md font-semibold text-gray-800 mb-3">Past Shows</h4>
         {past.length === 0 ? (
           <div className="text-center py-6 lg:py-8 bg-gray-50 rounded-lg">
             <svg className="w-8 h-8 lg:w-12 lg:h-12 text-gray-400 mx-auto mb-3 lg:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -122,7 +134,7 @@ const YourShows = ({ past, onEventClick }: YourShowsProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 overflow-hidden">
-            {past.slice(0, 6).map(event => renderEventCard(event, false))}
+            {past.slice(0, 6).map(event => renderEventCard(event))}
           </div>
         )}
       </div>

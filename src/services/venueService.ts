@@ -47,6 +47,60 @@ export type VenueAnalytics = {
     year: string;
     percentage: number;
   }>;
+  monthlyRevenue: Array<{
+    month: string;
+    revenue: number;
+  }>;
+  quarterlyRevenue: Array<{
+    quarter: string;
+    revenue: number;
+  }>;
+  yearlyRevenue: Array<{
+    year: string;
+    revenue: number;
+  }>;
+  monthlyGenreBreakdown: Array<{
+    month: string;
+    genres: Array<{
+      genre: string;
+      percentage: number;
+    }>;
+  }>;
+  quarterlyGenreBreakdown: Array<{
+    quarter: string;
+    genres: Array<{
+      genre: string;
+      percentage: number;
+    }>;
+  }>;
+  yearlyGenreBreakdown: Array<{
+    year: string;
+    genres: Array<{
+      genre: string;
+      percentage: number;
+    }>;
+  }>;
+  monthlyGenreRevenue: Array<{
+    month: string;
+    genres: Array<{
+      genre: string;
+      revenue: number;
+    }>;
+  }>;
+  quarterlyGenreRevenue: Array<{
+    quarter: string;
+    genres: Array<{
+      genre: string;
+      revenue: number;
+    }>;
+  }>;
+  yearlyGenreRevenue: Array<{
+    year: string;
+    genres: Array<{
+      genre: string;
+      revenue: number;
+    }>;
+  }>;
 };
 
 export type VenueEvent = Tables<'events'> & {
@@ -429,6 +483,21 @@ export class VenueService {
       const monthlyPercentageSold = this.calculateMonthlyPercentageSold(events);
       const quarterlyPercentageSold = this.calculateQuarterlyPercentageSold(events);
       const yearlyPercentageSold = this.calculateYearlyPercentageSold(events);
+      
+      // Calculate revenue data for different time periods
+      const monthlyRevenue = this.calculateMonthlyRevenue(events);
+      const quarterlyRevenue = this.calculateQuarterlyRevenue(events);
+      const yearlyRevenue = this.calculateYearlyRevenue(events);
+      
+      // Calculate genre breakdown data for different time periods
+      const monthlyGenreBreakdown = this.calculateMonthlyGenreBreakdown(events);
+      const quarterlyGenreBreakdown = this.calculateQuarterlyGenreBreakdown(events);
+      const yearlyGenreBreakdown = this.calculateYearlyGenreBreakdown(events);
+      
+      // Calculate genre revenue breakdown data for different time periods
+      const monthlyGenreRevenue = this.calculateMonthlyGenreRevenue(events);
+      const quarterlyGenreRevenue = this.calculateQuarterlyGenreRevenue(events);
+      const yearlyGenreRevenue = this.calculateYearlyGenreRevenue(events);
 
       return {
         showsReported,
@@ -442,7 +511,16 @@ export class VenueService {
         trends,
         monthlyPercentageSold,
         quarterlyPercentageSold,
-        yearlyPercentageSold
+        yearlyPercentageSold,
+        monthlyRevenue,
+        quarterlyRevenue,
+        yearlyRevenue,
+        monthlyGenreBreakdown,
+        quarterlyGenreBreakdown,
+        yearlyGenreBreakdown,
+        monthlyGenreRevenue,
+        quarterlyGenreRevenue,
+        yearlyGenreRevenue
       };
     } catch (error) {
       console.error('Error in getVenueAnalytics:', error);
@@ -562,7 +640,25 @@ export class VenueService {
         yearlyPercentageSold: acc.yearlyPercentageSold.map((yearData, index) => ({
           year: yearData.year,
           percentage: yearData.percentage + (analytics.yearlyPercentageSold[index]?.percentage || 0)
-        }))
+        })),
+        monthlyRevenue: acc.monthlyRevenue.map((monthData, index) => ({
+          month: monthData.month,
+          revenue: monthData.revenue + (analytics.monthlyRevenue[index]?.revenue || 0)
+        })),
+        quarterlyRevenue: acc.quarterlyRevenue.map((quarterData, index) => ({
+          quarter: quarterData.quarter,
+          revenue: quarterData.revenue + (analytics.quarterlyRevenue[index]?.revenue || 0)
+        })),
+        yearlyRevenue: acc.yearlyRevenue.map((yearData, index) => ({
+          year: yearData.year,
+          revenue: yearData.revenue + (analytics.yearlyRevenue[index]?.revenue || 0)
+        })),
+        monthlyGenreBreakdown: this.combineGenreBreakdown(acc.monthlyGenreBreakdown, analytics.monthlyGenreBreakdown),
+        quarterlyGenreBreakdown: this.combineGenreBreakdown(acc.quarterlyGenreBreakdown, analytics.quarterlyGenreBreakdown),
+        yearlyGenreBreakdown: this.combineGenreBreakdown(acc.yearlyGenreBreakdown, analytics.yearlyGenreBreakdown),
+        monthlyGenreRevenue: this.combineGenreRevenue(acc.monthlyGenreRevenue, analytics.monthlyGenreRevenue),
+        quarterlyGenreRevenue: this.combineGenreRevenue(acc.quarterlyGenreRevenue, analytics.quarterlyGenreRevenue),
+        yearlyGenreRevenue: this.combineGenreRevenue(acc.yearlyGenreRevenue, analytics.yearlyGenreRevenue)
       }), this.getDefaultAnalytics());
 
       // Calculate averages
@@ -595,6 +691,31 @@ export class VenueService {
         combined.yearlyPercentageSold = combined.yearlyPercentageSold.map(yearData => ({
           year: yearData.year,
           percentage: Math.round(yearData.percentage / venueCount)
+        }));
+        
+        // Average the genre breakdown data
+        combined.monthlyGenreBreakdown = combined.monthlyGenreBreakdown.map(monthData => ({
+          month: monthData.month,
+          genres: monthData.genres.map(genreData => ({
+            genre: genreData.genre,
+            percentage: Math.round(genreData.percentage / venueCount)
+          }))
+        }));
+        
+        combined.quarterlyGenreBreakdown = combined.quarterlyGenreBreakdown.map(quarterData => ({
+          quarter: quarterData.quarter,
+          genres: quarterData.genres.map(genreData => ({
+            genre: genreData.genre,
+            percentage: Math.round(genreData.percentage / venueCount)
+          }))
+        }));
+        
+        combined.yearlyGenreBreakdown = combined.yearlyGenreBreakdown.map(yearData => ({
+          year: yearData.year,
+          genres: yearData.genres.map(genreData => ({
+            genre: genreData.genre,
+            percentage: Math.round(genreData.percentage / venueCount)
+          }))
         }));
       }
 
@@ -758,6 +879,540 @@ export class VenueService {
     return yearlyData;
   }
 
+  // Calculate monthly revenue for the current year
+  private static calculateMonthlyRevenue(events: any[]): Array<{ month: string; revenue: number }> {
+    const now = new Date();
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+    return months.map((monthName, index) => {
+      const monthStart = new Date(now.getFullYear(), index, 1);
+      const monthEnd = new Date(now.getFullYear(), index + 1, 0);
+      
+      const monthEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return eventDate >= monthStart && eventDate <= monthEnd;
+      });
+
+      const totalRevenue = monthEvents.reduce((sum, event) => {
+        const ticketsSold = event.tickets_sold || 0;
+        let ticketPrice = event.ticket_price || 0;
+        
+        // If no single ticket price, use average of min/max range
+        if (!ticketPrice && event.ticket_price_min && event.ticket_price_max) {
+          ticketPrice = (event.ticket_price_min + event.ticket_price_max) / 2;
+        } else if (!ticketPrice && event.ticket_price_min) {
+          ticketPrice = event.ticket_price_min;
+        }
+        
+        const ticketRevenue = ticketsSold * ticketPrice;
+        const barSales = event.bar_sales || 0;
+        return sum + ticketRevenue + barSales;
+      }, 0);
+
+      return {
+        month: monthName,
+        revenue: Math.round(totalRevenue)
+      };
+    });
+  }
+
+  // Calculate quarterly revenue for the current year
+  private static calculateQuarterlyRevenue(events: any[]): Array<{ quarter: string; revenue: number }> {
+    const now = new Date();
+    const quarters = [
+      { quarter: 'Q1', months: [0, 1, 2] },
+      { quarter: 'Q2', months: [3, 4, 5] },
+      { quarter: 'Q3', months: [6, 7, 8] },
+      { quarter: 'Q4', months: [9, 10, 11] }
+    ];
+
+    return quarters.map(q => {
+      let totalRevenue = 0;
+
+      q.months.forEach(monthIndex => {
+        const monthStart = new Date(now.getFullYear(), monthIndex, 1);
+        const monthEnd = new Date(now.getFullYear(), monthIndex + 1, 0);
+        
+        const monthEvents = events.filter(event => {
+          const eventDate = parseEventDate(event.date);
+          return eventDate >= monthStart && eventDate <= monthEnd;
+        });
+
+        totalRevenue += monthEvents.reduce((sum, event) => {
+          const ticketsSold = event.tickets_sold || 0;
+          let ticketPrice = event.ticket_price || 0;
+          
+          // If no single ticket price, use average of min/max range
+          if (!ticketPrice && event.ticket_price_min && event.ticket_price_max) {
+            ticketPrice = (event.ticket_price_min + event.ticket_price_max) / 2;
+          } else if (!ticketPrice && event.ticket_price_min) {
+            ticketPrice = event.ticket_price_min;
+          }
+          
+          const ticketRevenue = ticketsSold * ticketPrice;
+          const barSales = event.bar_sales || 0;
+          return sum + ticketRevenue + barSales;
+        }, 0);
+      });
+
+      return {
+        quarter: q.quarter,
+        revenue: Math.round(totalRevenue)
+      };
+    });
+  }
+
+  // Calculate yearly revenue for the last 5 years
+  private static calculateYearlyRevenue(events: any[]): Array<{ year: string; revenue: number }> {
+    const now = new Date();
+    const years = [];
+    
+    // Generate last 5 years including current year
+    for (let i = 4; i >= 0; i--) {
+      years.push(now.getFullYear() - i);
+    }
+
+    return years.map(year => {
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      
+      const yearEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return eventDate >= yearStart && eventDate <= yearEnd;
+      });
+
+      const totalRevenue = yearEvents.reduce((sum, event) => {
+        const ticketsSold = event.tickets_sold || 0;
+        let ticketPrice = event.ticket_price || 0;
+        
+        // If no single ticket price, use average of min/max range
+        if (!ticketPrice && event.ticket_price_min && event.ticket_price_max) {
+          ticketPrice = (event.ticket_price_min + event.ticket_price_max) / 2;
+        } else if (!ticketPrice && event.ticket_price_min) {
+          ticketPrice = event.ticket_price_min;
+        }
+        
+        const ticketRevenue = ticketsSold * ticketPrice;
+        const barSales = event.bar_sales || 0;
+        return sum + ticketRevenue + barSales;
+      }, 0);
+
+      return {
+        year: year.toString(),
+        revenue: Math.round(totalRevenue)
+      };
+    });
+  }
+
+  // Extract unique genres from all events
+  private static extractGenresFromEvents(events: any[]): string[] {
+    const genreSet = new Set<string>();
+    
+    events.forEach(event => {
+      event.event_artists?.forEach((ea: any) => {
+        if (ea.artists?.genre) {
+          genreSet.add(ea.artists.genre.toUpperCase().trim());
+        }
+      });
+    });
+    
+    return Array.from(genreSet).sort();
+  }
+
+  // Combine genre breakdown data from multiple venues
+  private static combineGenreBreakdown<T extends { month?: string; quarter?: string; year?: string; genres: Array<{ genre: string; percentage: number }> }>(
+    acc: T[],
+    current: T[]
+  ): T[] {
+    return acc.map((accPeriod, index) => {
+      const currentPeriod = current[index];
+      if (!currentPeriod) return accPeriod;
+
+      // Get all unique genres from both accumulator and current
+      const allGenres = new Set<string>();
+      accPeriod.genres.forEach(g => allGenres.add(g.genre));
+      currentPeriod.genres.forEach(g => allGenres.add(g.genre));
+
+      // Combine percentages for each genre
+      const combinedGenres = Array.from(allGenres).map(genre => {
+        const accGenre = accPeriod.genres.find(g => g.genre === genre);
+        const currentGenre = currentPeriod.genres.find(g => g.genre === genre);
+        
+        return {
+          genre,
+          percentage: (accGenre?.percentage || 0) + (currentGenre?.percentage || 0)
+        };
+      }).sort((a, b) => a.genre.localeCompare(b.genre));
+
+      return {
+        ...accPeriod,
+        genres: combinedGenres
+      };
+    });
+  }
+
+  // Combine genre revenue data from multiple venues
+  private static combineGenreRevenue<T extends { month?: string; quarter?: string; year?: string; genres: Array<{ genre: string; revenue: number }> }>(
+    acc: T[],
+    current: T[]
+  ): T[] {
+    return acc.map((accPeriod, index) => {
+      const currentPeriod = current[index];
+      if (!currentPeriod) return accPeriod;
+
+      // Get all unique genres from both accumulator and current
+      const allGenres = new Set<string>();
+      accPeriod.genres.forEach(g => allGenres.add(g.genre));
+      currentPeriod.genres.forEach(g => allGenres.add(g.genre));
+
+      // Combine revenue for each genre
+      const combinedGenres = Array.from(allGenres).map(genre => {
+        const accGenre = accPeriod.genres.find(g => g.genre === genre);
+        const currentGenre = currentPeriod.genres.find(g => g.genre === genre);
+        
+        return {
+          genre,
+          revenue: (accGenre?.revenue || 0) + (currentGenre?.revenue || 0)
+        };
+      }).sort((a, b) => a.genre.localeCompare(b.genre));
+
+      return {
+        ...accPeriod,
+        genres: combinedGenres
+      };
+    });
+  }
+
+  // Calculate monthly genre breakdown for the current year
+  private static calculateMonthlyGenreBreakdown(events: any[]): Array<{ month: string; genres: Array<{ genre: string; percentage: number }> }> {
+    const now = new Date();
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const venueGenres = this.extractGenresFromEvents(events);
+
+    return months.map((monthName, index) => {
+      const monthStart = new Date(now.getFullYear(), index, 1);
+      const monthEnd = new Date(now.getFullYear(), index + 1, 0);
+      
+      const monthEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return eventDate >= monthStart && eventDate <= monthEnd;
+      });
+
+      // Calculate percentage for each genre
+      const genreData = venueGenres.map(genre => {
+        const genreEvents = monthEvents.filter(event => 
+          event.event_artists?.some((ea: any) => 
+            ea.artists?.genre?.toUpperCase().trim() === genre
+          )
+        );
+
+        let totalTicketsSold = 0;
+        let totalTicketsAvailable = 0;
+
+        genreEvents.forEach(event => {
+          const ticketsSold = event.tickets_sold || 0;
+          const totalTickets = event.total_tickets || 0;
+          totalTicketsSold += ticketsSold;
+          totalTicketsAvailable += totalTickets;
+        });
+
+        const percentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
+
+        return {
+          genre: genre,
+          percentage: Math.round(percentage)
+        };
+      });
+
+      return {
+        month: monthName,
+        genres: genreData
+      };
+    });
+  }
+
+  // Calculate quarterly genre breakdown for the current year
+  private static calculateQuarterlyGenreBreakdown(events: any[]): Array<{ quarter: string; genres: Array<{ genre: string; percentage: number }> }> {
+    const now = new Date();
+    const quarters = [
+      { quarter: 'Q1', months: [0, 1, 2] },
+      { quarter: 'Q2', months: [3, 4, 5] },
+      { quarter: 'Q3', months: [6, 7, 8] },
+      { quarter: 'Q4', months: [9, 10, 11] }
+    ];
+    const venueGenres = this.extractGenresFromEvents(events);
+
+    return quarters.map(q => {
+      // Get all events for this quarter
+      const quarterEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return q.months.some(monthIndex => {
+          const monthStart = new Date(now.getFullYear(), monthIndex, 1);
+          const monthEnd = new Date(now.getFullYear(), monthIndex + 1, 0);
+          return eventDate >= monthStart && eventDate <= monthEnd;
+        });
+      });
+
+      // Calculate percentage for each genre
+      const genreData = venueGenres.map(genre => {
+        const genreEvents = quarterEvents.filter(event => 
+          event.event_artists?.some((ea: any) => 
+            ea.artists?.genre?.toUpperCase().trim() === genre
+          )
+        );
+
+        let totalTicketsSold = 0;
+        let totalTicketsAvailable = 0;
+
+        genreEvents.forEach(event => {
+          const ticketsSold = event.tickets_sold || 0;
+          const totalTickets = event.total_tickets || 0;
+          totalTicketsSold += ticketsSold;
+          totalTicketsAvailable += totalTickets;
+        });
+
+        const percentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
+
+        return {
+          genre: genre,
+          percentage: Math.round(percentage)
+        };
+      });
+
+      return {
+        quarter: q.quarter,
+        genres: genreData
+      };
+    });
+  }
+
+  // Calculate yearly genre breakdown for the last 5 years
+  private static calculateYearlyGenreBreakdown(events: any[]): Array<{ year: string; genres: Array<{ genre: string; percentage: number }> }> {
+    const now = new Date();
+    const years = [];
+    const venueGenres = this.extractGenresFromEvents(events);
+    
+    // Generate last 5 years including current year
+    for (let i = 4; i >= 0; i--) {
+      years.push(now.getFullYear() - i);
+    }
+
+    return years.map(year => {
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      
+      const yearEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return eventDate >= yearStart && eventDate <= yearEnd;
+      });
+
+      // Calculate percentage for each genre
+      const genreData = venueGenres.map(genre => {
+        const genreEvents = yearEvents.filter(event => 
+          event.event_artists?.some((ea: any) => 
+            ea.artists?.genre?.toUpperCase().trim() === genre
+          )
+        );
+
+        let totalTicketsSold = 0;
+        let totalTicketsAvailable = 0;
+
+        genreEvents.forEach(event => {
+          const ticketsSold = event.tickets_sold || 0;
+          const totalTickets = event.total_tickets || 0;
+          totalTicketsSold += ticketsSold;
+          totalTicketsAvailable += totalTickets;
+        });
+
+        const percentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
+
+        return {
+          genre: genre,
+          percentage: Math.round(percentage)
+        };
+      });
+
+      return {
+        year: year.toString(),
+        genres: genreData
+      };
+    });
+  }
+
+  // Calculate monthly genre revenue breakdown for the current year
+  private static calculateMonthlyGenreRevenue(events: any[]): Array<{ month: string; genres: Array<{ genre: string; revenue: number }> }> {
+    const now = new Date();
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const venueGenres = this.extractGenresFromEvents(events);
+
+    return months.map((monthName, index) => {
+      const monthStart = new Date(now.getFullYear(), index, 1);
+      const monthEnd = new Date(now.getFullYear(), index + 1, 0);
+      
+      const monthEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return eventDate >= monthStart && eventDate <= monthEnd;
+      });
+
+      // Calculate revenue for each genre
+      const genreData = venueGenres.map(genre => {
+        const genreEvents = monthEvents.filter(event => 
+          event.event_artists?.some((ea: any) => 
+            ea.artists?.genre?.toUpperCase().trim() === genre
+          )
+        );
+
+        let totalRevenue = 0;
+
+        genreEvents.forEach(event => {
+          const ticketsSold = event.tickets_sold || 0;
+          let ticketPrice = event.ticket_price || 0;
+          
+          // Handle price ranges
+          if (!ticketPrice && event.ticket_price_min && event.ticket_price_max) {
+            ticketPrice = (event.ticket_price_min + event.ticket_price_max) / 2;
+          } else if (!ticketPrice && event.ticket_price_min) {
+            ticketPrice = event.ticket_price_min;
+          }
+          
+          const ticketRevenue = ticketsSold * ticketPrice;
+          const barSales = event.bar_sales || 0;
+          totalRevenue += ticketRevenue + barSales;
+        });
+
+        return {
+          genre: genre,
+          revenue: Math.round(totalRevenue)
+        };
+      });
+
+      return {
+        month: monthName,
+        genres: genreData
+      };
+    });
+  }
+
+  // Calculate quarterly genre revenue breakdown for the current year
+  private static calculateQuarterlyGenreRevenue(events: any[]): Array<{ quarter: string; genres: Array<{ genre: string; revenue: number }> }> {
+    const now = new Date();
+    const quarters = [
+      { quarter: 'Q1', months: [0, 1, 2] },
+      { quarter: 'Q2', months: [3, 4, 5] },
+      { quarter: 'Q3', months: [6, 7, 8] },
+      { quarter: 'Q4', months: [9, 10, 11] }
+    ];
+    const venueGenres = this.extractGenresFromEvents(events);
+
+    return quarters.map(q => {
+      // Get all events for this quarter
+      const quarterEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return q.months.some(monthIndex => {
+          const monthStart = new Date(now.getFullYear(), monthIndex, 1);
+          const monthEnd = new Date(now.getFullYear(), monthIndex + 1, 0);
+          return eventDate >= monthStart && eventDate <= monthEnd;
+        });
+      });
+
+      // Calculate revenue for each genre
+      const genreData = venueGenres.map(genre => {
+        const genreEvents = quarterEvents.filter(event => 
+          event.event_artists?.some((ea: any) => 
+            ea.artists?.genre?.toUpperCase().trim() === genre
+          )
+        );
+
+        let totalRevenue = 0;
+
+        genreEvents.forEach(event => {
+          const ticketsSold = event.tickets_sold || 0;
+          let ticketPrice = event.ticket_price || 0;
+          
+          // Handle price ranges
+          if (!ticketPrice && event.ticket_price_min && event.ticket_price_max) {
+            ticketPrice = (event.ticket_price_min + event.ticket_price_max) / 2;
+          } else if (!ticketPrice && event.ticket_price_min) {
+            ticketPrice = event.ticket_price_min;
+          }
+          
+          const ticketRevenue = ticketsSold * ticketPrice;
+          const barSales = event.bar_sales || 0;
+          totalRevenue += ticketRevenue + barSales;
+        });
+
+        return {
+          genre: genre,
+          revenue: Math.round(totalRevenue)
+        };
+      });
+
+      return {
+        quarter: q.quarter,
+        genres: genreData
+      };
+    });
+  }
+
+  // Calculate yearly genre revenue breakdown for the last 5 years
+  private static calculateYearlyGenreRevenue(events: any[]): Array<{ year: string; genres: Array<{ genre: string; revenue: number }> }> {
+    const now = new Date();
+    const years = [];
+    const venueGenres = this.extractGenresFromEvents(events);
+    
+    // Generate last 5 years including current year
+    for (let i = 4; i >= 0; i--) {
+      years.push(now.getFullYear() - i);
+    }
+
+    return years.map(year => {
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      
+      const yearEvents = events.filter(event => {
+        const eventDate = parseEventDate(event.date);
+        return eventDate >= yearStart && eventDate <= yearEnd;
+      });
+
+      // Calculate revenue for each genre
+      const genreData = venueGenres.map(genre => {
+        const genreEvents = yearEvents.filter(event => 
+          event.event_artists?.some((ea: any) => 
+            ea.artists?.genre?.toUpperCase().trim() === genre
+          )
+        );
+
+        let totalRevenue = 0;
+
+        genreEvents.forEach(event => {
+          const ticketsSold = event.tickets_sold || 0;
+          let ticketPrice = event.ticket_price || 0;
+          
+          // Handle price ranges
+          if (!ticketPrice && event.ticket_price_min && event.ticket_price_max) {
+            ticketPrice = (event.ticket_price_min + event.ticket_price_max) / 2;
+          } else if (!ticketPrice && event.ticket_price_min) {
+            ticketPrice = event.ticket_price_min;
+          }
+          
+          const ticketRevenue = ticketsSold * ticketPrice;
+          const barSales = event.bar_sales || 0;
+          totalRevenue += ticketRevenue + barSales;
+        });
+
+        return {
+          genre: genre,
+          revenue: Math.round(totalRevenue)
+        };
+      });
+
+      return {
+        year: year.toString(),
+        genres: genreData
+      };
+    });
+  }
+
   // Calculate trends for analytics metrics
   private static calculateTrends(events: any[], _timeFrame: 'YTD' | 'MTD' | 'ALL'): VenueAnalytics['trends'] {
     // Group events by month for the last 6 months
@@ -818,7 +1473,7 @@ export class VenueService {
   }
 
   // Default analytics for empty state
-  private static getDefaultAnalytics(): VenueAnalytics {
+  public static getDefaultAnalytics(): VenueAnalytics {
     const emptyTrend = [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }];
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const emptyMonthlyData = months.map(month => ({ month, percentage: 0 }));
@@ -851,7 +1506,34 @@ export class VenueService {
       },
       monthlyPercentageSold: emptyMonthlyData,
       quarterlyPercentageSold: emptyQuarterlyData,
-      yearlyPercentageSold: emptyYearlyData
+      yearlyPercentageSold: emptyYearlyData,
+      monthlyRevenue: months.map(month => ({ month, revenue: 0 })),
+      quarterlyRevenue: quarters.map(quarter => ({ quarter, revenue: 0 })),
+      yearlyRevenue: years.map(year => ({ year, revenue: 0 })),
+      monthlyGenreBreakdown: months.map(month => ({
+        month,
+        genres: [] // Empty when no events exist
+      })),
+      quarterlyGenreBreakdown: quarters.map(quarter => ({
+        quarter,
+        genres: [] // Empty when no events exist
+      })),
+      yearlyGenreBreakdown: years.map(year => ({
+        year,
+        genres: [] // Empty when no events exist
+      })),
+      monthlyGenreRevenue: months.map(month => ({
+        month,
+        genres: [] // Empty when no events exist
+      })),
+      quarterlyGenreRevenue: quarters.map(quarter => ({
+        quarter,
+        genres: [] // Empty when no events exist
+      })),
+      yearlyGenreRevenue: years.map(year => ({
+        year,
+        genres: [] // Empty when no events exist
+      }))
     };
   }
 } 

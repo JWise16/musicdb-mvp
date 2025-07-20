@@ -23,23 +23,7 @@ const Dashboard = () => {
   const [hasVenues, setHasVenues] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeFrame, setTimeFrame] = useState<'YTD' | 'MTD' | 'ALL'>('YTD');
-  const [analytics, setAnalytics] = useState<VenueAnalytics>({
-    showsReported: 0,
-    ticketSales: 0,
-    barSales: 0,
-    avgSelloutRate: 0,
-    avgTicketPrice: 0,
-    topMonth: { month: 'N/A', count: 0 },
-    topGenre: { genre: 'N/A', count: 0 },
-    topArtist: { name: 'N/A', count: 0 },
-    trends: {
-      showsReported: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }],
-      ticketSales: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }],
-      barSales: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }],
-      avgSelloutRate: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }],
-      avgTicketPrice: [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }]
-    }
-  });
+  const [analytics, setAnalytics] = useState<VenueAnalytics>(() => VenueService.getDefaultAnalytics());
   const [events, setEvents] = useState<{ upcoming: VenueEvent[]; past: VenueEvent[] }>({
     upcoming: [],
     past: []
