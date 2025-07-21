@@ -67,9 +67,14 @@ const EventCard = ({ event, onEventClick }: { event: VenueEvent; onEventClick: (
       </div>
 
       {/* Venue Name and Location */}
-      <h4 className="font-semibold text-gray-900 mb-1 truncate">
-        {event.venues?.name} - {event.venues?.location}
-      </h4>
+      <div className="mb-1">
+        <h4 className="font-semibold text-gray-900 truncate">
+          {event.venues?.name}
+        </h4>
+        <p className="text-sm text-gray-600 truncate">
+          {event.venues?.location}
+        </p>
+      </div>
 
       {/* Lineup + Date */}
       <p className="text-sm text-gray-600 mb-2">
