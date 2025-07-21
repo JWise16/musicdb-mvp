@@ -51,7 +51,7 @@
   /* Bot messages */
   --chat--message--bot--background: #ffffff;
   --chat--message--bot--color: var(--chat--color-dark);
-  --chat--message--bot--border: 1px solid #000000;
+  --chat--message--bot--border: 2.5px solid #000000;
   
   /* User messages */
   --chat--message--user--background: #f3f4f6;
@@ -346,7 +346,7 @@ div[id^="n8n-chat-container"] {
   /* Bot message styling */
   --chat--message--bot--background: #ffffff !important;
   --chat--message--bot--color: #000000 !important;
-  --chat--message--bot--border: 1px solid #000000 !important;
+  --chat--message--bot--border: 2.5px solid #000000 !important;
   
   /* Extra rounded chat bubbles */
   --chat--border-radius: 1.5rem !important;

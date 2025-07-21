@@ -134,7 +134,7 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
           defaultLanguage: 'en',
           initialMessages: [
             'Welcome to MusicDB! 🎵',
-            'I\'m here to help you find the perfect talent for your venue. What can I assist you with today?'
+            'Let’s find your next great show, who are you looking to book?'
           ],
           i18n: {
             en: {
@@ -241,7 +241,7 @@ const N8nChatWidget = ({ webhookUrl, userContext }: N8nChatWidgetProps) => {
             /* Bot message styling with black border */
             --chat--message--bot--background: #ffffff !important;
             --chat--message--bot--color: #000000 !important;
-            --chat--message--bot--border: 1px solid #000000 !important;
+            --chat--message--bot--border: 5px solid #000000 !important;
             
             /* Extra rounded chat bubbles */
             --chat--border-radius: 1.5rem !important;
