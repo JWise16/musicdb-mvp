@@ -140,7 +140,6 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
       
       {/* Past Shows */}
       <div>
-        <h4 className="text-md font-semibold text-gray-800 mb-3">Past Shows</h4>
         {past.length === 0 ? (
           <div className="text-center py-6 lg:py-8 bg-gray-50 rounded-lg">
             <svg className="w-8 h-8 lg:w-12 lg:h-12 text-gray-400 mx-auto mb-3 lg:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
