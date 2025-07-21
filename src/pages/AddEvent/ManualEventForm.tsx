@@ -21,7 +21,7 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
     ticket_price_min: undefined,
     ticket_price_max: undefined,
     total_ticket_revenue: undefined,
-    total_tickets: 100,
+    total_tickets: currentVenue?.capacity ?? 100,
     tickets_sold: undefined,
     bar_sales: undefined,
     notes: '',
@@ -35,10 +35,14 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
     ]
   });
 
-  // Set venue_id when currentVenue changes
+  // Set venue_id and total_tickets when currentVenue changes
   useEffect(() => {
     if (currentVenue) {
-      setFormData(prev => ({ ...prev, venue_id: currentVenue.id }));
+      setFormData(prev => ({
+        ...prev,
+        venue_id: currentVenue.id,
+        total_tickets: currentVenue.capacity ?? 100
+      }));
     }
   }, [currentVenue]);
 
