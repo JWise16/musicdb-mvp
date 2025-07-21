@@ -91,7 +91,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   });
 
   const [event, setEvent] = useState<EventData>({
-    name: '',
+    name: `Event ${eventNumber}`,
     date: '',
     ticket_price: undefined,
     ticket_price_min: undefined,
@@ -126,7 +126,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   useEffect(() => {
     if (step === 'events') {
       setEvent({
-        name: '',
+        name: `Event ${eventNumber}`,
         date: '',
         ticket_price: undefined,
         ticket_price_min: undefined,
@@ -188,9 +188,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     setEvent(prev => ({ ...prev, [field]: value }));
     
     // Clear validation errors for this field when user starts typing
-    if (field === 'name' && value.trim()) {
-      setValidationErrors(prev => ({ ...prev, event_name: false }));
-    }
     if (field === 'date' && value) {
       setValidationErrors(prev => ({ ...prev, event_date: false }));
     }
@@ -301,7 +298,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         return true;
         
       case 'events':
-        if (!event.name.trim()) errors.event_name = true;
         if (!event.date) errors.event_date = true;
         if (!event.total_tickets || event.total_tickets <= 0) errors.event_total_tickets = true;
         if (!event.artists.some(artist => artist.name.trim())) errors.event_artists = true;
@@ -749,19 +745,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Event Name *
-              </label>
-              <input
-                type="text"
-                value={event.name}
-                onChange={e => handleEventChange('name', e.target.value)}
-                className="form-input w-full"
-                placeholder="e.g., Summer Concert Series"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Date *
               </label>
               <input
@@ -804,124 +787,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             </div>
           </div>
         </div>
-        {/* Ticket Pricing */}
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Pricing</h3>
-          <div className="mb-4">
-            <div className="flex gap-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="priceType"
-                  value="single"
-                  checked={priceType === 'single'}
-                  onChange={() => setPriceType('single')}
-                  className="mr-2"
-                />
-                Single Price
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="priceType"
-                  value="range"
-                  checked={priceType === 'range'}
-                  onChange={() => setPriceType('range')}
-                  className="mr-2"
-                />
-                Price Range
-              </label>
-            </div>
-          </div>
-          {priceType === 'single' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ticket Price ($)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={event.ticket_price || ''}
-                onChange={e => handleEventChange('ticket_price', parseFloat(e.target.value) || undefined)}
-                className="form-input w-full"
-                placeholder="25.00"
-              />
-            </div>
-          )}
-          {priceType === 'range' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Minimum Price ($)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={event.ticket_price_min || ''}
-                  onChange={e => handleEventChange('ticket_price_min', parseFloat(e.target.value) || undefined)}
-                  className="form-input w-full"
-                  placeholder="20.00"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Maximum Price ($)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={event.ticket_price_max || ''}
-                  onChange={e => handleEventChange('ticket_price_max', parseFloat(e.target.value) || undefined)}
-                  className="form-input w-full"
-                  placeholder="50.00"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-        {/* Revenue Tracking */}
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Tracking (Optional)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Total Ticket Revenue
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={event.total_ticket_revenue || ''}
-                onChange={e => handleEventChange('total_ticket_revenue', parseFloat(e.target.value) || undefined)}
-                className="form-input w-full"
-                placeholder="0.00"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Total revenue from all ticket sales
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Bar Sales ($)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={event.bar_sales || ''}
-                onChange={e => handleEventChange('bar_sales', parseFloat(e.target.value) || undefined)}
-                className="form-input w-full"
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">
-            Any additional details you report—like bar sales or show notes—are completely private. They're optional and only visible to you on your dashboard for your own reference.
-          </p>
-        </div>
+        
         {/* Artists */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Artists</h3>
@@ -1007,6 +873,126 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           >
             + Add Another Artist
           </button>
+        </div>
+
+        {/* Ticket Pricing */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Pricing</h3>
+          <div className="mb-4">
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="priceType"
+                  value="single"
+                  checked={priceType === 'single'}
+                  onChange={() => setPriceType('single')}
+                  className="mr-2"
+                />
+                Single Price
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="priceType"
+                  value="range"
+                  checked={priceType === 'range'}
+                  onChange={() => setPriceType('range')}
+                  className="mr-2"
+                />
+                Price Range
+              </label>
+            </div>
+          </div>
+          {priceType === 'single' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ticket Price ($)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={event.ticket_price || ''}
+                onChange={e => handleEventChange('ticket_price', parseFloat(e.target.value) || undefined)}
+                className="form-input w-full"
+                placeholder="25.00"
+              />
+            </div>
+          )}
+          {priceType === 'range' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Minimum Price ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={event.ticket_price_min || ''}
+                  onChange={e => handleEventChange('ticket_price_min', parseFloat(e.target.value) || undefined)}
+                  className="form-input w-full"
+                  placeholder="20.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Maximum Price ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={event.ticket_price_max || ''}
+                  onChange={e => handleEventChange('ticket_price_max', parseFloat(e.target.value) || undefined)}
+                  className="form-input w-full"
+                  placeholder="50.00"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Revenue Tracking */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Tracking (Optional)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Total Ticket Revenue
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={event.total_ticket_revenue || ''}
+                onChange={e => handleEventChange('total_ticket_revenue', parseFloat(e.target.value) || undefined)}
+                className="form-input w-full"
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Total revenue from all ticket sales
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Bar Sales ($)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={event.bar_sales || ''}
+                onChange={e => handleEventChange('bar_sales', parseFloat(e.target.value) || undefined)}
+                className="form-input w-full"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-4">
+            Any additional details you report—like bar sales or show notes—are completely private. They're optional and only visible to you on your dashboard for your own reference.
+          </p>
         </div>
         {/* Notes */}
         <div className="card p-6">
@@ -1167,7 +1153,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             <div className="space-y-3">
               <div>
                 <div className="text-sm font-medium text-gray-700 mb-1">Event Name</div>
-                <div className="text-sm text-gray-900">{event.name || 'Event Name'}</div>
+                <div className="text-sm text-gray-900">{event.name}</div>
               </div>
               
               <div>
@@ -1321,7 +1307,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                     {validationErrors.venue_location && <span className="text-sm text-red-600">• Location/City</span>}
                     {validationErrors.venue_address && <span className="text-sm text-red-600">• Address</span>}
                     {validationErrors.venue_capacity && <span className="text-sm text-red-600">• Capacity</span>}
-                    {validationErrors.event_name && <span className="text-sm text-red-600">• Event Name</span>}
                     {validationErrors.event_date && <span className="text-sm text-red-600">• Date</span>}
                     {validationErrors.event_total_tickets && <span className="text-sm text-red-600">• Total Tickets</span>}
                     {validationErrors.event_artists && <span className="text-sm text-red-600">• At least one Artist Name</span>}

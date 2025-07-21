@@ -21,7 +21,7 @@ export default function OnboardingEventForm({
   const [isLoading, setIsLoading] = useState(false);
   const [priceType, setPriceType] = useState<'single' | 'range' | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
-    name: 'Event',
+    name: `Event ${currentEventNumber}`,
     date: '',
     venue_id: '',
     ticket_price: undefined,
@@ -98,7 +98,7 @@ export default function OnboardingEventForm({
         onEventAdded();
         // Reset form for next event
         setFormData({
-          name: 'Event',
+          name: `Event ${currentEventNumber}`,
           date: '',
           venue_id: formData.venue_id, // Keep same venue
           ticket_price: undefined,
