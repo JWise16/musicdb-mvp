@@ -186,6 +186,98 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
           </div>
         </div>
 
+        {/* Artists */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Artists</h3>
+          
+          {formData.artists.map((artist, index) => (
+            <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-medium text-gray-900">
+                  Artist {index + 1} {artist.is_headliner && '(Headliner)'}
+                </h4>
+                {formData.artists.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeArtist(index)}
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Artist Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={artist.name}
+                    onChange={(e) => handleArtistChange(index, 'name', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="e.g., The Rolling Stones"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Genre
+                  </label>
+                  <input
+                    type="text"
+                    value={artist.genre}
+                    onChange={(e) => handleArtistChange(index, 'genre', e.target.value)}
+                    className="form-input w-full"
+                    placeholder="e.g., Rock"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <div className="flex gap-6">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={artist.is_headliner}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArtistChange(index, 'is_headliner', true);
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    Headliner
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={!artist.is_headliner}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArtistChange(index, 'is_headliner', false);
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    Supporting
+                  </label>
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          <button
+            type="button"
+            onClick={addArtist}
+            className="btn-secondary w-full py-3"
+          >
+            + Add Another Artist
+          </button>
+        </div>
+
         {/* Ticket Pricing */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Pricing</h3>
@@ -310,98 +402,6 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
           <p className="text-xs text-gray-500 mt-4">
             Any additional details you report—like bar sales or show notes—are completely private. They're optional and only visible to you on your dashboard for your own reference.
           </p>
-        </div>
-
-        {/* Artists */}
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Artists</h3>
-          
-          {formData.artists.map((artist, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-medium text-gray-900">
-                  Artist {index + 1} {artist.is_headliner && '(Headliner)'}
-                </h4>
-                {formData.artists.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeArtist(index)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Artist Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={artist.name}
-                    onChange={(e) => handleArtistChange(index, 'name', e.target.value)}
-                    className="form-input w-full"
-                    placeholder="e.g., The Rolling Stones"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Genre
-                  </label>
-                  <input
-                    type="text"
-                    value={artist.genre}
-                    onChange={(e) => handleArtistChange(index, 'genre', e.target.value)}
-                    className="form-input w-full"
-                    placeholder="e.g., Rock"
-                  />
-                </div>
-              </div>
-              
-              <div className="mt-4">
-                <div className="flex gap-6">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={artist.is_headliner}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          handleArtistChange(index, 'is_headliner', true);
-                        }
-                      }}
-                      className="mr-2"
-                    />
-                    Headliner
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={!artist.is_headliner}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          handleArtistChange(index, 'is_headliner', false);
-                        }
-                      }}
-                      className="mr-2"
-                    />
-                    Supporting
-                  </label>
-                </div>
-              </div>
-            </div>
-          ))}
-          
-          <button
-            type="button"
-            onClick={addArtist}
-            className="btn-secondary w-full py-3"
-          >
-            + Add Another Artist
-          </button>
         </div>
 
         {/* Notes */}
