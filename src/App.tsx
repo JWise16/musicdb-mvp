@@ -20,12 +20,24 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { VenueProvider } from './contexts/VenueContext';
 
 function App() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   // Test Supabase configuration
   //console.log('App: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
   //console.log('App: Supabase Anon Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
   console.log('App: Current user:', user?.email);
+
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>
