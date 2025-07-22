@@ -112,18 +112,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
           </select>
         </div>
 
-        {/* Venue Size Filter */}
-        <div className="md:col-span-2">
-          <VenueSizeDropdown
-            min={1}
-            max={1000}
-            value={filters.venueSizeRange || [1, 1000]}
-            onChange={handleVenueSizeRangeChange}
-            histogram={filterOptions.venueHistogram}
-          />
-        </div>
-
-        {/* Percentage Sold Filter */}
+        {/* Percentage Sold Filter (Ticket Sales) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Ticket Sales</label>
           <select
@@ -137,6 +126,17 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
             <option value="high">High (67-100%)</option>
           </select>
         </div>
+      </div>
+
+      {/* Venue Size Filter */}
+      <div className="mt-4">
+        <VenueSizeDropdown
+          min={1}
+          max={1000}
+          value={filters.venueSizeRange || [1, 1000]}
+          onChange={handleVenueSizeRangeChange}
+          histogram={filterOptions.venueHistogram}
+        />
       </div>
 
       {/* Date Range Filters */}
