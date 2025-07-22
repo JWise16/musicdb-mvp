@@ -35,6 +35,7 @@ export type EventFilters = {
   genre?: string;
   city?: string;
   venueSize?: 'small' | 'medium' | 'large';
+  venueSizeRange?: [number, number];
   timeFrame?: 'upcoming' | 'past' | 'all';
   percentageSold?: 'low' | 'medium' | 'high';
   searchQuery?: string;
@@ -307,7 +308,9 @@ export class EventService {
         query = query.eq('venues.location', filters.city);
       }
 
-      if (filters.venueSize) {
+      if (filters.venueSizeRange) {
+        query = query.gte('venues.capacity', filters.venueSizeRange[0]).lte('venues.capacity', filters.venueSizeRange[1]);
+      } else if (filters.venueSize) {
         const sizeRanges = {
           small: { min: 0, max: 200 },
           medium: { min: 201, max: 1000 },
@@ -432,6 +435,7 @@ export class EventService {
     genres: string[];
     cities: string[];
     venueSizes: Array<{ value: string; label: string; count: number }>;
+    venueHistogram: number[];
   }> {
     try {
       // Get all events with details to extract filter options
@@ -475,14 +479,27 @@ export class EventService {
         { value: 'large', label: '1000+', count: venueSizeCounts.large }
       ];
 
+      // Generate histogram data for venue capacity ranges (1-1000)
+      const histogramBins = 50; // Number of bins for the histogram
+      const venueHistogram = new Array(histogramBins).fill(0);
+      
+      events.forEach(event => {
+        const capacity = event.venues?.capacity || 0;
+        if (capacity >= 1 && capacity <= 1000) {
+          const binIndex = Math.min(Math.floor((capacity - 1) / (1000 / histogramBins)), histogramBins - 1);
+          venueHistogram[binIndex]++;
+        }
+      });
+
       return {
         genres: Array.from(genres).sort(),
         cities: Array.from(cities).sort(),
-        venueSizes
+        venueSizes,
+        venueHistogram
       };
     } catch (error) {
       console.error('Error getting filter options:', error);
-      return { genres: [], cities: [], venueSizes: [] };
+      return { genres: [], cities: [], venueSizes: [], venueHistogram: [] };
     }
   }
 

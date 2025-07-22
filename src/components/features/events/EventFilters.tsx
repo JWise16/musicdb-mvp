@@ -1,4 +1,6 @@
 import { type EventFilters } from '../../../services/eventService';
+import RangeSlider from '../../common/RangeSlider';
+import VenueSizeDropdown from '../../common/VenueSizeDropdown';
 
 interface EventFiltersProps {
   filters: EventFilters;
@@ -6,6 +8,7 @@ interface EventFiltersProps {
     genres: string[];
     cities: string[];
     venueSizes: Array<{ value: string; label: string; count: number }>;
+    venueHistogram: number[];
   };
   onFilterChange: (filters: Partial<EventFilters>) => void;
 }
@@ -25,6 +28,10 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
 
   const handleVenueSizeChange = (size: string) => {
     onFilterChange({ venueSize: size as 'small' | 'medium' | 'large' || undefined });
+  };
+
+  const handleVenueSizeRangeChange = (range: [number, number]) => {
+    onFilterChange({ venueSizeRange: range });
   };
 
   const handlePercentageSoldChange = (percentage: string) => {
@@ -74,7 +81,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
       </div>
 
       {/* Filter Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Genre Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Genre</label>
@@ -106,20 +113,14 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
         </div>
 
         {/* Venue Size Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Venue Size</label>
-          <select
-            value={filters.venueSize || ''}
-            onChange={(e) => handleVenueSizeChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
-          >
-            <option value="">All Sizes</option>
-            {filterOptions.venueSizes.map(size => (
-              <option key={size.value} value={size.value}>
-                {size.label} ({size.count})
-              </option>
-            ))}
-          </select>
+        <div className="md:col-span-2">
+          <VenueSizeDropdown
+            min={1}
+            max={1000}
+            value={filters.venueSizeRange || [1, 1000]}
+            onChange={handleVenueSizeRangeChange}
+            histogram={filterOptions.venueHistogram}
+          />
         </div>
 
         {/* Percentage Sold Filter */}
@@ -197,6 +198,20 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
               <button
                 onClick={() => clearFilter('city')}
                 className="ml-2 text-green-500 hover:text-green-700"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          )}
+          
+          {filters.venueSizeRange && (filters.venueSizeRange[0] !== 1 || filters.venueSizeRange[1] !== 1000) && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700">
+              Venue: {filters.venueSizeRange[0]}-{filters.venueSizeRange[1] >= 1000 ? '1000+' : filters.venueSizeRange[1]}
+              <button
+                onClick={() => clearFilter('venueSizeRange')}
+                className="ml-2 text-purple-500 hover:text-purple-700"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

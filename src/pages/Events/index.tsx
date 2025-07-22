@@ -18,7 +18,8 @@ const Events = () => {
   const [filterOptions, setFilterOptions] = useState({
     genres: [] as string[],
     cities: [] as string[],
-    venueSizes: [] as Array<{ value: string; label: string; count: number }>
+    venueSizes: [] as Array<{ value: string; label: string; count: number }>,
+    venueHistogram: [] as number[]
   });
   
   // Verification states
