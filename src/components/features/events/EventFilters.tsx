@@ -1,7 +1,5 @@
 import { type EventFilters } from '../../../services/eventService';
-import RangeSlider from '../../common/RangeSlider';
 import VenueSizeDropdown from '../../common/VenueSizeDropdown';
-import PercentSoldSlider from '../../common/PercentSoldSlider';
 import PercentSoldDropdown from '../../common/PercentSoldDropdown';
 
 interface EventFiltersProps {
@@ -28,16 +26,8 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
     onFilterChange({ city: city || undefined });
   };
 
-  const handleVenueSizeChange = (size: string) => {
-    onFilterChange({ venueSize: size as 'small' | 'medium' | 'large' || undefined });
-  };
-
   const handleVenueSizeRangeChange = (range: [number, number]) => {
     onFilterChange({ venueSizeRange: range });
-  };
-
-  const handlePercentageSoldChange = (percentage: string) => {
-    onFilterChange({ percentageSold: percentage as 'low' | 'medium' | 'high' || undefined });
   };
 
   const handlePercentageSoldRangeChange = (range: [number, number]) => {

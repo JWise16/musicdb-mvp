@@ -6,7 +6,6 @@ interface RangeSliderProps {
   value: [number, number];
   onChange: (value: [number, number]) => void;
   step?: number;
-  formatValue?: (value: number) => string;
   histogram?: number[];
   className?: string;
 }
@@ -17,7 +16,6 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
   value,
   onChange,
   step = 1,
-  formatValue = (val) => val.toString(),
   histogram = [],
   className = ''
 }) => {
