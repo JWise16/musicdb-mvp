@@ -130,6 +130,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
 
       {/* Venue Size Filter */}
       <div className="mt-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Venue Size</label>
         <VenueSizeDropdown
           min={1}
           max={1000}
