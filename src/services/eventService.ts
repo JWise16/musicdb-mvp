@@ -38,9 +38,11 @@ export type EventFilters = {
   venueSizeRange?: [number, number];
   timeFrame?: 'upcoming' | 'past' | 'all';
   percentageSold?: 'low' | 'medium' | 'high';
+  percentageSoldRange?: [number, number];
   searchQuery?: string;
   dateFrom?: string;
   dateTo?: string;
+  sortBy?: 'date_asc' | 'date_desc' | 'percent_sold_desc' | 'percent_sold_asc' | 'capacity_asc' | 'capacity_desc' | 'price_desc' | 'price_asc';
 };
 
 export type EventWithDetails = Tables<'events'> & {
@@ -374,7 +376,12 @@ export class EventService {
       }) || [];
 
       // Apply percentage sold filter
-      if (filters.percentageSold) {
+      if (filters.percentageSoldRange) {
+        processedEvents = processedEvents.filter(event =>
+          event.percentage_sold >= filters.percentageSoldRange![0] && 
+          event.percentage_sold <= filters.percentageSoldRange![1]
+        );
+      } else if (filters.percentageSold) {
         const percentageRanges = {
           low: { min: 0, max: 33 },
           medium: { min: 34, max: 66 },
@@ -393,6 +400,36 @@ export class EventService {
             ea.artists?.genre?.toLowerCase().includes(filters.genre!.toLowerCase())
           )
         );
+      }
+
+      // Apply sorting
+      if (filters.sortBy) {
+        processedEvents.sort((a, b) => {
+          switch (filters.sortBy) {
+            case 'date_asc':
+              return new Date(a.date).getTime() - new Date(b.date).getTime();
+            case 'date_desc':
+              return new Date(b.date).getTime() - new Date(a.date).getTime();
+            case 'percent_sold_desc':
+              return b.percentage_sold - a.percentage_sold;
+            case 'percent_sold_asc':
+              return a.percentage_sold - b.percentage_sold;
+            case 'capacity_desc':
+              return (b.venues?.capacity || 0) - (a.venues?.capacity || 0);
+            case 'capacity_asc':
+              return (a.venues?.capacity || 0) - (b.venues?.capacity || 0);
+            case 'price_desc':
+              const priceB = b.ticket_price || b.ticket_price_max || 0;
+              const priceA = a.ticket_price || a.ticket_price_max || 0;
+              return priceB - priceA;
+            case 'price_asc':
+              const priceA2 = a.ticket_price || a.ticket_price_max || 0;
+              const priceB2 = b.ticket_price || b.ticket_price_max || 0;
+              return priceA2 - priceB2;
+            default:
+              return 0;
+          }
+        });
       }
 
       return processedEvents as EventWithDetails[];
