@@ -119,6 +119,20 @@ export type VibrateEventsResponse = {
   past: VibrateEvent[];
 };
 
+export type VibrateAudienceData = {
+  [key: string]: any; // Generic type since we don't know the exact structure yet
+};
+
+export type VibrateAudienceResponse = {
+  success: boolean;
+  artist: {
+    uuid: string;
+    name: string;
+    slug: string;
+  };
+  audience: VibrateAudienceData;
+};
+
 export class VibrateService {
   // Search for artists using the Viberate API via Supabase Edge Function
   static async searchArtists(artistName: string): Promise<VibrateSearchResponse | null> {
@@ -239,6 +253,33 @@ export class VibrateService {
     }
   }
 
+  // Get artist audience data by UUID
+  static async getArtistAudience(artistUuid: string): Promise<VibrateAudienceResponse | null> {
+    try {
+      console.log(`Fetching audience data for artist UUID: ${artistUuid}`);
+      
+      const { data, error } = await supabase.functions.invoke('vibrate-artist-audience', {
+        body: { artistUuid }
+      });
+
+      if (error) {
+        console.error('Error calling artist audience edge function:', error);
+        return null;
+      }
+
+      if (!data?.success) {
+        console.error('Artist audience edge function returned error:', data);
+        return null;
+      }
+
+      console.log(`Found audience data for artist`);
+      return data;
+    } catch (error) {
+      console.error('Error in VibrateService.getArtistAudience:', error);
+      return null;
+    }
+  }
+
   // Get artist data with links (combines search + links calls)
   static async getArtistWithLinks(artistName: string): Promise<{
     artist: VibrateArtist | null;
@@ -297,4 +338,40 @@ export class VibrateService {
       return { artist: null, links: [], upcomingEvents: [], pastEvents: [] };
     }
   }
-} 
+
+  // Get artist data with all available info (combines search + links + events + audience calls)
+  static async getArtistWithAllData(artistName: string): Promise<{
+    artist: VibrateArtist | null;
+    links: VibrateArtistLink[];
+    upcomingEvents: VibrateEvent[];
+    pastEvents: VibrateEvent[];
+    audience: VibrateAudienceData;
+  }> {
+    try {
+      // First get the artist data
+      const artist = await this.getExactArtistMatch(artistName);
+      
+      if (!artist?.uuid) {
+        return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {} };
+      }
+
+      // Then get their links, events, and audience data in parallel
+      const [linksResponse, eventsResponse, audienceResponse] = await Promise.all([
+        this.getArtistLinks(artist.uuid),
+        this.getArtistEvents(artist.uuid),
+        this.getArtistAudience(artist.uuid)
+      ]);
+      
+      return {
+        artist,
+        links: linksResponse?.links || [],
+        upcomingEvents: eventsResponse?.upcoming || [],
+        pastEvents: eventsResponse?.past || [],
+        audience: audienceResponse?.audience || {}
+      };
+    } catch (error) {
+      console.error('Error in VibrateService.getArtistWithAllData:', error);
+      return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {} };
+    }
+  }
+}

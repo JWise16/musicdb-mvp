@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatEventDate } from '../../utils/dateUtils';
-import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent } from '../../services/vibrateService';
+import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData } from '../../services/vibrateService';
 
 // Import types from the database
 import type { Tables } from '../../types/database.types';
@@ -74,6 +74,7 @@ const ArtistDetails = () => {
   const [artistLinks, setArtistLinks] = useState<VibrateArtistLink[]>([]);
   const [vibrateUpcomingEvents, setVibrateUpcomingEvents] = useState<VibrateEvent[]>([]);
   const [vibratePastEvents, setVibratePastEvents] = useState<VibrateEvent[]>([]);
+  const [vibrateAudience, setVibrateAudience] = useState<VibrateAudienceData>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,16 +94,20 @@ const ArtistDetails = () => {
           
           // Fetch additional data from Viberate API (artist info + links + events)
           try {
-            const { artist: vibrateData, links, upcomingEvents, pastEvents } = await VibrateService.getArtistWithLinksAndEvents(artistData.name);
+            const { artist: vibrateData, links, upcomingEvents, pastEvents, audience } = await VibrateService.getArtistWithAllData(artistData.name);
             if (vibrateData) {
               setVibrateArtist(vibrateData);
               setArtistLinks(links);
               setVibrateUpcomingEvents(upcomingEvents);
               setVibratePastEvents(pastEvents);
+              setVibrateAudience(audience);
               console.log('Found Viberate data for artist:', vibrateData);
               console.log('Found artist links:', links);
               console.log('Found upcoming events:', upcomingEvents);
               console.log('Found past events:', pastEvents);
+              console.log('Found audience data:', audience);
+              console.log('Audience data keys:', Object.keys(audience));
+              console.log('Audience data length check:', Object.keys(audience).length > 0);
             }
           } catch (vibrateError) {
             console.warn('Could not fetch Viberate data:', vibrateError);
@@ -282,6 +287,63 @@ const ArtistDetails = () => {
                            <span className="capitalize">{link.channel.replace('_', ' ')}</span>
                          </a>
                        ))}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Audience Data */}
+                 {Object.keys(vibrateAudience).length > 0 && (
+                   <div className="w-full">
+                     <div className="text-xs font-medium text-gray-500 mb-2">Audience Insights</div>
+                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                       {/* Display audience data with special handling for country data */}
+                       {Object.entries(vibrateAudience).map(([key, value]) => {
+                         // Skip if value is null/undefined or empty
+                         if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) {
+                           return null;
+                         }
+
+                         // Format key for display
+                         const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                         // Special handling for country audience data
+                         if (key === 'by-country' && Array.isArray(value)) {
+                           const topCountries = value.slice(0, 5); // Show top 5 countries
+                           return (
+                             <div key={key} className="mb-3 last:mb-0">
+                               <div className="text-gray-600 text-xs font-medium mb-2">{displayKey} (Top 5)</div>
+                               <div className="space-y-1">
+                                 {topCountries.map((country: any, index: number) => (
+                                   <div key={country.country_code} className="flex justify-between items-center">
+                                     <span className="text-xs text-gray-700 flex items-center gap-1">
+                                       <span className="text-gray-400">#{index + 1}</span>
+                                       {country.country_code}
+                                     </span>
+                                     <span className="text-xs font-medium text-gray-900">
+                                       {country.audience_pct.toFixed(1)}%
+                                     </span>
+                                   </div>
+                                 ))}
+                               </div>
+                               {value.length > 5 && (
+                                 <div className="text-xs text-gray-500 mt-1">
+                                   +{value.length - 5} more countries
+                                 </div>
+                               )}
+                             </div>
+                           );
+                         }
+
+                         // Default handling for other data types
+                         return (
+                           <div key={key} className="flex justify-between items-start mb-1 last:mb-0">
+                             <span className="text-gray-600 text-xs">{displayKey}</span>
+                             <span className="font-medium text-xs text-right max-w-24 truncate">
+                               {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                             </span>
+                           </div>
+                         );
+                       })}
                      </div>
                    </div>
                  )}
