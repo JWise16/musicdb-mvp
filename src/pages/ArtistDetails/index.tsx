@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatEventDate } from '../../utils/dateUtils';
-import { VibrateService, type VibrateArtist, type VibrateArtistLink } from '../../services/vibrateService';
+import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent } from '../../services/vibrateService';
 
 // Import types from the database
 import type { Tables } from '../../types/database.types';
@@ -72,6 +72,8 @@ const ArtistDetails = () => {
   const [artist, setArtist] = useState<ArtistWithEvents | null>(null);
   const [vibrateArtist, setVibrateArtist] = useState<VibrateArtist | null>(null);
   const [artistLinks, setArtistLinks] = useState<VibrateArtistLink[]>([]);
+  const [vibrateUpcomingEvents, setVibrateUpcomingEvents] = useState<VibrateEvent[]>([]);
+  const [vibratePastEvents, setVibratePastEvents] = useState<VibrateEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,14 +91,18 @@ const ArtistDetails = () => {
         if (artistData) {
           setArtist(artistData);
           
-          // Fetch additional data from Viberate API (artist info + links)
+          // Fetch additional data from Viberate API (artist info + links + events)
           try {
-            const { artist: vibrateData, links } = await VibrateService.getArtistWithLinks(artistData.name);
+            const { artist: vibrateData, links, upcomingEvents, pastEvents } = await VibrateService.getArtistWithLinksAndEvents(artistData.name);
             if (vibrateData) {
               setVibrateArtist(vibrateData);
               setArtistLinks(links);
+              setVibrateUpcomingEvents(upcomingEvents);
+              setVibratePastEvents(pastEvents);
               console.log('Found Viberate data for artist:', vibrateData);
               console.log('Found artist links:', links);
+              console.log('Found upcoming events:', upcomingEvents);
+              console.log('Found past events:', pastEvents);
             }
           } catch (vibrateError) {
             console.warn('Could not fetch Viberate data:', vibrateError);
@@ -304,93 +310,354 @@ const ArtistDetails = () => {
             {/* Right Column - Events List */}
             <div className="lg:col-span-9">
               <div className="card p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Event History</h3>
-            {artist.events.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Event
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Venue
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Role
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Attendance
-                      </th>
-                    </tr>
-                  </thead>
-                                     <tbody className="bg-white divide-y divide-gray-200">
-                     {artist.events.map((event: any) => (
-                      <tr
-                        key={event.id}
-                        className="hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => handleEventClick(event.id)}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {event.name}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {formatEventDate(event.date)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {event.venues?.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {event.venues?.location}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            event.is_headliner 
-                              ? 'bg-purple-100 text-purple-700' 
-                              : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {event.is_headliner ? 'Headliner' : 'Supporting'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {event.tickets_sold ? (
-                              <>
-                                {event.tickets_sold.toLocaleString()} / {event.total_tickets.toLocaleString()}
-                                <div className="text-xs text-gray-500">
-                                  ({Math.round((event.tickets_sold / event.total_tickets) * 100)}% sold)
+                <h3 className="text-xl font-semibold text-gray-900 mb-6">Events</h3>
+                
+                {/* Local Events Section */}
+                {artist.events.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="inline-block w-3 h-3 bg-purple-500 rounded-full"></span>
+                      Your Database Events ({artist.events.length})
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Event
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Venue
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Role
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Attendance
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {artist.events.map((event: any) => (
+                            <tr
+                              key={event.id}
+                              className="hover:bg-gray-50 cursor-pointer transition-colors"
+                              onClick={() => handleEventClick(event.id)}
+                            >
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {event.name}
                                 </div>
-                              </>
-                            ) : (
-                              <span className="text-gray-400">—</span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
-                  </svg>
-                </div>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">No events found</h4>
-                <p className="text-gray-600">This artist hasn't performed at any events yet.</p>
-              </div>
-            )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {formatEventDate(event.date)}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {event.venues?.name}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {event.venues?.location}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  event.is_headliner 
+                                    ? 'bg-purple-100 text-purple-700' 
+                                    : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {event.is_headliner ? 'Headliner' : 'Supporting'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {event.tickets_sold ? (
+                                    <>
+                                      {event.tickets_sold.toLocaleString()} / {event.total_tickets.toLocaleString()}
+                                      <div className="text-xs text-gray-500">
+                                        ({Math.round((event.tickets_sold / event.total_tickets) * 100)}% sold)
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <span className="text-gray-400">—</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vibrate Upcoming Events Section */}
+                {vibrateUpcomingEvents.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
+                      Upcoming Events via Viberate ({vibrateUpcomingEvents.length})
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Event
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Location
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Type
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Genres
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {vibrateUpcomingEvents.map((event: VibrateEvent) => {
+                            // Helper function to format date from ISO string
+                            const formatVibrateDate = (dateString: string) => {
+                              try {
+                                const date = new Date(dateString);
+                                return date.toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                });
+                              } catch {
+                                return dateString;
+                              }
+                            };
+
+                            // Get location info (venue for events, city for festivals)
+                            const getLocationInfo = () => {
+                              if (event.venue) {
+                                return {
+                                  name: event.venue.name,
+                                  city: event.venue.city.name,
+                                  country: event.venue.country.name
+                                };
+                              } else if (event.city && event.country) {
+                                return {
+                                  name: 'Festival',
+                                  city: event.city.name,
+                                  country: event.country.name
+                                };
+                              }
+                              return { name: 'TBA', city: '', country: '' };
+                            };
+
+                            const location = getLocationInfo();
+
+                            return (
+                              <tr
+                                key={`vibrate-upcoming-${event.uuid}`}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {event.name}
+                                  </div>
+                                  {event.image && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Has image
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {formatVibrateDate(event.start)}
+                                  </div>
+                                  {event.end && (
+                                    <div className="text-xs text-gray-500">
+                                      - {formatVibrateDate(event.end)}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {location.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {location.city}{location.country && `, ${location.country}`}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    event.type === 'event' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-purple-100 text-purple-700'
+                                  }`}>
+                                    {event.type}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {event.genres?.[0]?.name || event.subgenres?.[0]?.name || 'N/A'}
+                                  </div>
+                                  {event.subgenres && event.subgenres.length > 0 && (
+                                    <div className="text-xs text-gray-500">
+                                      {event.subgenres.slice(0, 2).map((sg: any) => sg.name).join(', ')}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vibrate Past Events Section */}
+                {vibratePastEvents.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="inline-block w-3 h-3 bg-gray-500 rounded-full"></span>
+                      Past Events via Viberate ({vibratePastEvents.length})
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Event
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Location
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Type
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Genres
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {vibratePastEvents.map((event: VibrateEvent) => {
+                            // Helper function to format date from ISO string
+                            const formatVibrateDate = (dateString: string) => {
+                              try {
+                                const date = new Date(dateString);
+                                return date.toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                });
+                              } catch {
+                                return dateString;
+                              }
+                            };
+
+                            // Get location info (venue for events, city for festivals)
+                            const getLocationInfo = () => {
+                              if (event.venue) {
+                                return {
+                                  name: event.venue.name,
+                                  city: event.venue.city.name,
+                                  country: event.venue.country.name
+                                };
+                              } else if (event.city && event.country) {
+                                return {
+                                  name: 'Festival',
+                                  city: event.city.name,
+                                  country: event.country.name
+                                };
+                              }
+                              return { name: 'TBA', city: '', country: '' };
+                            };
+
+                            const location = getLocationInfo();
+
+                            return (
+                              <tr
+                                key={`vibrate-past-${event.uuid}`}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {event.name}
+                                  </div>
+                                  {event.image && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Has image
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {formatVibrateDate(event.start)}
+                                  </div>
+                                  {event.end && (
+                                    <div className="text-xs text-gray-500">
+                                      - {formatVibrateDate(event.end)}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {location.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {location.city}{location.country && `, ${location.country}`}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    event.type === 'event' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-purple-100 text-purple-700'
+                                  }`}>
+                                    {event.type}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {event.genres?.[0]?.name || event.subgenres?.[0]?.name || 'N/A'}
+                                  </div>
+                                  {event.subgenres && event.subgenres.length > 0 && (
+                                    <div className="text-xs text-gray-500">
+                                      {event.subgenres.slice(0, 2).map((sg: any) => sg.name).join(', ')}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* No Events Message */}
+                {artist.events.length === 0 && vibrateUpcomingEvents.length === 0 && vibratePastEvents.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No events found</h4>
+                    <p className="text-gray-600">This artist hasn't performed at any events yet.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
