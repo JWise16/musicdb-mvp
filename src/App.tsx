@@ -10,6 +10,7 @@ import Events from './pages/Events';
 import Venues from './pages/Venues';
 import VenueDetails from './pages/VenueDetails';
 import EventDetails from './pages/EventDetails';
+import ArtistDetails from './pages/ArtistDetails';
 import AddEvent from './pages/AddEvent';
 import AddVenue from './pages/AddVenue';
 import Verification from './pages/Verification';
@@ -108,6 +109,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EventDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/artist/:id"
+            element={
+              <ProtectedRoute>
+                <ArtistDetails />
               </ProtectedRoute>
             }
           />

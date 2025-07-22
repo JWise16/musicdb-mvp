@@ -130,8 +130,19 @@ const Events = () => {
     applyFilters();
   }, [filters, hasVenues, hasVenueEvents]);
 
-  const handleEventClick = (eventId: string) => {
-    navigate(`/event/${eventId}`);
+  const handleEventClick = async (eventId: string) => {
+    // Import ArtistService dynamically to avoid import issues
+    const { ArtistService } = await import('../../services/artistService');
+    
+    // Get the primary artist for this event
+    const primaryArtistId = await ArtistService.getPrimaryArtistFromEvent(eventId);
+    
+    if (primaryArtistId) {
+      navigate(`/artist/${primaryArtistId}`);
+    } else {
+      // Fallback to event details if no artist found
+      navigate(`/event/${eventId}`);
+    }
   };
 
   // Show loading while checking verification
