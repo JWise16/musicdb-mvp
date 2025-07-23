@@ -240,6 +240,54 @@ export type VibrateInstagramAudienceResponse = {
   audience: VibrateInstagramAudienceData;
 };
 
+export type VibrateTikTokAudienceCountry = {
+  country_code: string;
+  tiktok_followers: number | null;
+  tiktok_followers_pct: number;
+};
+
+export type VibrateTikTokGenderData = {
+  male: {
+    pct: number;
+    total: number;
+  };
+  female: {
+    pct: number;
+    total: number;
+  };
+};
+
+export type VibrateTikTokAgeGroup = {
+  male: {
+    pct: number;
+    total: number;
+  };
+  female: {
+    pct: number;
+    total: number;
+  };
+};
+
+export type VibrateTikTokAgeData = {
+  [ageGroup: string]: VibrateTikTokAgeGroup;
+};
+
+export type VibrateTikTokAudienceData = {
+  byCountry: VibrateTikTokAudienceCountry[];
+  byGender: VibrateTikTokGenderData;
+  byAge: VibrateTikTokAgeData;
+};
+
+export type VibrateTikTokAudienceResponse = {
+  success: boolean;
+  artist: {
+    uuid: string;
+    name: string;
+    slug: string;
+  };
+  audience: VibrateTikTokAudienceData;
+};
+
 export class VibrateService {
   // Search for artists using the Viberate API via Supabase Edge Function
   static async searchArtists(artistName: string): Promise<VibrateSearchResponse | null> {
@@ -468,6 +516,33 @@ export class VibrateService {
     }
   }
 
+  // Get artist TikTok audience data by UUID
+  static async getArtistTikTokAudience(artistUuid: string): Promise<VibrateTikTokAudienceResponse | null> {
+    try {
+      console.log(`Fetching TikTok audience data for artist UUID: ${artistUuid}`);
+      
+      const { data, error } = await supabase.functions.invoke('vibrate-artist-tiktok-audience', {
+        body: { artistUuid }
+      });
+
+      if (error) {
+        console.error('Error calling artist TikTok audience edge function:', error);
+        return null;
+      }
+
+      if (!data?.success) {
+        console.error('Artist TikTok audience edge function returned error:', data);
+        return null;
+      }
+
+      console.log(`Found TikTok audience data for artist (${data.audience?.byCountry?.length || 0} countries)`);
+      return data;
+    } catch (error) {
+      console.error('Error in VibrateService.getArtistTikTokAudience:', error);
+      return null;
+    }
+  }
+
   // Get artist data with links (combines search + links calls)
   static async getArtistWithLinks(artistName: string): Promise<{
     artist: VibrateArtist | null;
@@ -527,7 +602,7 @@ export class VibrateService {
     }
   }
 
-  // Get artist data with all available info (combines search + links + events + audience + bio + spotify listeners + instagram audience calls)
+  // Get artist data with all available info (combines search + links + events + audience + bio + spotify listeners + instagram audience + tiktok audience calls)
   static async getArtistWithAllData(artistName: string): Promise<{
     artist: VibrateArtist | null;
     links: VibrateArtistLink[];
@@ -537,6 +612,7 @@ export class VibrateService {
     bio: VibrateBioData;
     spotifyListeners: VibrateSpotifyListenersData;
     instagramAudience: VibrateInstagramAudienceData;
+    tiktokAudience: VibrateTikTokAudienceData;
   }> {
     try {
       // First get the artist data
@@ -551,18 +627,20 @@ export class VibrateService {
           audience: {}, 
           bio: { BIO: [], FAQ: [] }, 
           spotifyListeners: { byCity: [], byCountry: {} },
-          instagramAudience: { byCity: [], byCountry: [], byGender: {} as VibrateInstagramGenderData, byAge: {} }
+          instagramAudience: { byCity: [], byCountry: [], byGender: {} as VibrateInstagramGenderData, byAge: {} },
+          tiktokAudience: { byCountry: [], byGender: {} as VibrateTikTokGenderData, byAge: {} }
         };
       }
 
-      // Then get their links, events, audience, bio, Spotify listeners, and Instagram audience data in parallel
-      const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse, instagramAudienceResponse] = await Promise.all([
+      // Then get their links, events, audience, bio, Spotify listeners, Instagram audience, and TikTok audience data in parallel
+      const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse, instagramAudienceResponse, tiktokAudienceResponse] = await Promise.all([
         this.getArtistLinks(artist.uuid),
         this.getArtistEvents(artist.uuid),
         this.getArtistAudience(artist.uuid),
         this.getArtistBio(artist.uuid),
         this.getArtistSpotifyListeners(artist.uuid),
-        this.getArtistInstagramAudience(artist.uuid)
+        this.getArtistInstagramAudience(artist.uuid),
+        this.getArtistTikTokAudience(artist.uuid)
       ]);
       
       return {
@@ -573,7 +651,8 @@ export class VibrateService {
         audience: audienceResponse?.audience || {},
         bio: bioResponse?.bio || { BIO: [], FAQ: [] },
         spotifyListeners: spotifyListenersResponse?.listeners || { byCity: [], byCountry: {} },
-        instagramAudience: instagramAudienceResponse?.audience || { byCity: [], byCountry: [], byGender: {} as VibrateInstagramGenderData, byAge: {} }
+        instagramAudience: instagramAudienceResponse?.audience || { byCity: [], byCountry: [], byGender: {} as VibrateInstagramGenderData, byAge: {} },
+        tiktokAudience: tiktokAudienceResponse?.audience || { byCountry: [], byGender: {} as VibrateTikTokGenderData, byAge: {} }
       };
     } catch (error) {
       console.error('Error in VibrateService.getArtistWithAllData:', error);
@@ -585,7 +664,8 @@ export class VibrateService {
         audience: {}, 
         bio: { BIO: [], FAQ: [] }, 
         spotifyListeners: { byCity: [], byCountry: {} },
-        instagramAudience: { byCity: [], byCountry: [], byGender: {} as VibrateInstagramGenderData, byAge: {} }
+        instagramAudience: { byCity: [], byCountry: [], byGender: {} as VibrateInstagramGenderData, byAge: {} },
+        tiktokAudience: { byCountry: [], byGender: {} as VibrateTikTokGenderData, byAge: {} }
       };
     }
   }
