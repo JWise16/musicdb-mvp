@@ -133,6 +133,26 @@ export type VibrateAudienceResponse = {
   audience: VibrateAudienceData;
 };
 
+export type VibrateBioItem = {
+  question: string;
+  answer: string;
+};
+
+export type VibrateBioData = {
+  BIO: VibrateBioItem[];
+  FAQ: VibrateBioItem[];
+};
+
+export type VibrateBioResponse = {
+  success: boolean;
+  artist: {
+    uuid: string;
+    name: string;
+    slug: string;
+  };
+  bio: VibrateBioData;
+};
+
 export class VibrateService {
   // Search for artists using the Viberate API via Supabase Edge Function
   static async searchArtists(artistName: string): Promise<VibrateSearchResponse | null> {
@@ -280,6 +300,33 @@ export class VibrateService {
     }
   }
 
+  // Get artist bio data by UUID
+  static async getArtistBio(artistUuid: string): Promise<VibrateBioResponse | null> {
+    try {
+      console.log(`Fetching bio data for artist UUID: ${artistUuid}`);
+      
+      const { data, error } = await supabase.functions.invoke('vibrate-artist-bio', {
+        body: { artistUuid }
+      });
+
+      if (error) {
+        console.error('Error calling artist bio edge function:', error);
+        return null;
+      }
+
+      if (!data?.success) {
+        console.error('Artist bio edge function returned error:', data);
+        return null;
+      }
+
+      console.log(`Found bio data for artist`);
+      return data;
+    } catch (error) {
+      console.error('Error in VibrateService.getArtistBio:', error);
+      return null;
+    }
+  }
+
   // Get artist data with links (combines search + links calls)
   static async getArtistWithLinks(artistName: string): Promise<{
     artist: VibrateArtist | null;
@@ -339,27 +386,29 @@ export class VibrateService {
     }
   }
 
-  // Get artist data with all available info (combines search + links + events + audience calls)
+  // Get artist data with all available info (combines search + links + events + audience + bio calls)
   static async getArtistWithAllData(artistName: string): Promise<{
     artist: VibrateArtist | null;
     links: VibrateArtistLink[];
     upcomingEvents: VibrateEvent[];
     pastEvents: VibrateEvent[];
     audience: VibrateAudienceData;
+    bio: VibrateBioData;
   }> {
     try {
       // First get the artist data
       const artist = await this.getExactArtistMatch(artistName);
       
       if (!artist?.uuid) {
-        return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {} };
+        return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {}, bio: { BIO: [], FAQ: [] } };
       }
 
-      // Then get their links, events, and audience data in parallel
-      const [linksResponse, eventsResponse, audienceResponse] = await Promise.all([
+      // Then get their links, events, audience, and bio data in parallel
+      const [linksResponse, eventsResponse, audienceResponse, bioResponse] = await Promise.all([
         this.getArtistLinks(artist.uuid),
         this.getArtistEvents(artist.uuid),
-        this.getArtistAudience(artist.uuid)
+        this.getArtistAudience(artist.uuid),
+        this.getArtistBio(artist.uuid)
       ]);
       
       return {
@@ -367,11 +416,12 @@ export class VibrateService {
         links: linksResponse?.links || [],
         upcomingEvents: eventsResponse?.upcoming || [],
         pastEvents: eventsResponse?.past || [],
-        audience: audienceResponse?.audience || {}
+        audience: audienceResponse?.audience || {},
+        bio: bioResponse?.bio || { BIO: [], FAQ: [] }
       };
     } catch (error) {
       console.error('Error in VibrateService.getArtistWithAllData:', error);
-      return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {} };
+      return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {}, bio: { BIO: [], FAQ: [] } };
     }
   }
 }

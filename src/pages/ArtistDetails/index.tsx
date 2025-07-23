@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatEventDate } from '../../utils/dateUtils';
-import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData } from '../../services/vibrateService';
+import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData, type VibrateBioData } from '../../services/vibrateService';
 
 // Import types from the database
 import type { Tables } from '../../types/database.types';
@@ -75,6 +75,7 @@ const ArtistDetails = () => {
   const [vibrateUpcomingEvents, setVibrateUpcomingEvents] = useState<VibrateEvent[]>([]);
   const [vibratePastEvents, setVibratePastEvents] = useState<VibrateEvent[]>([]);
   const [vibrateAudience, setVibrateAudience] = useState<VibrateAudienceData>({});
+  const [vibrateBio, setVibrateBio] = useState<VibrateBioData>({ BIO: [], FAQ: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,13 +95,14 @@ const ArtistDetails = () => {
           
           // Fetch additional data from Viberate API (artist info + links + events)
           try {
-            const { artist: vibrateData, links, upcomingEvents, pastEvents, audience } = await VibrateService.getArtistWithAllData(artistData.name);
+            const { artist: vibrateData, links, upcomingEvents, pastEvents, audience, bio } = await VibrateService.getArtistWithAllData(artistData.name);
             if (vibrateData) {
               setVibrateArtist(vibrateData);
               setArtistLinks(links);
               setVibrateUpcomingEvents(upcomingEvents);
               setVibratePastEvents(pastEvents);
               setVibrateAudience(audience);
+              setVibrateBio(bio);
               console.log('Found Viberate data for artist:', vibrateData);
               console.log('Found artist links:', links);
               console.log('Found upcoming events:', upcomingEvents);
@@ -108,6 +110,8 @@ const ArtistDetails = () => {
               console.log('Found audience data:', audience);
               console.log('Audience data keys:', Object.keys(audience));
               console.log('Audience data length check:', Object.keys(audience).length > 0);
+              console.log('Found bio data:', bio);
+              console.log('Bio sections:', bio.BIO.length, 'FAQ items:', bio.FAQ.length);
             }
           } catch (vibrateError) {
             console.warn('Could not fetch Viberate data:', vibrateError);
@@ -705,6 +709,67 @@ const ArtistDetails = () => {
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                )}
+
+                {/* Artist Bio Section */}
+                {(vibrateBio.BIO.length > 0 || vibrateBio.FAQ.length > 0) && (
+                  <div className="mt-8">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Artist Bio & Information</h3>
+
+                    {/* Bio Content */}
+                    {vibrateBio.BIO.length > 0 && (
+                      <div className="mb-8">
+                        <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                          <span className="inline-block w-3 h-3 bg-blue-500 rounded-full"></span>
+                          Biography
+                        </h4>
+                        <div className="space-y-6">
+                          {vibrateBio.BIO.map((item, index) => (
+                            <div key={index} className="bg-gray-50 rounded-lg p-6">
+                              <h5 className="text-base font-medium text-gray-900 mb-3">
+                                {item.question}
+                              </h5>
+                              <div 
+                                className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{ 
+                                  __html: item.answer.replace(/<br><br>/g, '</p><p>').replace(/^/, '<p>').replace(/$/, '</p>')
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* FAQ Section */}
+                    {vibrateBio.FAQ.length > 0 && (
+                      <div className="mb-8">
+                        <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                          <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
+                          Frequently Asked Questions
+                        </h4>
+                        <div className="space-y-4">
+                          {vibrateBio.FAQ.slice(0, 10).map((item, index) => (
+                            <details key={index} className="bg-white border border-gray-200 rounded-lg">
+                              <summary className="px-4 py-3 cursor-pointer hover:bg-gray-50 font-medium text-gray-900 text-sm">
+                                {item.question}
+                              </summary>
+                              <div className="px-4 pb-3 text-sm text-gray-700 leading-relaxed border-t border-gray-100 pt-3">
+                                {item.answer}
+                              </div>
+                            </details>
+                          ))}
+                          {vibrateBio.FAQ.length > 10 && (
+                            <div className="text-center">
+                              <p className="text-sm text-gray-500">
+                                Showing 10 of {vibrateBio.FAQ.length} questions
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
