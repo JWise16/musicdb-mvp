@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatEventDate } from '../../utils/dateUtils';
-import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData, type VibrateBioData, type VibrateSpotifyListenersData } from '../../services/vibrateService';
+import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData, type VibrateBioData, type VibrateSpotifyListenersData, type VibrateInstagramAudienceData } from '../../services/vibrateService';
 
 // Import types from the database
 import type { Tables } from '../../types/database.types';
@@ -77,7 +77,9 @@ const ArtistDetails = () => {
   const [vibrateAudience, setVibrateAudience] = useState<VibrateAudienceData>({});
   const [vibrateBio, setVibrateBio] = useState<VibrateBioData>({ BIO: [], FAQ: [] });
   const [spotifyListeners, setSpotifyListeners] = useState<VibrateSpotifyListenersData>({ byCity: [], byCountry: {} });
+  const [instagramAudience, setInstagramAudience] = useState<VibrateInstagramAudienceData>({ byCity: [], byCountry: [], byGender: {} as any, byAge: {} });
   const [showAllCities, setShowAllCities] = useState(false);
+  const [showAllInstagramCities, setShowAllInstagramCities] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,9 +97,9 @@ const ArtistDetails = () => {
         if (artistData) {
           setArtist(artistData);
           
-          // Fetch additional data from Viberate API (artist info + links + events + spotify listeners)
+          // Fetch additional data from Viberate API (artist info + links + events + spotify listeners + instagram audience)
           try {
-            const { artist: vibrateData, links, upcomingEvents, pastEvents, audience, bio, spotifyListeners: spotifyListenersData } = await VibrateService.getArtistWithAllData(artistData.name);
+            const { artist: vibrateData, links, upcomingEvents, pastEvents, audience, bio, spotifyListeners: spotifyListenersData, instagramAudience: instagramAudienceData } = await VibrateService.getArtistWithAllData(artistData.name);
             if (vibrateData) {
               setVibrateArtist(vibrateData);
               setArtistLinks(links);
@@ -106,6 +108,7 @@ const ArtistDetails = () => {
               setVibrateAudience(audience);
               setVibrateBio(bio);
               setSpotifyListeners(spotifyListenersData);
+              setInstagramAudience(instagramAudienceData);
               console.log('Found Viberate data for artist:', vibrateData);
               console.log('Found artist links:', links);
               console.log('Found upcoming events:', upcomingEvents);
@@ -117,6 +120,8 @@ const ArtistDetails = () => {
               console.log('Bio sections:', bio.BIO.length, 'FAQ items:', bio.FAQ.length);
               console.log('Found Spotify listeners data:', spotifyListenersData);
               console.log('Spotify listeners by city:', spotifyListenersData.byCity.length, 'countries:', Object.keys(spotifyListenersData.byCountry).length);
+              console.log('Found Instagram audience data:', instagramAudienceData);
+              console.log('Instagram audience by city:', instagramAudienceData.byCity.length, 'countries:', instagramAudienceData.byCountry.length);
             }
           } catch (vibrateError) {
             console.warn('Could not fetch Viberate data:', vibrateError);
@@ -441,6 +446,135 @@ const ArtistDetails = () => {
                            +{Object.keys(spotifyListeners.byCountry).length - 10} more countries
                          </div>
                        )}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Instagram Audience by City */}
+                 {instagramAudience.byCity.length > 0 && (
+                   <div className="w-full">
+                     <div className="text-xs font-medium text-gray-500 mb-2">
+                       Instagram Audience by City 
+                       {showAllInstagramCities 
+                         ? `(${instagramAudience.byCity.length} cities)` 
+                         : `(Top 10 of ${instagramAudience.byCity.length})`
+                       }
+                     </div>
+                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                       <div className="space-y-1.5">
+                         {instagramAudience.byCity
+                           .slice(0, showAllInstagramCities ? instagramAudience.byCity.length : 10)
+                           .map((cityData, index) => (
+                           <div key={cityData.city_id} className="flex justify-between items-center">
+                             <div className="flex-1 min-w-0">
+                               <div className="flex items-center gap-2">
+                                 <span className="text-xs text-gray-400">#{index + 1}</span>
+                                 <span className="text-xs text-gray-900 font-medium truncate">
+                                   {cityData.city}
+                                 </span>
+                                 <span className="text-xs text-gray-500 uppercase">
+                                   {cityData.country_code}
+                                 </span>
+                               </div>
+                             </div>
+                             <div className="flex flex-col items-end">
+                               <span className="text-xs font-medium text-gray-900">
+                                 {cityData.instagram_followers.toLocaleString()}
+                               </span>
+                               <span className="text-xs text-gray-500">
+                                 {cityData.instagram_followers_pct.toFixed(1)}%
+                               </span>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                       <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                         Total: {instagramAudience.byCity.reduce((sum, city) => sum + city.instagram_followers, 0).toLocaleString()} followers
+                       </div>
+                       {instagramAudience.byCity.length > 10 && (
+                         <div className="mt-3">
+                           <button
+                             onClick={() => setShowAllInstagramCities(!showAllInstagramCities)}
+                             className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                           >
+                             {showAllInstagramCities 
+                               ? 'Show Top 10 Only' 
+                               : `See All ${instagramAudience.byCity.length} Cities`
+                             }
+                           </button>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Instagram Gender Demographics */}
+                 {Object.keys(instagramAudience.byGender).length > 0 && (
+                   <div className="w-full">
+                     <div className="text-xs font-medium text-gray-500 mb-2">Instagram Gender Distribution</div>
+                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                       <div className="space-y-2">
+                         {Object.entries(instagramAudience.byGender).map(([gender, data]) => (
+                           <div key={gender} className="flex justify-between items-center">
+                             <div className="flex items-center gap-2">
+                               <div className={`w-3 h-3 rounded-full ${gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}></div>
+                               <span className="text-xs text-gray-900 font-medium capitalize">{gender}</span>
+                             </div>
+                             <div className="flex flex-col items-end">
+                               <span className="text-xs font-medium text-gray-900">
+                                 {data.pct.toFixed(1)}%
+                               </span>
+                               <span className="text-xs text-gray-500">
+                                 {data.total.toLocaleString()} followers
+                               </span>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Instagram Age Demographics */}
+                 {Object.keys(instagramAudience.byAge).length > 0 && (
+                   <div className="w-full">
+                     <div className="text-xs font-medium text-gray-500 mb-2">Instagram Age Distribution</div>
+                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                       <div className="space-y-1.5">
+                         {Object.entries(instagramAudience.byAge)
+                           .filter(([ageGroup, data]) => (data.male.total + data.female.total) > 0)
+                           .sort(([a], [b]) => {
+                             // Sort age groups properly (13-17, 18-24, 25-34, etc.)
+                             const getAgeOrder = (age: string) => {
+                               if (age === '13-17') return 1;
+                               if (age === '18-24') return 2;
+                               if (age === '25-34') return 3;
+                               if (age === '35-44') return 4;
+                               if (age === '45-64') return 5;
+                               if (age === '65-') return 6;
+                               return 7;
+                             };
+                             return getAgeOrder(a) - getAgeOrder(b);
+                           })
+                           .map(([ageGroup, data]) => {
+                             const totalForAge = data.male.total + data.female.total;
+                             const totalPct = data.male.pct + data.female.pct;
+                             return (
+                               <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
+                                 <div className="flex justify-between items-center mb-1">
+                                   <span className="text-xs text-gray-900 font-medium">{ageGroup}</span>
+                                   <span className="text-xs font-medium text-gray-900">
+                                     {totalPct.toFixed(1)}%
+                                   </span>
+                                 </div>
+                                 <div className="flex justify-between text-xs text-gray-600 pl-2">
+                                   <span>♂ {data.male.pct.toFixed(1)}% ({data.male.total.toLocaleString()})</span>
+                                   <span>♀ {data.female.pct.toFixed(1)}% ({data.female.total.toLocaleString()})</span>
+                                 </div>
+                               </div>
+                             );
+                           })}
+                       </div>
                      </div>
                    </div>
                  )}
