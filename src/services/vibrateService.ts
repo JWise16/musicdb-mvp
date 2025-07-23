@@ -288,6 +288,54 @@ export type VibrateTikTokAudienceResponse = {
   audience: VibrateTikTokAudienceData;
 };
 
+export type VibrateYouTubeCountryData = {
+  [countryCode: string]: {
+    alltime: number;
+  };
+};
+
+export type VibrateYouTubeGenderData = {
+  male: {
+    pct: number;
+    total: number;
+  };
+  female: {
+    pct: number;
+    total: number;
+  };
+};
+
+export type VibrateYouTubeAgeGroup = {
+  male: {
+    pct: number;
+    total: number;
+  };
+  female: {
+    pct: number;
+    total: number;
+  };
+};
+
+export type VibrateYouTubeAgeData = {
+  [ageGroup: string]: VibrateYouTubeAgeGroup;
+};
+
+export type VibrateYouTubeAudienceData = {
+  byCountry: VibrateYouTubeCountryData;
+  byGender: VibrateYouTubeGenderData;
+  byAge: VibrateYouTubeAgeData;
+};
+
+export type VibrateYouTubeAudienceResponse = {
+  success: boolean;
+  artist: {
+    uuid: string;
+    name: string;
+    slug: string;
+  };
+  audience: VibrateYouTubeAudienceData;
+};
+
 export class VibrateService {
   // Search for artists using the Viberate API via Supabase Edge Function
   static async searchArtists(artistName: string): Promise<VibrateSearchResponse | null> {
@@ -543,6 +591,33 @@ export class VibrateService {
     }
   }
 
+  // Get artist YouTube audience data by UUID
+  static async getArtistYouTubeAudience(artistUuid: string): Promise<VibrateYouTubeAudienceResponse | null> {
+    try {
+      console.log(`Fetching YouTube audience data for artist UUID: ${artistUuid}`);
+      
+      const { data, error } = await supabase.functions.invoke('vibrate-artist-youtube-audience', {
+        body: { artistUuid }
+      });
+
+      if (error) {
+        console.error('Error calling artist YouTube audience edge function:', error);
+        return null;
+      }
+
+      if (!data?.success) {
+        console.error('Artist YouTube audience edge function returned error:', data);
+        return null;
+      }
+
+      console.log(`Found YouTube audience data for artist (${Object.keys(data.audience?.byCountry || {}).length} countries)`);
+      return data;
+    } catch (error) {
+      console.error('Error in VibrateService.getArtistYouTubeAudience:', error);
+      return null;
+    }
+  }
+
   // Get artist data with links (combines search + links calls)
   static async getArtistWithLinks(artistName: string): Promise<{
     artist: VibrateArtist | null;
@@ -602,7 +677,7 @@ export class VibrateService {
     }
   }
 
-  // Get artist data with all available info (combines search + links + events + audience + bio + spotify listeners + instagram audience + tiktok audience calls)
+  // Get artist data with all available info (combines search + links + events + audience + bio + spotify listeners + instagram audience + tiktok audience + youtube audience calls)
   static async getArtistWithAllData(artistName: string): Promise<{
     artist: VibrateArtist | null;
     links: VibrateArtistLink[];
@@ -613,6 +688,7 @@ export class VibrateService {
     spotifyListeners: VibrateSpotifyListenersData;
     instagramAudience: VibrateInstagramAudienceData;
     tiktokAudience: VibrateTikTokAudienceData;
+    youtubeAudience: VibrateYouTubeAudienceData;
   }> {
     try {
       // First get the artist data
@@ -628,19 +704,21 @@ export class VibrateService {
           bio: { BIO: [], FAQ: [] }, 
           spotifyListeners: { byCity: [], byCountry: {} },
           instagramAudience: { byCity: [], byCountry: [], byGender: {} as VibrateInstagramGenderData, byAge: {} },
-          tiktokAudience: { byCountry: [], byGender: {} as VibrateTikTokGenderData, byAge: {} }
+          tiktokAudience: { byCountry: [], byGender: {} as VibrateTikTokGenderData, byAge: {} },
+          youtubeAudience: { byCountry: {}, byGender: {} as VibrateYouTubeGenderData, byAge: {} }
         };
       }
 
-      // Then get their links, events, audience, bio, Spotify listeners, Instagram audience, and TikTok audience data in parallel
-      const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse, instagramAudienceResponse, tiktokAudienceResponse] = await Promise.all([
+      // Then get their links, events, audience, bio, Spotify listeners, Instagram audience, TikTok audience, and YouTube audience data in parallel
+      const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse, instagramAudienceResponse, tiktokAudienceResponse, youtubeAudienceResponse] = await Promise.all([
         this.getArtistLinks(artist.uuid),
         this.getArtistEvents(artist.uuid),
         this.getArtistAudience(artist.uuid),
         this.getArtistBio(artist.uuid),
         this.getArtistSpotifyListeners(artist.uuid),
         this.getArtistInstagramAudience(artist.uuid),
-        this.getArtistTikTokAudience(artist.uuid)
+        this.getArtistTikTokAudience(artist.uuid),
+        this.getArtistYouTubeAudience(artist.uuid)
       ]);
       
       return {
@@ -652,7 +730,8 @@ export class VibrateService {
         bio: bioResponse?.bio || { BIO: [], FAQ: [] },
         spotifyListeners: spotifyListenersResponse?.listeners || { byCity: [], byCountry: {} },
         instagramAudience: instagramAudienceResponse?.audience || { byCity: [], byCountry: [], byGender: {} as VibrateInstagramGenderData, byAge: {} },
-        tiktokAudience: tiktokAudienceResponse?.audience || { byCountry: [], byGender: {} as VibrateTikTokGenderData, byAge: {} }
+        tiktokAudience: tiktokAudienceResponse?.audience || { byCountry: [], byGender: {} as VibrateTikTokGenderData, byAge: {} },
+        youtubeAudience: youtubeAudienceResponse?.audience || { byCountry: {}, byGender: {} as VibrateYouTubeGenderData, byAge: {} }
       };
     } catch (error) {
       console.error('Error in VibrateService.getArtistWithAllData:', error);
@@ -665,7 +744,8 @@ export class VibrateService {
         bio: { BIO: [], FAQ: [] }, 
         spotifyListeners: { byCity: [], byCountry: {} },
         instagramAudience: { byCity: [], byCountry: [], byGender: {} as VibrateInstagramGenderData, byAge: {} },
-        tiktokAudience: { byCountry: [], byGender: {} as VibrateTikTokGenderData, byAge: {} }
+        tiktokAudience: { byCountry: [], byGender: {} as VibrateTikTokGenderData, byAge: {} },
+        youtubeAudience: { byCountry: {}, byGender: {} as VibrateYouTubeGenderData, byAge: {} }
       };
     }
   }
