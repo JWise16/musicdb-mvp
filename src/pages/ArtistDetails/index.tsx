@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatEventDate } from '../../utils/dateUtils';
-import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData, type VibrateBioData } from '../../services/vibrateService';
+import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData, type VibrateBioData, type VibrateSpotifyListenersData } from '../../services/vibrateService';
 
 // Import types from the database
 import type { Tables } from '../../types/database.types';
@@ -76,6 +76,8 @@ const ArtistDetails = () => {
   const [vibratePastEvents, setVibratePastEvents] = useState<VibrateEvent[]>([]);
   const [vibrateAudience, setVibrateAudience] = useState<VibrateAudienceData>({});
   const [vibrateBio, setVibrateBio] = useState<VibrateBioData>({ BIO: [], FAQ: [] });
+  const [spotifyListeners, setSpotifyListeners] = useState<VibrateSpotifyListenersData>({ byCity: [], byCountry: {} });
+  const [showAllCities, setShowAllCities] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,9 +95,9 @@ const ArtistDetails = () => {
         if (artistData) {
           setArtist(artistData);
           
-          // Fetch additional data from Viberate API (artist info + links + events)
+          // Fetch additional data from Viberate API (artist info + links + events + spotify listeners)
           try {
-            const { artist: vibrateData, links, upcomingEvents, pastEvents, audience, bio } = await VibrateService.getArtistWithAllData(artistData.name);
+            const { artist: vibrateData, links, upcomingEvents, pastEvents, audience, bio, spotifyListeners: spotifyListenersData } = await VibrateService.getArtistWithAllData(artistData.name);
             if (vibrateData) {
               setVibrateArtist(vibrateData);
               setArtistLinks(links);
@@ -103,6 +105,7 @@ const ArtistDetails = () => {
               setVibratePastEvents(pastEvents);
               setVibrateAudience(audience);
               setVibrateBio(bio);
+              setSpotifyListeners(spotifyListenersData);
               console.log('Found Viberate data for artist:', vibrateData);
               console.log('Found artist links:', links);
               console.log('Found upcoming events:', upcomingEvents);
@@ -112,6 +115,8 @@ const ArtistDetails = () => {
               console.log('Audience data length check:', Object.keys(audience).length > 0);
               console.log('Found bio data:', bio);
               console.log('Bio sections:', bio.BIO.length, 'FAQ items:', bio.FAQ.length);
+              console.log('Found Spotify listeners data:', spotifyListenersData);
+              console.log('Spotify listeners by city:', spotifyListenersData.byCity.length, 'countries:', Object.keys(spotifyListenersData.byCountry).length);
             }
           } catch (vibrateError) {
             console.warn('Could not fetch Viberate data:', vibrateError);
@@ -348,6 +353,94 @@ const ArtistDetails = () => {
                            </div>
                          );
                        })}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Spotify Listeners by City */}
+                 {spotifyListeners.byCity.length > 0 && (
+                   <div className="w-full">
+                     <div className="text-xs font-medium text-gray-500 mb-2">
+                       Spotify Listeners by City 
+                       {showAllCities 
+                         ? `(${spotifyListeners.byCity.length} cities)` 
+                         : `(Top 10 of ${spotifyListeners.byCity.length})`
+                       }
+                     </div>
+                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                       <div className="space-y-1.5">
+                         {spotifyListeners.byCity
+                           .slice(0, showAllCities ? spotifyListeners.byCity.length : 10)
+                           .map((cityData, index) => (
+                           <div key={cityData.city_id} className="flex justify-between items-center">
+                             <div className="flex-1 min-w-0">
+                               <div className="flex items-center gap-2">
+                                 <span className="text-xs text-gray-400">#{index + 1}</span>
+                                 <span className="text-xs text-gray-900 font-medium truncate">
+                                   {cityData.city}
+                                 </span>
+                                 <span className="text-xs text-gray-500 uppercase">
+                                   {cityData.country_code}
+                                 </span>
+                               </div>
+                             </div>
+                             <div className="flex flex-col items-end">
+                               <span className="text-xs font-medium text-gray-900">
+                                 {cityData.listeners_1m.toLocaleString()}
+                               </span>
+                               <span className="text-xs text-gray-500">listeners/month</span>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                       <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                         Total: {spotifyListeners.byCity.reduce((sum, city) => sum + city.listeners_1m, 0).toLocaleString()} monthly listeners
+                       </div>
+                       {spotifyListeners.byCity.length > 10 && (
+                         <div className="mt-3">
+                           <button
+                             onClick={() => setShowAllCities(!showAllCities)}
+                             className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                           >
+                             {showAllCities 
+                               ? 'Show Top 10 Only' 
+                               : `See All ${spotifyListeners.byCity.length} Cities`
+                             }
+                           </button>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Spotify Listeners by Country */}
+                 {Object.keys(spotifyListeners.byCountry).length > 0 && (
+                   <div className="w-full">
+                     <div className="text-xs font-medium text-gray-500 mb-2">Spotify Listeners by Country (Top 10)</div>
+                     <div className="bg-gray-50 rounded-lg p-3 text-sm max-h-48 overflow-y-auto">
+                       <div className="space-y-1">
+                         {Object.entries(spotifyListeners.byCountry)
+                           .sort(([,a], [,b]) => b - a)
+                           .slice(0, 10)
+                           .map(([countryCode, listeners], index) => (
+                             <div key={countryCode} className="flex justify-between items-center">
+                               <div className="flex items-center gap-2">
+                                 <span className="text-xs text-gray-400">#{index + 1}</span>
+                                 <span className="text-xs text-gray-900 font-medium uppercase">
+                                   {countryCode}
+                                 </span>
+                               </div>
+                               <span className="text-xs font-medium text-gray-900">
+                                 {listeners.toLocaleString()}
+                               </span>
+                             </div>
+                           ))}
+                       </div>
+                       {Object.keys(spotifyListeners.byCountry).length > 10 && (
+                         <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                           +{Object.keys(spotifyListeners.byCountry).length - 10} more countries
+                         </div>
+                       )}
                      </div>
                    </div>
                  )}

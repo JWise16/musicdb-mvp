@@ -153,6 +153,32 @@ export type VibrateBioResponse = {
   bio: VibrateBioData;
 };
 
+export type VibrateSpotifyListenerCity = {
+  city: string;
+  city_id: string;
+  coordinates: {
+    lat: string;
+    lng: string;
+  };
+  country_code: string;
+  listeners_1m: number;
+};
+
+export type VibrateSpotifyListenersData = {
+  byCity: VibrateSpotifyListenerCity[];
+  byCountry: { [countryCode: string]: number };
+};
+
+export type VibrateSpotifyListenersResponse = {
+  success: boolean;
+  artist: {
+    uuid: string;
+    name: string;
+    slug: string;
+  };
+  listeners: VibrateSpotifyListenersData;
+};
+
 export class VibrateService {
   // Search for artists using the Viberate API via Supabase Edge Function
   static async searchArtists(artistName: string): Promise<VibrateSearchResponse | null> {
@@ -327,6 +353,33 @@ export class VibrateService {
     }
   }
 
+  // Get artist Spotify listeners by location data by UUID
+  static async getArtistSpotifyListeners(artistUuid: string): Promise<VibrateSpotifyListenersResponse | null> {
+    try {
+      console.log(`Fetching Spotify listeners data for artist UUID: ${artistUuid}`);
+      
+      const { data, error } = await supabase.functions.invoke('vibrate-artist-spotify-listeners', {
+        body: { artistUuid }
+      });
+
+      if (error) {
+        console.error('Error calling artist Spotify listeners edge function:', error);
+        return null;
+      }
+
+      if (!data?.success) {
+        console.error('Artist Spotify listeners edge function returned error:', data);
+        return null;
+      }
+
+      console.log(`Found Spotify listeners data for artist (${data.listeners?.byCity?.length || 0} cities)`);
+      return data;
+    } catch (error) {
+      console.error('Error in VibrateService.getArtistSpotifyListeners:', error);
+      return null;
+    }
+  }
+
   // Get artist data with links (combines search + links calls)
   static async getArtistWithLinks(artistName: string): Promise<{
     artist: VibrateArtist | null;
@@ -386,7 +439,7 @@ export class VibrateService {
     }
   }
 
-  // Get artist data with all available info (combines search + links + events + audience + bio calls)
+  // Get artist data with all available info (combines search + links + events + audience + bio + spotify listeners calls)
   static async getArtistWithAllData(artistName: string): Promise<{
     artist: VibrateArtist | null;
     links: VibrateArtistLink[];
@@ -394,21 +447,23 @@ export class VibrateService {
     pastEvents: VibrateEvent[];
     audience: VibrateAudienceData;
     bio: VibrateBioData;
+    spotifyListeners: VibrateSpotifyListenersData;
   }> {
     try {
       // First get the artist data
       const artist = await this.getExactArtistMatch(artistName);
       
       if (!artist?.uuid) {
-        return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {}, bio: { BIO: [], FAQ: [] } };
+        return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {}, bio: { BIO: [], FAQ: [] }, spotifyListeners: { byCity: [], byCountry: {} } };
       }
 
-      // Then get their links, events, audience, and bio data in parallel
-      const [linksResponse, eventsResponse, audienceResponse, bioResponse] = await Promise.all([
+      // Then get their links, events, audience, bio, and Spotify listeners data in parallel
+      const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse] = await Promise.all([
         this.getArtistLinks(artist.uuid),
         this.getArtistEvents(artist.uuid),
         this.getArtistAudience(artist.uuid),
-        this.getArtistBio(artist.uuid)
+        this.getArtistBio(artist.uuid),
+        this.getArtistSpotifyListeners(artist.uuid)
       ]);
       
       return {
@@ -417,11 +472,12 @@ export class VibrateService {
         upcomingEvents: eventsResponse?.upcoming || [],
         pastEvents: eventsResponse?.past || [],
         audience: audienceResponse?.audience || {},
-        bio: bioResponse?.bio || { BIO: [], FAQ: [] }
+        bio: bioResponse?.bio || { BIO: [], FAQ: [] },
+        spotifyListeners: spotifyListenersResponse?.listeners || { byCity: [], byCountry: {} }
       };
     } catch (error) {
       console.error('Error in VibrateService.getArtistWithAllData:', error);
-      return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {}, bio: { BIO: [], FAQ: [] } };
+      return { artist: null, links: [], upcomingEvents: [], pastEvents: [], audience: {}, bio: { BIO: [], FAQ: [] }, spotifyListeners: { byCity: [], byCountry: {} } };
     }
   }
 }
