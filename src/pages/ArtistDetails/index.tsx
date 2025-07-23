@@ -60,6 +60,30 @@ const getChannelIcon = (channel: string) => {
       return <svg {...iconProps}><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>;
     case 'twitter':
       return <svg {...iconProps}><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>;
+    case 'soundcloud':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24">
+          <path d="M17.5 10.5a3.5 3.5 0 0 1 3.5 3.5c0 1.933-1.567 3.5-3.5 3.5H6.75A3.25 3.25 0 0 1 6.7 11.5a.75.75 0 0 1 .8.75v4.25h.75v-5.5a.75.75 0 0 1 1.5 0v5.5h.75v-6.25a.75.75 0 0 1 1.5 0v6.25h.75v-7a.75.75 0 0 1 1.5 0v7h.75v-5.5a.75.75 0 0 1 1.5 0v5.5h.75v-3.5a.75.75 0 0 1 1.5 0v3.5H17.5a2 2 0 1 0 0-4z" fill="currentColor"/>
+        </svg>
+      );
+    case 'tiktok':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24">
+          <path d="M21 8.306c-.638 0-1.262-.062-1.863-.182V14.5A6.5 6.5 0 1 1 12 8v2.02a4.5 4.5 0 1 0 4.5 4.48V2h2.02c.12.601.182 1.225.182 1.863 0 2.37 1.92 4.293 4.293 4.443V8.306z" fill="currentColor"/>
+        </svg>
+      );
+    case 'bandsintown':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24">
+          <path d="M3 3h3v18H3V3zm5 0h3v18H8V3zm5 0h3v18h-3V3zm5 0h3v18h-3V3z" fill="currentColor"/>
+        </svg>
+      );
+    case 'home_page':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24">
+          <path d="M3 12l9-9 9 9h-3v9a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-5H8v5a1 1 0 0 1-1 1H3v-9H3z" fill="currentColor"/>
+        </svg>
+      );
     default:
       return <svg {...iconProps}><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h.5c.28 0 .5.22.5.5s-.22.5-.5.5H7c-1.16 0-2.1.94-2.1 2.1s.94 2.1 2.1 2.1h.5c.28 0 .5.22.5.5s-.22.5-.5.5H7c-1.71 0-3.1-1.39-3.1-3.1zM14 8.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5h.5c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1H14c-.28 0-.5-.22-.5-.5s.22-.5.5-.5h.5c1.16 0 2.1-.94 2.1-2.1S15.66 9.9 14.5 9.9H14c-.28 0-.5-.22-.5-.5z"/></svg>;
   }
@@ -296,21 +320,33 @@ const ArtistDetails = () => {
                    <div className="w-full">
                      <div className="text-xs font-medium text-gray-500 mb-2">Links</div>
                      <div className="flex flex-col gap-2">
-                       {artistLinks.map((link) => (
-                         <a
-                           key={link.channel_id}
-                           href={link.link}
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors"
-                         >
-                           {/* Channel Icon */}
-                           <div className={`w-5 h-5 rounded flex items-center justify-center ${getChannelStyle(link.channel)}`}>
-                             {getChannelIcon(link.channel)}
-                           </div>
-                           <span className="capitalize">{link.channel.replace('_', ' ')}</span>
-                         </a>
-                       ))}
+                       {artistLinks
+                         .filter(link => ![
+                           'tidal',
+                           'amazon_music',
+                           'deezer',
+                           'tumblr',
+                           'itunes',
+                           'shazam',
+                           'songkick',
+                           'bandcamp',
+                           'napster'
+                         ].includes(link.channel.toLowerCase()))
+                         .map((link) => (
+                           <a
+                             key={link.channel_id}
+                             href={link.link}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                           >
+                             {/* Channel Icon */}
+                             <div className={`w-5 h-5 rounded flex items-center justify-center ${getChannelStyle(link.channel)}`}>
+                               {getChannelIcon(link.channel)}
+                             </div>
+                             <span className="capitalize">{link.channel.replace('_', ' ')}</span>
+                           </a>
+                         ))}
                      </div>
                    </div>
                  )}
