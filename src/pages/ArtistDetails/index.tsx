@@ -625,94 +625,222 @@ const ArtistDetails = () => {
                   </div>
                 </div>
               )}
-              {Object.keys(instagramAudience.byGender).length > 0 && (
-                <div className="w-full">
-                  <div className="text-xs font-medium text-gray-500 mb-2 mt-14">Instagram Gender Distribution</div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center" style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={Object.entries(instagramAudience.byGender).map(([gender, data]) => ({
-                            name: gender.charAt(0).toUpperCase() + gender.slice(1),
-                            value: data.pct,
-                          }))}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={90}
-                        >
-                          {Object.entries(instagramAudience.byGender).map(([gender], idx) => (
-                            <Cell
-                              key={gender}
-                              fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#E1306C' : '#A3A3A3'}
-                            />
-                          ))}
-                        </Pie>
-                        <Legend
-                          verticalAlign="bottom"
-                          height={36}
-                          content={() => {
-                            const data = Object.entries(instagramAudience.byGender).map(([gender, d]) => ({
+              {/* Instagram Gender + Age Distribution Inline */}
+              {Object.keys(instagramAudience.byGender).length > 0 && Object.keys(instagramAudience.byAge).length > 0 ? (
+                <div className="flex flex-col lg:flex-row gap-8">
+                  {/* Gender Distribution */}
+                  <div className="w-full flex-1">
+                    <div className="text-base font-medium text-black mb-2 mt-14">Instagram Gender Distribution</div>
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={Object.entries(instagramAudience.byGender).map(([gender, data]) => ({
                               name: gender.charAt(0).toUpperCase() + gender.slice(1),
-                              value: d.pct
-                            }));
-                            return (
-                              <ul className="flex justify-center gap-6 mt-4">
-                                {data.map((entry, idx) => (
-                                  <li key={entry.name} className="flex items-center gap-2 text-sm">
-                                    <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: idx === 0 ? '#3B82F6' : idx === 1 ? '#E1306C' : '#A3A3A3' }}></span>
-                                    <span>{entry.name}: {entry.value.toFixed(1)}%</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            );
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                              value: data.pct,
+                            }))}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="60%"
+                            outerRadius={75}
+                          >
+                            {Object.entries(instagramAudience.byGender).map(([gender], idx) => (
+                              <Cell
+                                key={gender}
+                                fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
+                              />
+                            ))}
+                          </Pie>
+                          <Legend
+                            verticalAlign="bottom"
+                            height={36}
+                            content={() => {
+                              const data = Object.entries(instagramAudience.byGender).map(([gender, d]) => ({
+                                name: gender.charAt(0).toUpperCase() + gender.slice(1),
+                                value: d.pct
+                              }));
+                              return (
+                                <ul className="flex justify-center gap-6 mt-4">
+                                  {data.map((entry, idx) => (
+                                    <li key={entry.name} className="flex items-center gap-2 text-sm">
+                                      <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: idx === 0 ? '#3B82F6' : idx === 1 ? '#EC4899' : '#A3A3A3' }}></span>
+                                      <span>{entry.name}: {entry.value.toFixed(1)}%</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              );
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
-                </div>
-              )}
-              {Object.keys(instagramAudience.byAge).length > 0 && (
-                <div className="w-full">
-                  <div className="text-xs font-medium text-gray-500 mb-2">Instagram Age Distribution</div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                    <div className="space-y-1.5">
-                      {Object.entries(instagramAudience.byAge)
-                        .filter(([, data]) => (data.male.total + data.female.total) > 0)
-                        .sort(([a], [b]) => {
-                          const getAgeOrder = (age: string) => {
-                            if (age === '13-17') return 1;
-                            if (age === '18-24') return 2;
-                            if (age === '25-34') return 3;
-                            if (age === '35-44') return 4;
-                            if (age === '45-64') return 5;
-                            if (age === '65-') return 6;
-                            return 7;
-                          };
-                          return getAgeOrder(a) - getAgeOrder(b);
-                        })
-                        .map(([ageGroup, data]) => {
-                          const totalPct = data.male.pct + data.female.pct;
-                          return (
-                            <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs text-gray-900 font-medium">{ageGroup}</span>
-                                <span className="text-xs font-medium text-gray-900">
-                                  {totalPct.toFixed(1)}%
-                                </span>
-                              </div>
-                              <div className="flex justify-between text-xs text-gray-600 pl-2">
-                                <span>♂ {data.male.pct.toFixed(1)}% ({data.male.total.toLocaleString()})</span>
-                                <span>♀ {data.female.pct.toFixed(1)}% ({data.female.total.toLocaleString()})</span>
-                              </div>
-                            </div>
-                          );
-                        })}
+                  {/* Age Distribution */}
+                  <div className="w-full flex-1 mt-8 lg:mt-0">
+                    <div className="text-base font-medium text-black mb-2 mt-8 lg:mt-14">Instagram Age Distribution</div>
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: Math.max(320, Object.keys(instagramAudience.byAge).length * 48) }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={Object.entries(instagramAudience.byAge)
+                            .filter(([, data]) => (data.male.total + data.female.total) > 0)
+                            .sort(([a, b]) => {
+                              const getAgeOrder = (age: string) => {
+                                if (age === '13-17') return 1;
+                                if (age === '18-24') return 2;
+                                if (age === '25-34') return 3;
+                                if (age === '35-44') return 4;
+                                if (age === '45-64') return 5;
+                                if (age === '65-') return 6;
+                                return 7;
+                              };
+                              return getAgeOrder(String(a)) - getAgeOrder(String(b));
+                            })
+                            .map(([ageGroup, data]) => ({
+                              age: ageGroup,
+                              Male: data.male.pct,
+                              Female: data.female.pct
+                            }))}
+                          layout="vertical"
+                          margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+                        >
+                          <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={v => `${v}%`} />
+                          <YAxis dataKey="age" type="category" tick={{ fontSize: 12, fill: '#6B7280' }} width={80} interval={0} />
+                          <Tooltip
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                const male = payload.find(p => p.dataKey === 'Male')?.value || 0;
+                                const female = payload.find(p => p.dataKey === 'Female')?.value || 0;
+                                const total = Number(male) + Number(female);
+                                return (
+                                  <div className="bg-white p-3 rounded shadow text-xs text-gray-900">
+                                    <div className="font-semibold mb-1">{label}</div>
+                                    <div><span className="font-medium text-blue-600">Male:</span> {Number(male).toFixed(1)}%</div>
+                                    <div><span className="font-medium text-pink-600">Female:</span> {Number(female).toFixed(1)}%</div>
+                                    <div className="mt-1 font-semibold">Total: {total.toFixed(1)}%</div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Bar dataKey="Male" stackId="a" fill="#3B82F6" />
+                          <Bar dataKey="Female" stackId="a" fill="#EC4899" />
+                          <Legend verticalAlign="bottom" height={36} />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 </div>
+              ) : (
+                <>
+                  {/* Fallback: render as before if only one is present */}
+                  {Object.keys(instagramAudience.byGender).length > 0 && (
+                    <div className="w-full">
+                      <div className="text-base font-medium text-black mb-2 mt-14">Instagram Gender Distribution</div>
+                      <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={Object.entries(instagramAudience.byGender).map(([gender, data]) => ({
+                                name: gender.charAt(0).toUpperCase() + gender.slice(1),
+                                value: data.pct,
+                              }))}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="60%"
+                              outerRadius={75}
+                            >
+                              {Object.entries(instagramAudience.byGender).map(([gender], idx) => (
+                                <Cell
+                                  key={gender}
+                                  fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
+                                />
+                              ))}
+                            </Pie>
+                            <Legend
+                              verticalAlign="bottom"
+                              height={36}
+                              content={() => {
+                                const data = Object.entries(instagramAudience.byGender).map(([gender, d]) => ({
+                                  name: gender.charAt(0).toUpperCase() + gender.slice(1),
+                                  value: d.pct
+                                }));
+                                return (
+                                  <ul className="flex justify-center gap-6 mt-4">
+                                    {data.map((entry, idx) => (
+                                      <li key={entry.name} className="flex items-center gap-2 text-sm">
+                                        <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: idx === 0 ? '#3B82F6' : idx === 1 ? '#EC4899' : '#A3A3A3' }}></span>
+                                        <span>{entry.name}: {entry.value.toFixed(1)}%</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                );
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+                  {Object.keys(instagramAudience.byAge).length > 0 && (
+                    <div className="w-full">
+                      <div className="text-base font-medium text-black mb-2 mt-8">Instagram Age Distribution</div>
+                      <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: Math.max(320, Object.keys(instagramAudience.byAge).length * 48) }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={Object.entries(instagramAudience.byAge)
+                              .filter(([, data]) => (data.male.total + data.female.total) > 0)
+                              .sort(([a, b]) => {
+                                const getAgeOrder = (age: string) => {
+                                  if (age === '13-17') return 1;
+                                  if (age === '18-24') return 2;
+                                  if (age === '25-34') return 3;
+                                  if (age === '35-44') return 4;
+                                  if (age === '45-64') return 5;
+                                  if (age === '65-') return 6;
+                                  return 7;
+                                };
+                                return getAgeOrder(String(a)) - getAgeOrder(String(b));
+                              })
+                              .map(([ageGroup, data]) => ({
+                                age: ageGroup,
+                                Male: data.male.pct,
+                                Female: data.female.pct
+                              }))}
+                            layout="vertical"
+                            margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+                          >
+                            <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={v => `${v}%`} />
+                            <YAxis dataKey="age" type="category" tick={{ fontSize: 12, fill: '#6B7280' }} width={80} interval={0} />
+                            <Tooltip
+                              content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                  const male = payload.find(p => p.dataKey === 'Male')?.value || 0;
+                                  const female = payload.find(p => p.dataKey === 'Female')?.value || 0;
+                                  const total = Number(male) + Number(female);
+                                  return (
+                                    <div className="bg-white p-3 rounded shadow text-xs text-gray-900">
+                                      <div className="font-semibold mb-1">{label}</div>
+                                      <div><span className="font-medium text-blue-600">Male:</span> {Number(male).toFixed(1)}%</div>
+                                      <div><span className="font-medium text-pink-600">Female:</span> {Number(female).toFixed(1)}%</div>
+                                      <div className="mt-1 font-semibold">Total: {total.toFixed(1)}%</div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Bar dataKey="Male" stackId="a" fill="#3B82F6" />
+                            <Bar dataKey="Female" stackId="a" fill="#EC4899" />
+                            <Legend verticalAlign="bottom" height={36} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
               {tiktokAudience.byCountry.length > 0 && (
                 <div className="w-full">
@@ -801,7 +929,7 @@ const ArtistDetails = () => {
                     <div className="space-y-1.5">
                       {Object.entries(tiktokAudience.byAge)
                         .filter(([, data]) => (data.male.total + data.female.total) > 0)
-                        .sort(([a], [b]) => {
+                        .sort(([a, b]) => {
                           const getAgeOrder = (age: string) => {
                             if (age === '13-17') return 1;
                             if (age === '18-24') return 2;
@@ -811,7 +939,7 @@ const ArtistDetails = () => {
                             if (age === '65-') return 6;
                             return 7;
                           };
-                          return getAgeOrder(a) - getAgeOrder(b);
+                          return getAgeOrder(String(a)) - getAgeOrder(String(b));
                         })
                         .map(([ageGroup, data]) => {
                           const totalPct = data.male.pct + data.female.pct;
@@ -920,7 +1048,7 @@ const ArtistDetails = () => {
                     <div className="space-y-1.5">
                       {Object.entries(youtubeAudience.byAge)
                         .filter(([, data]) => (data.male.total + data.female.total) > 0)
-                        .sort(([a], [b]) => {
+                        .sort(([a, b]) => {
                           const getAgeOrder = (age: string) => {
                             if (age === '13-17') return 1;
                             if (age === '18-24') return 2;
@@ -930,7 +1058,7 @@ const ArtistDetails = () => {
                             if (age === '65-') return 6;
                             return 7;
                           };
-                          return getAgeOrder(a) - getAgeOrder(b);
+                          return getAgeOrder(String(a)) - getAgeOrder(String(b));
                         })
                         .map(([ageGroup, data]) => {
                           const totalPct = data.male.pct + data.female.pct;
