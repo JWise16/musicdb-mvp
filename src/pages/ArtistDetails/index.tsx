@@ -552,7 +552,7 @@ const ArtistDetails = () => {
                      <div className="bg-gray-50 rounded-lg p-3 text-sm">
                        <div className="space-y-1.5">
                          {Object.entries(instagramAudience.byAge)
-                           .filter(([ageGroup, data]) => (data.male.total + data.female.total) > 0)
+                           .filter(([, data]) => (data.male.total + data.female.total) > 0)
                            .sort(([a], [b]) => {
                              // Sort age groups properly (13-17, 18-24, 25-34, etc.)
                              const getAgeOrder = (age: string) => {
@@ -567,7 +567,6 @@ const ArtistDetails = () => {
                              return getAgeOrder(a) - getAgeOrder(b);
                            })
                            .map(([ageGroup, data]) => {
-                             const totalForAge = data.male.total + data.female.total;
                              const totalPct = data.male.pct + data.female.pct;
                              return (
                                <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
@@ -680,7 +679,7 @@ const ArtistDetails = () => {
                      <div className="bg-gray-50 rounded-lg p-3 text-sm">
                        <div className="space-y-1.5">
                          {Object.entries(tiktokAudience.byAge)
-                           .filter(([ageGroup, data]) => (data.male.total + data.female.total) > 0)
+                           .filter(([, data]) => (data.male.total + data.female.total) > 0)
                            .sort(([a], [b]) => {
                              // Sort age groups properly (13-17, 18-24, 25-34, etc.)
                              const getAgeOrder = (age: string) => {
@@ -695,7 +694,6 @@ const ArtistDetails = () => {
                              return getAgeOrder(a) - getAgeOrder(b);
                            })
                            .map(([ageGroup, data]) => {
-                             const totalForAge = data.male.total + data.female.total;
                              const totalPct = data.male.pct + data.female.pct;
                              return (
                                <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
@@ -807,7 +805,7 @@ const ArtistDetails = () => {
                      <div className="bg-gray-50 rounded-lg p-3 text-sm">
                        <div className="space-y-1.5">
                          {Object.entries(youtubeAudience.byAge)
-                           .filter(([ageGroup, data]) => (data.male.total + data.female.total) > 0)
+                           .filter(([, data]) => (data.male.total + data.female.total) > 0)
                            .sort(([a], [b]) => {
                              // Sort age groups properly (13-17, 18-24, 25-34, etc.)
                              const getAgeOrder = (age: string) => {
@@ -822,7 +820,6 @@ const ArtistDetails = () => {
                              return getAgeOrder(a) - getAgeOrder(b);
                            })
                            .map(([ageGroup, data]) => {
-                             const totalForAge = data.male.total + data.female.total;
                              const totalPct = data.male.pct + data.female.pct;
                              return (
                                <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
