@@ -108,6 +108,7 @@ const ArtistDetails = () => {
   const [showAllInstagramCities, setShowAllInstagramCities] = useState(false);
   const [showAllTiktokCountries, setShowAllTiktokCountries] = useState(false);
   const [showAllYoutubeCountries, setShowAllYoutubeCountries] = useState(false);
+  const [showAllAudienceCountries, setShowAllAudienceCountries] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -351,555 +352,505 @@ const ArtistDetails = () => {
                    </div>
                  )}
 
-                 {/* Audience Data */}
-                 {Object.keys(vibrateAudience).length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">Audience Insights</div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       {/* Display audience data with special handling for country data */}
-                       {Object.entries(vibrateAudience).map(([key, value]) => {
-                         // Skip if value is null/undefined or empty
-                         if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) {
-                           return null;
-                         }
-
-                         // Format key for display
-                         const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-                         // Special handling for country audience data
-                         if (key === 'by-country' && Array.isArray(value)) {
-                           const topCountries = value.slice(0, 5); // Show top 5 countries
-                           return (
-                             <div key={key} className="mb-3 last:mb-0">
-                               <div className="text-gray-600 text-xs font-medium mb-2">{displayKey} (Top 5)</div>
-                               <div className="space-y-1">
-                                 {topCountries.map((country: any, index: number) => (
-                                   <div key={country.country_code} className="flex justify-between items-center">
-                                     <span className="text-xs text-gray-700 flex items-center gap-1">
-                                       <span className="text-gray-400">#{index + 1}</span>
-                                       {country.country_code}
-                                     </span>
-                                     <span className="text-xs font-medium text-gray-900">
-                                       {country.audience_pct.toFixed(1)}%
-                                     </span>
-                                   </div>
-                                 ))}
-                               </div>
-                               {value.length > 5 && (
-                                 <div className="text-xs text-gray-500 mt-1">
-                                   +{value.length - 5} more countries
-                                 </div>
-                               )}
-                             </div>
-                           );
-                         }
-
-                         // Default handling for other data types
-                         return (
-                           <div key={key} className="flex justify-between items-start mb-1 last:mb-0">
-                             <span className="text-gray-600 text-xs">{displayKey}</span>
-                             <span className="font-medium text-xs text-right max-w-24 truncate">
-                               {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                             </span>
-                           </div>
-                         );
-                       })}
-                     </div>
-                   </div>
-                 )}
-
-                 {/* Spotify Listeners by City */}
-                 {spotifyListeners.byCity.length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">
-                       Spotify Listeners by City 
-                       {showAllCities 
-                         ? `(${spotifyListeners.byCity.length} cities)` 
-                         : `(Top 10 of ${spotifyListeners.byCity.length})`
-                       }
-                     </div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-1.5">
-                         {spotifyListeners.byCity
-                           .slice(0, showAllCities ? spotifyListeners.byCity.length : 10)
-                           .map((cityData, index) => (
-                           <div key={cityData.city_id} className="flex justify-between items-center">
-                             <div className="flex-1 min-w-0">
-                               <div className="flex items-center gap-2">
-                                 <span className="text-xs text-gray-400">#{index + 1}</span>
-                                 <span className="text-xs text-gray-900 font-medium truncate">
-                                   {cityData.city}
-                                 </span>
-                                 <span className="text-xs text-gray-500 uppercase">
-                                   {cityData.country_code}
-                                 </span>
-                               </div>
-                             </div>
-                             <div className="flex flex-col items-end">
-                               <span className="text-xs font-medium text-gray-900">
-                                 {cityData.listeners_1m.toLocaleString()}
-                               </span>
-                               <span className="text-xs text-gray-500">listeners/month</span>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                       <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                         Total: {spotifyListeners.byCity.reduce((sum, city) => sum + city.listeners_1m, 0).toLocaleString()} monthly listeners
-                       </div>
-                       {spotifyListeners.byCity.length > 10 && (
-                         <div className="mt-3">
-                           <button
-                             onClick={() => setShowAllCities(!showAllCities)}
-                             className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                           >
-                             {showAllCities 
-                               ? 'Show Top 10 Only' 
-                               : `See All ${spotifyListeners.byCity.length} Cities`
-                             }
-                           </button>
+                 {/* Audience % By-Country (Top 5) - moved to left column */}
+                 {Object.keys(vibrateAudience).length > 0 && Array.isArray(vibrateAudience['by-country']) && vibrateAudience['by-country'].length > 0 && (
+                   <div className="w-full mt-6">
+                     <div className="text-xs font-medium text-gray-500 mb-2">Audience % By-Country (Top 5)</div>
+                     <div className="space-y-1">
+                       {(showAllAudienceCountries ? vibrateAudience['by-country'] : vibrateAudience['by-country'].slice(0, 5)).map((country: any, index: number) => (
+                         <div key={country.country_code} className="flex justify-between items-center">
+                           <span className="text-xs text-gray-700 flex items-center gap-1">
+                             <span className="text-gray-400">#{index + 1}</span>
+                             {country.country_code}
+                           </span>
+                           <span className="text-xs font-medium text-gray-900">
+                             {country.audience_pct.toFixed(1)}%
+                           </span>
                          </div>
-                       )}
+                       ))}
                      </div>
+                     {vibrateAudience['by-country'].length > 5 && (
+                       <div className="text-xs text-gray-500 mt-1">
+                         <button
+                           className="underline text-blue-600 hover:text-blue-800 transition-colors text-xs font-medium"
+                           onClick={() => setShowAllAudienceCountries(v => !v)}
+                         >
+                           {showAllAudienceCountries ? 'Show Top 5 Only' : `See More (${vibrateAudience['by-country'].length - 5} more)`}
+                         </button>
+                       </div>
+                     )}
                    </div>
                  )}
 
-                 {/* Spotify Listeners by Country */}
-                 {Object.keys(spotifyListeners.byCountry).length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">Spotify Listeners by Country (Top 10)</div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm max-h-48 overflow-y-auto">
-                       <div className="space-y-1">
-                         {Object.entries(spotifyListeners.byCountry)
-                           .sort(([,a], [,b]) => b - a)
-                           .slice(0, 10)
-                           .map(([countryCode, listeners], index) => (
-                             <div key={countryCode} className="flex justify-between items-center">
-                               <div className="flex items-center gap-2">
-                                 <span className="text-xs text-gray-400">#{index + 1}</span>
-                                 <span className="text-xs text-gray-900 font-medium uppercase">
-                                   {countryCode}
-                                 </span>
-                               </div>
-                               <span className="text-xs font-medium text-gray-900">
-                                 {listeners.toLocaleString()}
-                               </span>
-                             </div>
-                           ))}
-                       </div>
-                       {Object.keys(spotifyListeners.byCountry).length > 10 && (
-                         <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                           +{Object.keys(spotifyListeners.byCountry).length - 10} more countries
-                         </div>
-                       )}
-                     </div>
-                   </div>
-                 )}
-
-                 {/* Instagram Audience by City */}
-                 {instagramAudience.byCity.length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">
-                       Instagram Audience by City 
-                       {showAllInstagramCities 
-                         ? `(${instagramAudience.byCity.length} cities)` 
-                         : `(Top 10 of ${instagramAudience.byCity.length})`
-                       }
-                     </div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-1.5">
-                         {instagramAudience.byCity
-                           .slice(0, showAllInstagramCities ? instagramAudience.byCity.length : 10)
-                           .map((cityData, index) => (
-                           <div key={cityData.city_id} className="flex justify-between items-center">
-                             <div className="flex-1 min-w-0">
-                               <div className="flex items-center gap-2">
-                                 <span className="text-xs text-gray-400">#{index + 1}</span>
-                                 <span className="text-xs text-gray-900 font-medium truncate">
-                                   {cityData.city}
-                                 </span>
-                                 <span className="text-xs text-gray-500 uppercase">
-                                   {cityData.country_code}
-                                 </span>
-                               </div>
-                             </div>
-                             <div className="flex flex-col items-end">
-                               <span className="text-xs font-medium text-gray-900">
-                                 {cityData.instagram_followers.toLocaleString()}
-                               </span>
-                               <span className="text-xs text-gray-500">
-                                 {cityData.instagram_followers_pct.toFixed(1)}%
-                               </span>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                       <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                         Total: {instagramAudience.byCity.reduce((sum, city) => sum + city.instagram_followers, 0).toLocaleString()} followers
-                       </div>
-                       {instagramAudience.byCity.length > 10 && (
-                         <div className="mt-3">
-                           <button
-                             onClick={() => setShowAllInstagramCities(!showAllInstagramCities)}
-                             className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                           >
-                             {showAllInstagramCities 
-                               ? 'Show Top 10 Only' 
-                               : `See All ${instagramAudience.byCity.length} Cities`
-                             }
-                           </button>
-                         </div>
-                       )}
-                     </div>
-                   </div>
-                 )}
-
-                 {/* Instagram Gender Demographics */}
-                 {Object.keys(instagramAudience.byGender).length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">Instagram Gender Distribution</div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-2">
-                         {Object.entries(instagramAudience.byGender).map(([gender, data]) => (
-                           <div key={gender} className="flex justify-between items-center">
-                             <div className="flex items-center gap-2">
-                               <div className={`w-3 h-3 rounded-full ${gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}></div>
-                               <span className="text-xs text-gray-900 font-medium capitalize">{gender}</span>
-                             </div>
-                             <div className="flex flex-col items-end">
-                               <span className="text-xs font-medium text-gray-900">
-                                 {data.pct.toFixed(1)}%
-                               </span>
-                               <span className="text-xs text-gray-500">
-                                 {data.total.toLocaleString()} followers
-                               </span>
-                             </div>
-                           </div>
-                         ))}
+                 {/* Bio Overview (moved under links, only first section) */}
+                 {vibrateBio.BIO.length > 0 && (
+                   <div className="w-full mt-6">
+                     <div className="text-xs font-medium text-gray-500 mb-2">Biography</div>
+                     <div className="space-y-4">
+                       <div className="bg-gray-50 rounded-lg p-4">
+                         <div className="text-sm font-semibold text-gray-900 mb-1">{vibrateBio.BIO[0].question}</div>
+                         <div
+                           className="text-xs text-gray-700 leading-relaxed prose prose-xs max-w-none"
+                           dangerouslySetInnerHTML={{
+                             __html: vibrateBio.BIO[0].answer.replace(/<br><br>/g, '</p><p>').replace(/^/, '<p>').replace(/$/, '</p>')
+                           }}
+                         />
                        </div>
                      </div>
                    </div>
                  )}
-
-                 {/* Instagram Age Demographics */}
-                 {Object.keys(instagramAudience.byAge).length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">Instagram Age Distribution</div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-1.5">
-                         {Object.entries(instagramAudience.byAge)
-                           .filter(([, data]) => (data.male.total + data.female.total) > 0)
-                           .sort(([a], [b]) => {
-                             // Sort age groups properly (13-17, 18-24, 25-34, etc.)
-                             const getAgeOrder = (age: string) => {
-                               if (age === '13-17') return 1;
-                               if (age === '18-24') return 2;
-                               if (age === '25-34') return 3;
-                               if (age === '35-44') return 4;
-                               if (age === '45-64') return 5;
-                               if (age === '65-') return 6;
-                               return 7;
-                             };
-                             return getAgeOrder(a) - getAgeOrder(b);
-                           })
-                           .map(([ageGroup, data]) => {
-                             const totalPct = data.male.pct + data.female.pct;
-                             return (
-                               <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
-                                 <div className="flex justify-between items-center mb-1">
-                                   <span className="text-xs text-gray-900 font-medium">{ageGroup}</span>
-                                   <span className="text-xs font-medium text-gray-900">
-                                     {totalPct.toFixed(1)}%
-                                   </span>
-                                 </div>
-                                 <div className="flex justify-between text-xs text-gray-600 pl-2">
-                                   <span>♂ {data.male.pct.toFixed(1)}% ({data.male.total.toLocaleString()})</span>
-                                   <span>♀ {data.female.pct.toFixed(1)}% ({data.female.total.toLocaleString()})</span>
-                                 </div>
-                               </div>
-                             );
-                           })}
-                       </div>
-                     </div>
-                   </div>
-                 )}
-
-                 {/* TikTok Audience by Country */}
-                 {tiktokAudience.byCountry.length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">
-                       TikTok Audience by Country 
-                       {showAllTiktokCountries 
-                         ? `(${tiktokAudience.byCountry.length} countries)` 
-                         : `(Top 10 of ${tiktokAudience.byCountry.length})`
-                       }
-                     </div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-1.5">
-                         {tiktokAudience.byCountry
-                           .filter(country => country.tiktok_followers !== null && country.tiktok_followers > 0)
-                           .slice(0, showAllTiktokCountries ? tiktokAudience.byCountry.length : 10)
-                           .map((countryData, index) => (
-                           <div key={countryData.country_code} className="flex justify-between items-center">
-                             <div className="flex items-center gap-2">
-                               <span className="text-xs text-gray-400">#{index + 1}</span>
-                               <span className="text-xs text-gray-900 font-medium uppercase">
-                                 {countryData.country_code}
-                               </span>
-                             </div>
-                             <div className="flex flex-col items-end">
-                               <span className="text-xs font-medium text-gray-900">
-                                 {countryData.tiktok_followers?.toLocaleString()}
-                               </span>
-                               <span className="text-xs text-gray-500">
-                                 {countryData.tiktok_followers_pct.toFixed(1)}%
-                               </span>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                       <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                         Total: {tiktokAudience.byCountry
-                           .filter(country => country.tiktok_followers !== null)
-                           .reduce((sum, country) => sum + (country.tiktok_followers || 0), 0)
-                           .toLocaleString()} followers
-                       </div>
-                       {tiktokAudience.byCountry.filter(c => c.tiktok_followers !== null && c.tiktok_followers > 0).length > 10 && (
-                         <div className="mt-3">
-                           <button
-                             onClick={() => setShowAllTiktokCountries(!showAllTiktokCountries)}
-                             className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                           >
-                             {showAllTiktokCountries 
-                               ? 'Show Top 10 Only' 
-                               : `See All ${tiktokAudience.byCountry.filter(c => c.tiktok_followers !== null && c.tiktok_followers > 0).length} Countries`
-                             }
-                           </button>
-                         </div>
-                       )}
-                     </div>
-                   </div>
-                 )}
-
-                 {/* TikTok Gender Demographics */}
-                 {Object.keys(tiktokAudience.byGender).length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">TikTok Gender Distribution</div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-2">
-                         {Object.entries(tiktokAudience.byGender).map(([gender, data]) => (
-                           <div key={gender} className="flex justify-between items-center">
-                             <div className="flex items-center gap-2">
-                               <div className={`w-3 h-3 rounded-full ${gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}></div>
-                               <span className="text-xs text-gray-900 font-medium capitalize">{gender}</span>
-                             </div>
-                             <div className="flex flex-col items-end">
-                               <span className="text-xs font-medium text-gray-900">
-                                 {data.pct.toFixed(1)}%
-                               </span>
-                               <span className="text-xs text-gray-500">
-                                 {data.total.toLocaleString()} followers
-                               </span>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                   </div>
-                 )}
-
-                 {/* TikTok Age Demographics */}
-                 {Object.keys(tiktokAudience.byAge).length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">TikTok Age Distribution</div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-1.5">
-                         {Object.entries(tiktokAudience.byAge)
-                           .filter(([, data]) => (data.male.total + data.female.total) > 0)
-                           .sort(([a], [b]) => {
-                             // Sort age groups properly (13-17, 18-24, 25-34, etc.)
-                             const getAgeOrder = (age: string) => {
-                               if (age === '13-17') return 1;
-                               if (age === '18-24') return 2;
-                               if (age === '25-34') return 3;
-                               if (age === '35-44') return 4;
-                               if (age === '45-64') return 5;
-                               if (age === '65-') return 6;
-                               return 7;
-                             };
-                             return getAgeOrder(a) - getAgeOrder(b);
-                           })
-                           .map(([ageGroup, data]) => {
-                             const totalPct = data.male.pct + data.female.pct;
-                             return (
-                               <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
-                                 <div className="flex justify-between items-center mb-1">
-                                   <span className="text-xs text-gray-900 font-medium">{ageGroup}</span>
-                                   <span className="text-xs font-medium text-gray-900">
-                                     {totalPct.toFixed(1)}%
-                                   </span>
-                                 </div>
-                                 <div className="flex justify-between text-xs text-gray-600 pl-2">
-                                   <span>♂ {data.male.pct.toFixed(1)}% ({data.male.total.toLocaleString()})</span>
-                                   <span>♀ {data.female.pct.toFixed(1)}% ({data.female.total.toLocaleString()})</span>
-                                 </div>
-                               </div>
-                             );
-                           })}
-                       </div>
-                     </div>
-                   </div>
-                 )}
-
-                 {/* YouTube Audience by Country */}
-                 {Object.keys(youtubeAudience.byCountry).length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">
-                       YouTube Audience by Country 
-                       {showAllYoutubeCountries 
-                         ? `(${Object.keys(youtubeAudience.byCountry).length} countries)` 
-                         : `(Top 10 of ${Object.keys(youtubeAudience.byCountry).length})`
-                       }
-                     </div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-1.5">
-                         {Object.entries(youtubeAudience.byCountry)
-                           .sort(([,a], [,b]) => b.alltime - a.alltime)
-                           .slice(0, showAllYoutubeCountries ? Object.keys(youtubeAudience.byCountry).length : 10)
-                           .map(([countryCode, data], index) => (
-                           <div key={countryCode} className="flex justify-between items-center">
-                             <div className="flex items-center gap-2">
-                               <span className="text-xs text-gray-400">#{index + 1}</span>
-                               <span className="text-xs text-gray-900 font-medium uppercase">
-                                 {countryCode}
-                               </span>
-                             </div>
-                             <div className="flex flex-col items-end">
-                               <span className="text-xs font-medium text-gray-900">
-                                 {data.alltime.toLocaleString()}
-                               </span>
-                               <span className="text-xs text-gray-500">
-                                 views
-                               </span>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                       <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                         Total: {Object.values(youtubeAudience.byCountry)
-                           .reduce((sum, country) => sum + country.alltime, 0)
-                           .toLocaleString()} views
-                       </div>
-                       {Object.keys(youtubeAudience.byCountry).length > 10 && (
-                         <div className="mt-3">
-                           <button
-                             onClick={() => setShowAllYoutubeCountries(!showAllYoutubeCountries)}
-                             className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                           >
-                             {showAllYoutubeCountries 
-                               ? 'Show Top 10 Only' 
-                               : `See All ${Object.keys(youtubeAudience.byCountry).length} Countries`
-                             }
-                           </button>
-                         </div>
-                       )}
-                     </div>
-                   </div>
-                 )}
-
-                 {/* YouTube Gender Demographics */}
-                 {Object.keys(youtubeAudience.byGender).length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">YouTube Gender Distribution</div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-2">
-                         {Object.entries(youtubeAudience.byGender).map(([gender, data]) => (
-                           <div key={gender} className="flex justify-between items-center">
-                             <div className="flex items-center gap-2">
-                               <div className={`w-3 h-3 rounded-full ${gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}></div>
-                               <span className="text-xs text-gray-900 font-medium capitalize">{gender}</span>
-                             </div>
-                             <div className="flex flex-col items-end">
-                               <span className="text-xs font-medium text-gray-900">
-                                 {data.pct.toFixed(1)}%
-                               </span>
-                               <span className="text-xs text-gray-500">
-                                 {data.total.toLocaleString()} viewers
-                               </span>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                   </div>
-                 )}
-
-                 {/* YouTube Age Demographics */}
-                 {Object.keys(youtubeAudience.byAge).length > 0 && (
-                   <div className="w-full">
-                     <div className="text-xs font-medium text-gray-500 mb-2">YouTube Age Distribution</div>
-                     <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                       <div className="space-y-1.5">
-                         {Object.entries(youtubeAudience.byAge)
-                           .filter(([, data]) => (data.male.total + data.female.total) > 0)
-                           .sort(([a], [b]) => {
-                             // Sort age groups properly (13-17, 18-24, 25-34, etc.)
-                             const getAgeOrder = (age: string) => {
-                               if (age === '13-17') return 1;
-                               if (age === '18-24') return 2;
-                               if (age === '25-34') return 3;
-                               if (age === '35-44') return 4;
-                               if (age === '45-64') return 5;
-                               if (age === '65-') return 6;
-                               return 7;
-                             };
-                             return getAgeOrder(a) - getAgeOrder(b);
-                           })
-                           .map(([ageGroup, data]) => {
-                             const totalPct = data.male.pct + data.female.pct;
-                             return (
-                               <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
-                                 <div className="flex justify-between items-center mb-1">
-                                   <span className="text-xs text-gray-900 font-medium">{ageGroup}</span>
-                                   <span className="text-xs font-medium text-gray-900">
-                                     {totalPct.toFixed(1)}%
-                                   </span>
-                                 </div>
-                                 <div className="flex justify-between text-xs text-gray-600 pl-2">
-                                   <span>♂ {data.male.pct.toFixed(1)}% ({data.male.total.toLocaleString()})</span>
-                                   <span>♀ {data.female.pct.toFixed(1)}% ({data.female.total.toLocaleString()})</span>
-                                 </div>
-                               </div>
-                             );
-                           })}
-                       </div>
-                     </div>
-                   </div>
-                 )}
-
-                {/* Performance Stats */}
-                <div className="w-full pt-2 border-t border-gray-100 mt-2">
-                  <div className="text-xs font-medium text-gray-500 mb-2">Performance Stats</div>
-                  <div className="flex flex-col gap-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Events</span>
-                      <span className="font-semibold">{artist.events.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Headliner Events</span>
-                      <span className="font-semibold">{artist.events.filter((e: any) => e.is_headliner).length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Supporting Events</span>
-                      <span className="font-semibold">{artist.events.filter((e: any) => !e.is_headliner).length}</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
 
-            {/* Right Column - Events List */}
+            {/* Right Column - Analytics and Events List */}
             <div className="lg:col-span-9">
+              {/* --- BEGIN: Analytics Sections (moved above events) --- */}
+              {spotifyListeners.byCity.length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">
+                    Spotify Listeners by City
+                    {showAllCities
+                      ? `(${spotifyListeners.byCity.length} cities)`
+                      : `(Top 10 of ${spotifyListeners.byCity.length})`
+                    }
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-1.5">
+                      {spotifyListeners.byCity
+                        .slice(0, showAllCities ? spotifyListeners.byCity.length : 10)
+                        .map((cityData, index) => (
+                          <div key={cityData.city_id} className="flex justify-between items-center">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400">#{index + 1}</span>
+                                <span className="text-xs text-gray-900 font-medium truncate">
+                                  {cityData.city}
+                                </span>
+                                <span className="text-xs text-gray-500 uppercase">
+                                  {cityData.country_code}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-xs font-medium text-gray-900">
+                                {cityData.listeners_1m.toLocaleString()}
+                              </span>
+                              <span className="text-xs text-gray-500">listeners/month</span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                      Total: {spotifyListeners.byCity.reduce((sum, city) => sum + city.listeners_1m, 0).toLocaleString()} monthly listeners
+                    </div>
+                    {spotifyListeners.byCity.length > 10 && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setShowAllCities(!showAllCities)}
+                          className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                        >
+                          {showAllCities
+                            ? 'Show Top 10 Only'
+                            : `See All ${spotifyListeners.byCity.length} Cities`
+                          }
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {Object.keys(spotifyListeners.byCountry).length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">Spotify Listeners by Country (Top 10)</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm max-h-48 overflow-y-auto">
+                    <div className="space-y-1">
+                      {Object.entries(spotifyListeners.byCountry)
+                        .sort(([,a], [,b]) => b - a)
+                        .slice(0, 10)
+                        .map(([countryCode, listeners], index) => (
+                          <div key={countryCode} className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400">#{index + 1}</span>
+                              <span className="text-xs text-gray-900 font-medium uppercase">
+                                {countryCode}
+                              </span>
+                            </div>
+                            <span className="text-xs font-medium text-gray-900">
+                              {listeners.toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                    {Object.keys(spotifyListeners.byCountry).length > 10 && (
+                      <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                        +{Object.keys(spotifyListeners.byCountry).length - 10} more countries
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {instagramAudience.byCity.length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">
+                    Instagram Audience by City
+                    {showAllInstagramCities
+                      ? `(${instagramAudience.byCity.length} cities)`
+                      : `(Top 10 of ${instagramAudience.byCity.length})`
+                    }
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-1.5">
+                      {instagramAudience.byCity
+                        .slice(0, showAllInstagramCities ? instagramAudience.byCity.length : 10)
+                        .map((cityData, index) => (
+                          <div key={cityData.city_id} className="flex justify-between items-center">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400">#{index + 1}</span>
+                                <span className="text-xs text-gray-900 font-medium truncate">
+                                  {cityData.city}
+                                </span>
+                                <span className="text-xs text-gray-500 uppercase">
+                                  {cityData.country_code}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-xs font-medium text-gray-900">
+                                {cityData.instagram_followers.toLocaleString()}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {cityData.instagram_followers_pct.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                      Total: {instagramAudience.byCity.reduce((sum, city) => sum + city.instagram_followers, 0).toLocaleString()} followers
+                    </div>
+                    {instagramAudience.byCity.length > 10 && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setShowAllInstagramCities(!showAllInstagramCities)}
+                          className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                        >
+                          {showAllInstagramCities
+                            ? 'Show Top 10 Only'
+                            : `See All ${instagramAudience.byCity.length} Cities`
+                          }
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {Object.keys(instagramAudience.byGender).length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">Instagram Gender Distribution</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-2">
+                      {Object.entries(instagramAudience.byGender).map(([gender, data]) => (
+                        <div key={gender} className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}></div>
+                            <span className="text-xs text-gray-900 font-medium capitalize">{gender}</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="text-xs font-medium text-gray-900">
+                              {data.pct.toFixed(1)}%
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {data.total.toLocaleString()} followers
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {Object.keys(instagramAudience.byAge).length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">Instagram Age Distribution</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-1.5">
+                      {Object.entries(instagramAudience.byAge)
+                        .filter(([, data]) => (data.male.total + data.female.total) > 0)
+                        .sort(([a], [b]) => {
+                          const getAgeOrder = (age: string) => {
+                            if (age === '13-17') return 1;
+                            if (age === '18-24') return 2;
+                            if (age === '25-34') return 3;
+                            if (age === '35-44') return 4;
+                            if (age === '45-64') return 5;
+                            if (age === '65-') return 6;
+                            return 7;
+                          };
+                          return getAgeOrder(a) - getAgeOrder(b);
+                        })
+                        .map(([ageGroup, data]) => {
+                          const totalPct = data.male.pct + data.female.pct;
+                          return (
+                            <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs text-gray-900 font-medium">{ageGroup}</span>
+                                <span className="text-xs font-medium text-gray-900">
+                                  {totalPct.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-xs text-gray-600 pl-2">
+                                <span>♂ {data.male.pct.toFixed(1)}% ({data.male.total.toLocaleString()})</span>
+                                <span>♀ {data.female.pct.toFixed(1)}% ({data.female.total.toLocaleString()})</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {tiktokAudience.byCountry.length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">
+                    TikTok Audience by Country
+                    {showAllTiktokCountries
+                      ? `(${tiktokAudience.byCountry.length} countries)`
+                      : `(Top 10 of ${tiktokAudience.byCountry.length})`
+                    }
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-1.5">
+                      {tiktokAudience.byCountry
+                        .filter(country => country.tiktok_followers !== null && country.tiktok_followers > 0)
+                        .slice(0, showAllTiktokCountries ? tiktokAudience.byCountry.length : 10)
+                        .map((countryData, index) => (
+                          <div key={countryData.country_code} className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400">#{index + 1}</span>
+                              <span className="text-xs text-gray-900 font-medium uppercase">
+                                {countryData.country_code}
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-xs font-medium text-gray-900">
+                                {countryData.tiktok_followers?.toLocaleString()}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {countryData.tiktok_followers_pct.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                      Total: {tiktokAudience.byCountry
+                        .filter(country => country.tiktok_followers !== null)
+                        .reduce((sum, country) => sum + (country.tiktok_followers || 0), 0)
+                        .toLocaleString()} followers
+                    </div>
+                    {tiktokAudience.byCountry.filter(c => c.tiktok_followers !== null && c.tiktok_followers > 0).length > 10 && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setShowAllTiktokCountries(!showAllTiktokCountries)}
+                          className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                        >
+                          {showAllTiktokCountries
+                            ? 'Show Top 10 Only'
+                            : `See All ${tiktokAudience.byCountry.filter(c => c.tiktok_followers !== null && c.tiktok_followers > 0).length} Countries`
+                          }
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {Object.keys(tiktokAudience.byGender).length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">TikTok Gender Distribution</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-2">
+                      {Object.entries(tiktokAudience.byGender).map(([gender, data]) => (
+                        <div key={gender} className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}></div>
+                            <span className="text-xs text-gray-900 font-medium capitalize">{gender}</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="text-xs font-medium text-gray-900">
+                              {data.pct.toFixed(1)}%
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {data.total.toLocaleString()} followers
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {Object.keys(tiktokAudience.byAge).length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">TikTok Age Distribution</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-1.5">
+                      {Object.entries(tiktokAudience.byAge)
+                        .filter(([, data]) => (data.male.total + data.female.total) > 0)
+                        .sort(([a], [b]) => {
+                          const getAgeOrder = (age: string) => {
+                            if (age === '13-17') return 1;
+                            if (age === '18-24') return 2;
+                            if (age === '25-34') return 3;
+                            if (age === '35-44') return 4;
+                            if (age === '45-64') return 5;
+                            if (age === '65-') return 6;
+                            return 7;
+                          };
+                          return getAgeOrder(a) - getAgeOrder(b);
+                        })
+                        .map(([ageGroup, data]) => {
+                          const totalPct = data.male.pct + data.female.pct;
+                          return (
+                            <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs text-gray-900 font-medium">{ageGroup}</span>
+                                <span className="text-xs font-medium text-gray-900">
+                                  {totalPct.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-xs text-gray-600 pl-2">
+                                <span>♂ {data.male.pct.toFixed(1)}% ({data.male.total.toLocaleString()})</span>
+                                <span>♀ {data.female.pct.toFixed(1)}% ({data.female.total.toLocaleString()})</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {Object.keys(youtubeAudience.byCountry).length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">
+                    YouTube Audience by Country
+                    {showAllYoutubeCountries
+                      ? `(${Object.keys(youtubeAudience.byCountry).length} countries)`
+                      : `(Top 10 of ${Object.keys(youtubeAudience.byCountry).length})`
+                    }
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-1.5">
+                      {Object.entries(youtubeAudience.byCountry)
+                        .sort(([,a], [,b]) => b.alltime - a.alltime)
+                        .slice(0, showAllYoutubeCountries ? Object.keys(youtubeAudience.byCountry).length : 10)
+                        .map(([countryCode, data], index) => (
+                          <div key={countryCode} className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400">#{index + 1}</span>
+                              <span className="text-xs text-gray-900 font-medium uppercase">
+                                {countryCode}
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-xs font-medium text-gray-900">
+                                {data.alltime.toLocaleString()}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                views
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                      Total: {Object.values(youtubeAudience.byCountry)
+                        .reduce((sum, country) => sum + country.alltime, 0)
+                        .toLocaleString()} views
+                    </div>
+                    {Object.keys(youtubeAudience.byCountry).length > 10 && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setShowAllYoutubeCountries(!showAllYoutubeCountries)}
+                          className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                        >
+                          {showAllYoutubeCountries
+                            ? 'Show Top 10 Only'
+                            : `See All ${Object.keys(youtubeAudience.byCountry).length} Countries`
+                          }
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {Object.keys(youtubeAudience.byGender).length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">YouTube Gender Distribution</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-2">
+                      {Object.entries(youtubeAudience.byGender).map(([gender, data]) => (
+                        <div key={gender} className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}></div>
+                            <span className="text-xs text-gray-900 font-medium capitalize">{gender}</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="text-xs font-medium text-gray-900">
+                              {data.pct.toFixed(1)}%
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {data.total.toLocaleString()} viewers
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {Object.keys(youtubeAudience.byAge).length > 0 && (
+                <div className="w-full">
+                  <div className="text-xs font-medium text-gray-500 mb-2">YouTube Age Distribution</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div className="space-y-1.5">
+                      {Object.entries(youtubeAudience.byAge)
+                        .filter(([, data]) => (data.male.total + data.female.total) > 0)
+                        .sort(([a], [b]) => {
+                          const getAgeOrder = (age: string) => {
+                            if (age === '13-17') return 1;
+                            if (age === '18-24') return 2;
+                            if (age === '25-34') return 3;
+                            if (age === '35-44') return 4;
+                            if (age === '45-64') return 5;
+                            if (age === '65-') return 6;
+                            return 7;
+                          };
+                          return getAgeOrder(a) - getAgeOrder(b);
+                        })
+                        .map(([ageGroup, data]) => {
+                          const totalPct = data.male.pct + data.female.pct;
+                          return (
+                            <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs text-gray-900 font-medium">{ageGroup}</span>
+                                <span className="text-xs font-medium text-gray-900">
+                                  {totalPct.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-xs text-gray-600 pl-2">
+                                <span>♂ {data.male.pct.toFixed(1)}% ({data.male.total.toLocaleString()})</span>
+                                <span>♀ {data.female.pct.toFixed(1)}% ({data.female.total.toLocaleString()})</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* --- END: Analytics Sections --- */}
+
               <div className="card p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-6">Events</h3>
                 
@@ -1241,31 +1192,6 @@ const ArtistDetails = () => {
                 {(vibrateBio.BIO.length > 0 || vibrateBio.FAQ.length > 0) && (
                   <div className="mt-8">
                     <h3 className="text-xl font-semibold text-gray-900 mb-6">Artist Bio & Information</h3>
-
-                    {/* Bio Content */}
-                    {vibrateBio.BIO.length > 0 && (
-                      <div className="mb-8">
-                        <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                          <span className="inline-block w-3 h-3 bg-blue-500 rounded-full"></span>
-                          Biography
-                        </h4>
-                        <div className="space-y-6">
-                          {vibrateBio.BIO.map((item, index) => (
-                            <div key={index} className="bg-gray-50 rounded-lg p-6">
-                              <h5 className="text-base font-medium text-gray-900 mb-3">
-                                {item.question}
-                              </h5>
-                              <div 
-                                className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
-                                dangerouslySetInnerHTML={{ 
-                                  __html: item.answer.replace(/<br><br>/g, '</p><p>').replace(/^/, '<p>').replace(/$/, '</p>')
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     {/* FAQ Section */}
                     {vibrateBio.FAQ.length > 0 && (
