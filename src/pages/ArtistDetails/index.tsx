@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatEventDate } from '../../utils/dateUtils';
 import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData, type VibrateBioData, type VibrateSpotifyListenersData, type VibrateInstagramAudienceData, type VibrateTikTokAudienceData, type VibrateYouTubeAudienceData } from '../../services/vibrateService';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
 
 // Import types from the database
 import type { Tables } from '../../types/database.types';
@@ -628,25 +628,49 @@ const ArtistDetails = () => {
               {Object.keys(instagramAudience.byGender).length > 0 && (
                 <div className="w-full">
                   <div className="text-xs font-medium text-gray-500 mb-2 mt-14">Instagram Gender Distribution</div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                    <div className="space-y-2">
-                      {Object.entries(instagramAudience.byGender).map(([gender, data]) => (
-                        <div key={gender} className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}></div>
-                            <span className="text-xs text-gray-900 font-medium capitalize">{gender}</span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-xs font-medium text-gray-900">
-                              {data.pct.toFixed(1)}%
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {data.total.toLocaleString()} followers
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center" style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={Object.entries(instagramAudience.byGender).map(([gender, data]) => ({
+                            name: gender.charAt(0).toUpperCase() + gender.slice(1),
+                            value: data.pct,
+                          }))}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={90}
+                        >
+                          {Object.entries(instagramAudience.byGender).map(([gender], idx) => (
+                            <Cell
+                              key={gender}
+                              fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#E1306C' : '#A3A3A3'}
+                            />
+                          ))}
+                        </Pie>
+                        <Legend
+                          verticalAlign="bottom"
+                          height={36}
+                          content={() => {
+                            const data = Object.entries(instagramAudience.byGender).map(([gender, d]) => ({
+                              name: gender.charAt(0).toUpperCase() + gender.slice(1),
+                              value: d.pct
+                            }));
+                            return (
+                              <ul className="flex justify-center gap-6 mt-4">
+                                {data.map((entry, idx) => (
+                                  <li key={entry.name} className="flex items-center gap-2 text-sm">
+                                    <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: idx === 0 ? '#3B82F6' : idx === 1 ? '#E1306C' : '#A3A3A3' }}></span>
+                                    <span>{entry.name}: {entry.value.toFixed(1)}%</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            );
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               )}
