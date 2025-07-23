@@ -114,6 +114,7 @@ const ArtistDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [citiesToShow, setCitiesToShow] = useState(10);
   const [countriesToShow, setCountriesToShow] = useState(10);
+  const [instagramCitiesToShow, setInstagramCitiesToShow] = useState(10);
 
   useEffect(() => {
     const loadArtistDetails = async () => {
@@ -556,55 +557,69 @@ const ArtistDetails = () => {
               )}
               {instagramAudience.byCity.length > 0 && (
                 <div className="w-full">
-                  <div className="text-xs font-medium text-gray-500 mb-2">
+                  <div className="text-base font-medium text-black mb-2 mt-8">
                     Instagram Audience by City
-                    {showAllInstagramCities
-                      ? `(${instagramAudience.byCity.length} cities)`
-                      : `(Top 10 of ${instagramAudience.byCity.length})`
-                    }
+                    {instagramCitiesToShow >= instagramAudience.byCity.length
+                      ? ` (${instagramAudience.byCity.length} cities)`
+                      : `(Top ${instagramCitiesToShow} of ${instagramAudience.byCity.length})`}
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                    <div className="space-y-1.5">
-                      {instagramAudience.byCity
-                        .slice(0, showAllInstagramCities ? instagramAudience.byCity.length : 10)
-                        .map((cityData, index) => (
-                          <div key={cityData.city_id} className="flex justify-between items-center">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-400">#{index + 1}</span>
-                                <span className="text-xs text-gray-900 font-medium truncate">
-                                  {cityData.city}
-                                </span>
-                                <span className="text-xs text-gray-500 uppercase">
-                                  {cityData.country_code}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end">
-                              <span className="text-xs font-medium text-gray-900">
-                                {cityData.instagram_followers.toLocaleString()}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {cityData.instagram_followers_pct.toFixed(1)}%
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                      Total: {instagramAudience.byCity.reduce((sum, city) => sum + city.instagram_followers, 0).toLocaleString()} followers
-                    </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: instagramCitiesToShow * 40 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={instagramAudience.byCity
+                          .slice(0, instagramCitiesToShow)
+                          .map(cityData => ({
+                            name: cityData.country_code ? `${cityData.city} (${cityData.country_code})` : cityData.city,
+                            followers: cityData.instagram_followers
+                          }))}
+                        layout="vertical"
+                        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+                      >
+                        <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7280' }} />
+                        <YAxis
+                          dataKey="name"
+                          type="category"
+                          tick={{ fontSize: 12, fill: '#6B7280' }}
+                          width={(() => {
+                            const maxLabelLength = Math.max(...instagramAudience.byCity.slice(0, instagramCitiesToShow).map(cityData => {
+                              const label = cityData.country_code ? `${cityData.city} (${cityData.country_code})` : cityData.city;
+                              return label.length;
+                            }), 0);
+                            return Math.min(160, maxLabelLength * 9);
+                          })()}
+                          interval={0}
+                          tickFormatter={name => name.length > 20 ? name.slice(0, 18) + '…' : name}
+                        />
+                        <Tooltip formatter={value => value.toLocaleString()} cursor={{ fill: '#e5e7eb', opacity: 0.2 }} />
+                        <Bar dataKey="followers" fill="#E1306C" radius={[4, 4, 4, 4]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                     {instagramAudience.byCity.length > 10 && (
-                      <div className="mt-3">
+                      <div className="mt-3 flex flex-row gap-2">
                         <button
-                          onClick={() => setShowAllInstagramCities(!showAllInstagramCities)}
-                          className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          style={{ width: '50%' }}
+                          onClick={() => {
+                            if (instagramCitiesToShow >= instagramAudience.byCity.length) {
+                              setInstagramCitiesToShow(10);
+                            } else {
+                              setInstagramCitiesToShow(Math.min(instagramCitiesToShow + 10, instagramAudience.byCity.length));
+                            }
+                          }}
+                          className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
-                          {showAllInstagramCities
+                          {instagramCitiesToShow >= instagramAudience.byCity.length
                             ? 'Show Top 10 Only'
-                            : `See All ${instagramAudience.byCity.length} Cities`
-                          }
+                            : `See 10 More Cities`}
                         </button>
+                        {instagramCitiesToShow > 10 && (
+                          <button
+                            style={{ width: '50%' }}
+                            onClick={() => setInstagramCitiesToShow(10)}
+                            className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          >
+                            See Less Cities
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -612,7 +627,7 @@ const ArtistDetails = () => {
               )}
               {Object.keys(instagramAudience.byGender).length > 0 && (
                 <div className="w-full">
-                  <div className="text-xs font-medium text-gray-500 mb-2">Instagram Gender Distribution</div>
+                  <div className="text-xs font-medium text-gray-500 mb-2 mt-14">Instagram Gender Distribution</div>
                   <div className="bg-gray-50 rounded-lg p-3 text-sm">
                     <div className="space-y-2">
                       {Object.entries(instagramAudience.byGender).map(([gender, data]) => (
