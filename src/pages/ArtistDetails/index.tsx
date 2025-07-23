@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatEventDate } from '../../utils/dateUtils';
 import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData, type VibrateBioData, type VibrateSpotifyListenersData, type VibrateInstagramAudienceData, type VibrateTikTokAudienceData, type VibrateYouTubeAudienceData } from '../../services/vibrateService';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 // Import types from the database
 import type { Tables } from '../../types/database.types';
@@ -111,6 +112,8 @@ const ArtistDetails = () => {
   const [showAllAudienceCountries, setShowAllAudienceCountries] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [citiesToShow, setCitiesToShow] = useState(10);
+  const [countriesToShow, setCountriesToShow] = useState(10);
 
   useEffect(() => {
     const loadArtistDetails = async () => {
@@ -226,6 +229,15 @@ const ArtistDetails = () => {
       </div>
     );
   }
+
+  // Calculate dynamic YAxis width for city chart
+  const getCityYAxisWidth = () => {
+    const maxLabelLength = Math.max(...spotifyListeners.byCity.slice(0, citiesToShow).map(cityData => {
+      const label = cityData.country_code ? `${cityData.city} (${cityData.country_code})` : cityData.city;
+      return label.length;
+    }), 0);
+    return Math.min(160, maxLabelLength * 9);
+  };
 
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
@@ -405,88 +417,141 @@ const ArtistDetails = () => {
             {/* Right Column - Analytics and Events List */}
             <div className="lg:col-span-9">
               {/* --- BEGIN: Analytics Sections (moved above events) --- */}
+              {/* Spotify Listeners by City */}
               {spotifyListeners.byCity.length > 0 && (
                 <div className="w-full">
-                  <div className="text-xs font-medium text-gray-500 mb-2">
+                  <div className="text-base font-medium text-black mb-2">
                     Spotify Listeners by City
-                    {showAllCities
-                      ? `(${spotifyListeners.byCity.length} cities)`
-                      : `(Top 10 of ${spotifyListeners.byCity.length})`
-                    }
+                    {citiesToShow >= spotifyListeners.byCity.length
+                      ? ` (${spotifyListeners.byCity.length} cities)`
+                      : `(Top ${citiesToShow} of ${spotifyListeners.byCity.length})`}
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                    <div className="space-y-1.5">
-                      {spotifyListeners.byCity
-                        .slice(0, showAllCities ? spotifyListeners.byCity.length : 10)
-                        .map((cityData, index) => (
-                          <div key={cityData.city_id} className="flex justify-between items-center">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-400">#{index + 1}</span>
-                                <span className="text-xs text-gray-900 font-medium truncate">
-                                  {cityData.city}
-                                </span>
-                                <span className="text-xs text-gray-500 uppercase">
-                                  {cityData.country_code}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end">
-                              <span className="text-xs font-medium text-gray-900">
-                                {cityData.listeners_1m.toLocaleString()}
-                              </span>
-                              <span className="text-xs text-gray-500">listeners/month</span>
-                            </div>
-                          </div>
-                        ))}
+                    <div className="w-full flex justify-start">
+                      <ResponsiveContainer width="100%" height={citiesToShow * 40}>
+                          <BarChart
+                            data={spotifyListeners.byCity
+                              .slice(0, citiesToShow)
+                              .map(cityData => ({
+                                name: cityData.country_code ? `${cityData.city} (${cityData.country_code})` : cityData.city,
+                                listeners: cityData.listeners_1m
+                              }))}
+                            layout="vertical"
+                            margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+                          >
+                            <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7280' }} />
+                            <YAxis
+                              dataKey="name"
+                              type="category"
+                              tick={{ fontSize: 12, fill: '#6B7280' }}
+                              width={getCityYAxisWidth()}
+                              interval={0}
+                              tickFormatter={name => name.length > 20 ? name.slice(0, 18) + '…' : name}
+                            />
+                            <Tooltip formatter={value => value.toLocaleString()} cursor={{ fill: '#e5e7eb', opacity: 0.2 }} />
+                            <Bar dataKey="listeners" fill="#1DB954" radius={[4, 4, 4, 4]} />
+                          </BarChart>
+                        </ResponsiveContainer>
                     </div>
                     <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
                       Total: {spotifyListeners.byCity.reduce((sum, city) => sum + city.listeners_1m, 0).toLocaleString()} monthly listeners
                     </div>
                     {spotifyListeners.byCity.length > 10 && (
-                      <div className="mt-3">
+                      <div className="mt-3 flex flex-row gap-2">
                         <button
-                          onClick={() => setShowAllCities(!showAllCities)}
-                          className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          style={{ width: '50%' }}
+                          onClick={() => {
+                            if (citiesToShow >= spotifyListeners.byCity.length) {
+                              setCitiesToShow(10);
+                            } else {
+                              setCitiesToShow(Math.min(citiesToShow + 10, spotifyListeners.byCity.length));
+                            }
+                          }}
+                          className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
                         >
-                          {showAllCities
+                          {citiesToShow >= spotifyListeners.byCity.length
                             ? 'Show Top 10 Only'
-                            : `See All ${spotifyListeners.byCity.length} Cities`
-                          }
+                            : `See 10 More Cities`}
                         </button>
+                        {citiesToShow > 10 && (
+                          <button
+                            style={{ width: '50%' }}
+                            onClick={() => setCitiesToShow(10)}
+                            className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          >
+                            See Less Cities
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
               )}
+
+              {/* Spotify Listeners by Country */}
               {Object.keys(spotifyListeners.byCountry).length > 0 && (
                 <div className="w-full">
-                  <div className="text-xs font-medium text-gray-500 mb-2">Spotify Listeners by Country (Top 10)</div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm max-h-48 overflow-y-auto">
-                    <div className="space-y-1">
-                      {Object.entries(spotifyListeners.byCountry)
-                        .sort(([,a], [,b]) => b - a)
-                        .slice(0, 10)
-                        .map(([countryCode, listeners], index) => (
-                          <div key={countryCode} className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400">#{index + 1}</span>
-                              <span className="text-xs text-gray-900 font-medium uppercase">
-                                {countryCode}
-                              </span>
-                            </div>
-                            <span className="text-xs font-medium text-gray-900">
-                              {listeners.toLocaleString()}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                    {Object.keys(spotifyListeners.byCountry).length > 10 && (
-                      <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                        +{Object.keys(spotifyListeners.byCountry).length - 10} more countries
-                      </div>
-                    )}
+                  <div className="text-base font-medium text-black mb-2 mt-8">
+                    Spotify Listeners by Country
+                    {countriesToShow >= Object.keys(spotifyListeners.byCountry).length
+                      ? ` (${Object.keys(spotifyListeners.byCountry).length} countries)`
+                      : `(Top ${countriesToShow} of ${Object.keys(spotifyListeners.byCountry).length})`}
                   </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: countriesToShow * 40 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={Object.entries(spotifyListeners.byCountry)
+                          .sort(([,a], [,b]) => b - a)
+                          .slice(0, countriesToShow)
+                          .map(([countryCode, listeners]) => ({
+                            name: countryCode,
+                            listeners: listeners as number
+                          }))}
+                        layout="vertical"
+                        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+                      >
+                        <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7280' }} />
+                        <YAxis
+                          dataKey="name"
+                          type="category"
+                          tick={{ fontSize: 12, fill: '#6B7280' }}
+                          width={100}
+                          interval={0}
+                          tickFormatter={name => name.length > 10 ? name.slice(0, 9) + '…' : name}
+                        />
+                        <Tooltip formatter={value => value.toLocaleString()} cursor={{ fill: '#e5e7eb', opacity: 0.2 }} />
+                        <Bar dataKey="listeners" fill="#1DB954" radius={[4, 4, 4, 4]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {Object.keys(spotifyListeners.byCountry).length > 10 && (
+                    <div className="mt-3 flex flex-row gap-2">
+                      <button
+                        style={{ width: '50%' }}
+                        onClick={() => {
+                          if (countriesToShow >= Object.keys(spotifyListeners.byCountry).length) {
+                            setCountriesToShow(10);
+                          } else {
+                            setCountriesToShow(Math.min(countriesToShow + 10, Object.keys(spotifyListeners.byCountry).length));
+                          }
+                        }}
+                        className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                      >
+                        {countriesToShow >= Object.keys(spotifyListeners.byCountry).length
+                          ? 'Show Top 10 Only'
+                          : `See 10 More Countries`}
+                      </button>
+                      {countriesToShow > 10 && (
+                        <button
+                          style={{ width: '50%' }}
+                          onClick={() => setCountriesToShow(10)}
+                          className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                        >
+                          See Less Countries
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               {instagramAudience.byCity.length > 0 && (
