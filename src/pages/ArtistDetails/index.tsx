@@ -116,6 +116,8 @@ const ArtistDetails = () => {
   const [countriesToShow, setCountriesToShow] = useState(10);
   const [instagramCitiesToShow, setInstagramCitiesToShow] = useState(10);
   const [tiktokCountriesToShow, setTiktokCountriesToShow] = useState(10);
+  const [upcomingEventsToShow, setUpcomingEventsToShow] = useState(5);
+  const [pastEventsToShow, setPastEventsToShow] = useState(5);
 
   useEffect(() => {
     const loadArtistDetails = async () => {
@@ -1337,31 +1339,35 @@ const ArtistDetails = () => {
                   <div className="mb-8">
                     <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
                       <span className="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
-                      Upcoming Events via Viberate ({vibrateUpcomingEvents.length})
+                      Upcoming Events via Viberate 
+                      {upcomingEventsToShow >= vibrateUpcomingEvents.length
+                        ? ` (${vibrateUpcomingEvents.length})`
+                        : ` (${upcomingEventsToShow} of ${vibrateUpcomingEvents.length})`}
                     </h4>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Event
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Date
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Location
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Type
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Genres
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {vibrateUpcomingEvents.map((event: VibrateEvent) => {
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Event
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Location
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Type
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Genres
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {vibrateUpcomingEvents.slice(0, upcomingEventsToShow).map((event: VibrateEvent) => {
                             // Helper function to format date from ISO string
                             const formatVibrateDate = (dateString: string) => {
                               try {
@@ -1454,6 +1460,35 @@ const ArtistDetails = () => {
                         </tbody>
                       </table>
                     </div>
+                    {vibrateUpcomingEvents.length > 5 && (
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              if (upcomingEventsToShow >= vibrateUpcomingEvents.length) {
+                                setUpcomingEventsToShow(5);
+                              } else {
+                                setUpcomingEventsToShow(Math.min(upcomingEventsToShow + 5, vibrateUpcomingEvents.length));
+                              }
+                            }}
+                            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          >
+                            {upcomingEventsToShow >= vibrateUpcomingEvents.length
+                              ? 'Show First 5 Only'
+                              : `Show ${Math.min(5, vibrateUpcomingEvents.length - upcomingEventsToShow)} More Events`}
+                          </button>
+                          {upcomingEventsToShow > 5 && (
+                            <button
+                              onClick={() => setUpcomingEventsToShow(5)}
+                              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            >
+                              Show Less
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   </div>
                 )}
 
@@ -1462,31 +1497,35 @@ const ArtistDetails = () => {
                   <div className="mb-8">
                     <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
                       <span className="inline-block w-3 h-3 bg-gray-500 rounded-full"></span>
-                      Past Events via Viberate ({vibratePastEvents.length})
+                      Past Events via Viberate 
+                      {pastEventsToShow >= vibratePastEvents.length
+                        ? ` (${vibratePastEvents.length})`
+                        : ` (${pastEventsToShow} of ${vibratePastEvents.length})`}
                     </h4>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Event
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Date
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Location
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Type
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Genres
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {vibratePastEvents.map((event: VibrateEvent) => {
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Event
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Location
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Type
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Genres
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {vibratePastEvents.slice(0, pastEventsToShow).map((event: VibrateEvent) => {
                             // Helper function to format date from ISO string
                             const formatVibrateDate = (dateString: string) => {
                               try {
@@ -1579,6 +1618,35 @@ const ArtistDetails = () => {
                         </tbody>
                       </table>
                     </div>
+                    {vibratePastEvents.length > 5 && (
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              if (pastEventsToShow >= vibratePastEvents.length) {
+                                setPastEventsToShow(5);
+                              } else {
+                                setPastEventsToShow(Math.min(pastEventsToShow + 5, vibratePastEvents.length));
+                              }
+                            }}
+                            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          >
+                            {pastEventsToShow >= vibratePastEvents.length
+                              ? 'Show First 5 Only'
+                              : `Show ${Math.min(5, vibratePastEvents.length - pastEventsToShow)} More Events`}
+                          </button>
+                          {pastEventsToShow > 5 && (
+                            <button
+                              onClick={() => setPastEventsToShow(5)}
+                              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            >
+                              Show Less
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   </div>
                 )}
 
