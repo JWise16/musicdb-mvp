@@ -420,6 +420,408 @@ const ArtistDetails = () => {
 
             {/* Right Column - Analytics and Events List */}
             <div className="lg:col-span-9">
+              {/* Events Section */}
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Events</h3>
+                
+                {/* Local Events Section */}
+                {artist.events.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="inline-block w-3 h-3 bg-purple-500 rounded-full"></span>
+                      Your Database Events ({artist.events.length})
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Event
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Venue
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Role
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Attendance
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {artist.events.map((event: any) => (
+                            <tr
+                              key={event.id}
+                              className="hover:bg-gray-50 cursor-pointer transition-colors"
+                              onClick={() => handleEventClick(event.id)}
+                            >
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {event.name}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {formatEventDate(event.date)}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {event.venues?.name}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {event.venues?.location}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  event.is_headliner 
+                                    ? 'bg-purple-100 text-purple-700' 
+                                    : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {event.is_headliner ? 'Headliner' : 'Supporting'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {event.tickets_sold ? (
+                                    <>
+                                      {event.tickets_sold.toLocaleString()} / {event.total_tickets.toLocaleString()}
+                                      <div className="text-xs text-gray-500">
+                                        ({Math.round((event.tickets_sold / event.total_tickets) * 100)}% sold)
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <span className="text-gray-400">—</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vibrate Upcoming Events Section */}
+                {vibrateUpcomingEvents.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
+                      Upcoming Events via Viberate 
+                      {upcomingEventsToShow >= vibrateUpcomingEvents.length
+                        ? ` (${vibrateUpcomingEvents.length})`
+                        : ` (${upcomingEventsToShow} of ${vibrateUpcomingEvents.length})`}
+                    </h4>
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Event
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Location
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Type
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Genres
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {vibrateUpcomingEvents.slice(0, upcomingEventsToShow).map((event: VibrateEvent) => {
+                            // Helper function to format date from ISO string
+                            const formatVibrateDate = (dateString: string) => {
+                              try {
+                                const date = new Date(dateString);
+                                return date.toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                });
+                              } catch {
+                                return dateString;
+                              }
+                            };
+
+                            // Get location info (venue for events, city for festivals)
+                            const getLocationInfo = () => {
+                              if (event.venue) {
+                                return {
+                                  name: event.venue.name,
+                                  city: event.venue.city.name,
+                                  country: event.venue.country.name
+                                };
+                              } else if (event.city && event.country) {
+                                return {
+                                  name: 'Festival',
+                                  city: event.city.name,
+                                  country: event.country.name
+                                };
+                              }
+                              return { name: 'TBA', city: '', country: '' };
+                            };
+
+                            const location = getLocationInfo();
+
+                            return (
+                              <tr
+                                key={`vibrate-upcoming-${event.uuid}`}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {event.name}
+                                  </div>
+                                  {event.image && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Has image
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {formatVibrateDate(event.start)}
+                                  </div>
+                                  {event.end && (
+                                    <div className="text-xs text-gray-500">
+                                      - {formatVibrateDate(event.end)}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {location.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {location.city}{location.country && `, ${location.country}`}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    event.type === 'event' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-purple-100 text-purple-700'
+                                  }`}>
+                                    {event.type}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {event.genres?.[0]?.name || event.subgenres?.[0]?.name || 'N/A'}
+                                  </div>
+                                  {event.subgenres && event.subgenres.length > 0 && (
+                                    <div className="text-xs text-gray-500">
+                                      {event.subgenres.slice(0, 2).map((sg: any) => sg.name).join(', ')}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {vibrateUpcomingEvents.length > 5 && (
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              if (upcomingEventsToShow >= vibrateUpcomingEvents.length) {
+                                setUpcomingEventsToShow(5);
+                              } else {
+                                setUpcomingEventsToShow(Math.min(upcomingEventsToShow + 5, vibrateUpcomingEvents.length));
+                              }
+                            }}
+                            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          >
+                            {upcomingEventsToShow >= vibrateUpcomingEvents.length
+                              ? 'Show First 5 Only'
+                              : `Show ${Math.min(5, vibrateUpcomingEvents.length - upcomingEventsToShow)} More Events`}
+                          </button>
+                          {upcomingEventsToShow > 5 && (
+                            <button
+                              onClick={() => setUpcomingEventsToShow(5)}
+                              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            >
+                              Show Less
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  </div>
+                )}
+
+                {/* Vibrate Past Events Section */}
+                {vibratePastEvents.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="inline-block w-3 h-3 bg-gray-500 rounded-full"></span>
+                      Past Events via Viberate 
+                      {pastEventsToShow >= vibratePastEvents.length
+                        ? ` (${vibratePastEvents.length})`
+                        : ` (${pastEventsToShow} of ${vibratePastEvents.length})`}
+                    </h4>
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Event
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Location
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Type
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Genres
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {vibratePastEvents.slice(0, pastEventsToShow).map((event: VibrateEvent) => {
+                            // Helper function to format date from ISO string
+                            const formatVibrateDate = (dateString: string) => {
+                              try {
+                                const date = new Date(dateString);
+                                return date.toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                });
+                              } catch {
+                                return dateString;
+                              }
+                            };
+
+                            // Get location info (venue for events, city for festivals)
+                            const getLocationInfo = () => {
+                              if (event.venue) {
+                                return {
+                                  name: event.venue.name,
+                                  city: event.venue.city.name,
+                                  country: event.venue.country.name
+                                };
+                              } else if (event.city && event.country) {
+                                return {
+                                  name: 'Festival',
+                                  city: event.city.name,
+                                  country: event.country.name
+                                };
+                              }
+                              return { name: 'TBA', city: '', country: '' };
+                            };
+
+                            const location = getLocationInfo();
+
+                            return (
+                              <tr
+                                key={`vibrate-past-${event.uuid}`}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {event.name}
+                                  </div>
+                                  {event.image && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Has image
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {formatVibrateDate(event.start)}
+                                  </div>
+                                  {event.end && (
+                                    <div className="text-xs text-gray-500">
+                                      - {formatVibrateDate(event.end)}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {location.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {location.city}{location.country && `, ${location.country}`}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    event.type === 'event' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-purple-100 text-purple-700'
+                                  }`}>
+                                    {event.type}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {event.genres?.[0]?.name || event.subgenres?.[0]?.name || 'N/A'}
+                                  </div>
+                                  {event.subgenres && event.subgenres.length > 0 && (
+                                    <div className="text-xs text-gray-500">
+                                      {event.subgenres.slice(0, 2).map((sg: any) => sg.name).join(', ')}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {vibratePastEvents.length > 5 && (
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              if (pastEventsToShow >= vibratePastEvents.length) {
+                                setPastEventsToShow(5);
+                              } else {
+                                setPastEventsToShow(Math.min(pastEventsToShow + 5, vibratePastEvents.length));
+                              }
+                            }}
+                            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          >
+                            {pastEventsToShow >= vibratePastEvents.length
+                              ? 'Show First 5 Only'
+                              : `Show ${Math.min(5, vibratePastEvents.length - pastEventsToShow)} More Events`}
+                          </button>
+                          {pastEventsToShow > 5 && (
+                            <button
+                              onClick={() => setPastEventsToShow(5)}
+                              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            >
+                              Show Less
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  </div>
+                )}
               {/* --- BEGIN: Analytics Sections (moved above events) --- */}
               {/* Spotify Listeners by City */}
               {spotifyListeners.byCity.length > 0 && (
@@ -1216,407 +1618,6 @@ const ArtistDetails = () => {
               {/* --- END: Analytics Sections --- */}
 
               <div className="card p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Events</h3>
-                
-                {/* Local Events Section */}
-                {artist.events.length > 0 && (
-                  <div className="mb-8">
-                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                      <span className="inline-block w-3 h-3 bg-purple-500 rounded-full"></span>
-                      Your Database Events ({artist.events.length})
-                    </h4>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Event
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Date
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Venue
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Role
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Attendance
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {artist.events.map((event: any) => (
-                            <tr
-                              key={event.id}
-                              className="hover:bg-gray-50 cursor-pointer transition-colors"
-                              onClick={() => handleEventClick(event.id)}
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {event.name}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-900">
-                                  {formatEventDate(event.date)}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-900">
-                                  {event.venues?.name}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {event.venues?.location}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  event.is_headliner 
-                                    ? 'bg-purple-100 text-purple-700' 
-                                    : 'bg-blue-100 text-blue-700'
-                                }`}>
-                                  {event.is_headliner ? 'Headliner' : 'Supporting'}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-900">
-                                  {event.tickets_sold ? (
-                                    <>
-                                      {event.tickets_sold.toLocaleString()} / {event.total_tickets.toLocaleString()}
-                                      <div className="text-xs text-gray-500">
-                                        ({Math.round((event.tickets_sold / event.total_tickets) * 100)}% sold)
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <span className="text-gray-400">—</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* Vibrate Upcoming Events Section */}
-                {vibrateUpcomingEvents.length > 0 && (
-                  <div className="mb-8">
-                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                      <span className="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
-                      Upcoming Events via Viberate 
-                      {upcomingEventsToShow >= vibrateUpcomingEvents.length
-                        ? ` (${vibrateUpcomingEvents.length})`
-                        : ` (${upcomingEventsToShow} of ${vibrateUpcomingEvents.length})`}
-                    </h4>
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Event
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Date
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Location
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Type
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Genres
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {vibrateUpcomingEvents.slice(0, upcomingEventsToShow).map((event: VibrateEvent) => {
-                            // Helper function to format date from ISO string
-                            const formatVibrateDate = (dateString: string) => {
-                              try {
-                                const date = new Date(dateString);
-                                return date.toLocaleDateString('en-US', {
-                                  weekday: 'short',
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                });
-                              } catch {
-                                return dateString;
-                              }
-                            };
-
-                            // Get location info (venue for events, city for festivals)
-                            const getLocationInfo = () => {
-                              if (event.venue) {
-                                return {
-                                  name: event.venue.name,
-                                  city: event.venue.city.name,
-                                  country: event.venue.country.name
-                                };
-                              } else if (event.city && event.country) {
-                                return {
-                                  name: 'Festival',
-                                  city: event.city.name,
-                                  country: event.country.name
-                                };
-                              }
-                              return { name: 'TBA', city: '', country: '' };
-                            };
-
-                            const location = getLocationInfo();
-
-                            return (
-                              <tr
-                                key={`vibrate-upcoming-${event.uuid}`}
-                                className="hover:bg-gray-50 transition-colors"
-                              >
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {event.name}
-                                  </div>
-                                  {event.image && (
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      Has image
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">
-                                    {formatVibrateDate(event.start)}
-                                  </div>
-                                  {event.end && (
-                                    <div className="text-xs text-gray-500">
-                                      - {formatVibrateDate(event.end)}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">
-                                    {location.name}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    {location.city}{location.country && `, ${location.country}`}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className={`px-2 py-1 text-xs rounded-full ${
-                                    event.type === 'event' ? 'bg-blue-100 text-blue-700' :
-                                    'bg-purple-100 text-purple-700'
-                                  }`}>
-                                    {event.type}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">
-                                    {event.genres?.[0]?.name || event.subgenres?.[0]?.name || 'N/A'}
-                                  </div>
-                                  {event.subgenres && event.subgenres.length > 0 && (
-                                    <div className="text-xs text-gray-500">
-                                      {event.subgenres.slice(0, 2).map((sg: any) => sg.name).join(', ')}
-                                    </div>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    {vibrateUpcomingEvents.length > 5 && (
-                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              if (upcomingEventsToShow >= vibrateUpcomingEvents.length) {
-                                setUpcomingEventsToShow(5);
-                              } else {
-                                setUpcomingEventsToShow(Math.min(upcomingEventsToShow + 5, vibrateUpcomingEvents.length));
-                              }
-                            }}
-                            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                          >
-                            {upcomingEventsToShow >= vibrateUpcomingEvents.length
-                              ? 'Show First 5 Only'
-                              : `Show ${Math.min(5, vibrateUpcomingEvents.length - upcomingEventsToShow)} More Events`}
-                          </button>
-                          {upcomingEventsToShow > 5 && (
-                            <button
-                              onClick={() => setUpcomingEventsToShow(5)}
-                              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                            >
-                              Show Less
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  </div>
-                )}
-
-                {/* Vibrate Past Events Section */}
-                {vibratePastEvents.length > 0 && (
-                  <div className="mb-8">
-                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                      <span className="inline-block w-3 h-3 bg-gray-500 rounded-full"></span>
-                      Past Events via Viberate 
-                      {pastEventsToShow >= vibratePastEvents.length
-                        ? ` (${vibratePastEvents.length})`
-                        : ` (${pastEventsToShow} of ${vibratePastEvents.length})`}
-                    </h4>
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Event
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Date
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Location
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Type
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Genres
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {vibratePastEvents.slice(0, pastEventsToShow).map((event: VibrateEvent) => {
-                            // Helper function to format date from ISO string
-                            const formatVibrateDate = (dateString: string) => {
-                              try {
-                                const date = new Date(dateString);
-                                return date.toLocaleDateString('en-US', {
-                                  weekday: 'short',
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                });
-                              } catch {
-                                return dateString;
-                              }
-                            };
-
-                            // Get location info (venue for events, city for festivals)
-                            const getLocationInfo = () => {
-                              if (event.venue) {
-                                return {
-                                  name: event.venue.name,
-                                  city: event.venue.city.name,
-                                  country: event.venue.country.name
-                                };
-                              } else if (event.city && event.country) {
-                                return {
-                                  name: 'Festival',
-                                  city: event.city.name,
-                                  country: event.country.name
-                                };
-                              }
-                              return { name: 'TBA', city: '', country: '' };
-                            };
-
-                            const location = getLocationInfo();
-
-                            return (
-                              <tr
-                                key={`vibrate-past-${event.uuid}`}
-                                className="hover:bg-gray-50 transition-colors"
-                              >
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {event.name}
-                                  </div>
-                                  {event.image && (
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      Has image
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">
-                                    {formatVibrateDate(event.start)}
-                                  </div>
-                                  {event.end && (
-                                    <div className="text-xs text-gray-500">
-                                      - {formatVibrateDate(event.end)}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">
-                                    {location.name}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    {location.city}{location.country && `, ${location.country}`}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className={`px-2 py-1 text-xs rounded-full ${
-                                    event.type === 'event' ? 'bg-blue-100 text-blue-700' :
-                                    'bg-purple-100 text-purple-700'
-                                  }`}>
-                                    {event.type}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">
-                                    {event.genres?.[0]?.name || event.subgenres?.[0]?.name || 'N/A'}
-                                  </div>
-                                  {event.subgenres && event.subgenres.length > 0 && (
-                                    <div className="text-xs text-gray-500">
-                                      {event.subgenres.slice(0, 2).map((sg: any) => sg.name).join(', ')}
-                                    </div>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    {vibratePastEvents.length > 5 && (
-                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              if (pastEventsToShow >= vibratePastEvents.length) {
-                                setPastEventsToShow(5);
-                              } else {
-                                setPastEventsToShow(Math.min(pastEventsToShow + 5, vibratePastEvents.length));
-                              }
-                            }}
-                            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                          >
-                            {pastEventsToShow >= vibratePastEvents.length
-                              ? 'Show First 5 Only'
-                              : `Show ${Math.min(5, vibratePastEvents.length - pastEventsToShow)} More Events`}
-                          </button>
-                          {pastEventsToShow > 5 && (
-                            <button
-                              onClick={() => setPastEventsToShow(5)}
-                              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                            >
-                              Show Less
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  </div>
-                )}
 
                 {/* Artist Bio Section */}
                 {(vibrateBio.BIO.length > 0 || vibrateBio.FAQ.length > 0) && (
