@@ -492,72 +492,7 @@ const ArtistDetails = () => {
                 </div>
               )}
 
-              {/* Spotify Listeners by Country */}
-              {Object.keys(spotifyListeners.byCountry).length > 0 && (
-                <div className="w-full">
-                  <div className="text-base font-medium text-black mb-2 mt-8">
-                    Spotify Listeners by Country
-                    {countriesToShow >= Object.keys(spotifyListeners.byCountry).length
-                      ? ` (${Object.keys(spotifyListeners.byCountry).length} countries)`
-                      : `(Top ${countriesToShow} of ${Object.keys(spotifyListeners.byCountry).length})`}
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: countriesToShow * 40 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={Object.entries(spotifyListeners.byCountry)
-                          .sort(([,a], [,b]) => b - a)
-                          .slice(0, countriesToShow)
-                          .map(([countryCode, listeners]) => ({
-                            name: countryCode,
-                            listeners: listeners as number
-                          }))}
-                        layout="vertical"
-                        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
-                      >
-                        <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7280' }} />
-                        <YAxis
-                          dataKey="name"
-                          type="category"
-                          tick={{ fontSize: 12, fill: '#6B7280' }}
-                          width={100}
-                          interval={0}
-                          tickFormatter={name => name.length > 10 ? name.slice(0, 9) + '…' : name}
-                        />
-                        <Tooltip formatter={value => value.toLocaleString()} cursor={{ fill: '#e5e7eb', opacity: 0.2 }} />
-                        <Bar dataKey="listeners" fill="#1DB954" radius={[4, 4, 4, 4]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  {Object.keys(spotifyListeners.byCountry).length > 10 && (
-                    <div className="mt-3 flex flex-row gap-2">
-                      <button
-                        style={{ width: '50%' }}
-                        onClick={() => {
-                          if (countriesToShow >= Object.keys(spotifyListeners.byCountry).length) {
-                            setCountriesToShow(10);
-                          } else {
-                            setCountriesToShow(Math.min(countriesToShow + 10, Object.keys(spotifyListeners.byCountry).length));
-                          }
-                        }}
-                        className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                      >
-                        {countriesToShow >= Object.keys(spotifyListeners.byCountry).length
-                          ? 'Show Top 10 Only'
-                          : `See 10 More Countries`}
-                      </button>
-                      {countriesToShow > 10 && (
-                        <button
-                          style={{ width: '50%' }}
-                          onClick={() => setCountriesToShow(10)}
-                          className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                        >
-                          See Less Countries
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+
               {instagramAudience.byCity.length > 0 && (
                 <div className="w-full">
                   <div className="text-base font-medium text-black mb-2 mt-8">
@@ -844,72 +779,7 @@ const ArtistDetails = () => {
                   )}
                 </>
               )}
-              {tiktokAudience.byCountry.length > 0 && (
-                <div className="w-full">
-                  <div className="text-base font-medium text-black mb-2 mt-8">
-                    TikTok Audience by Country
-                    {tiktokCountriesToShow >= tiktokAudience.byCountry.length
-                      ? ` (${tiktokAudience.byCountry.length} countries)`
-                      : `(Top ${tiktokCountriesToShow} of ${tiktokAudience.byCountry.length})`}
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: tiktokCountriesToShow * 40 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={tiktokAudience.byCountry
-                          .filter(country => country.tiktok_followers !== null && country.tiktok_followers > 0)
-                          .sort((a, b) => (b.tiktok_followers || 0) - (a.tiktok_followers || 0))
-                          .slice(0, tiktokCountriesToShow)
-                          .map(countryData => ({
-                            name: countryData.country_code,
-                            followers: countryData.tiktok_followers
-                          }))}
-                        layout="vertical"
-                        margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
-                      >
-                        <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7280' }} />
-                        <YAxis
-                          dataKey="name"
-                          type="category"
-                          tick={{ fontSize: 12, fill: '#6B7280' }}
-                          width={100}
-                          interval={0}
-                          tickFormatter={name => name.length > 10 ? name.slice(0, 9) + '…' : name}
-                        />
-                        <Tooltip formatter={value => value.toLocaleString()} cursor={{ fill: '#e5e7eb', opacity: 0.2 }} />
-                        <Bar dataKey="followers" fill="#000000" radius={[4, 4, 4, 4]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                    {tiktokAudience.byCountry.length > 10 && (
-                      <div className="mt-3 flex flex-row gap-2">
-                        <button
-                          style={{ width: '50%' }}
-                          onClick={() => {
-                            if (tiktokCountriesToShow >= tiktokAudience.byCountry.length) {
-                              setTiktokCountriesToShow(10);
-                            } else {
-                              setTiktokCountriesToShow(Math.min(tiktokCountriesToShow + 10, tiktokAudience.byCountry.length));
-                            }
-                          }}
-                          className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                        >
-                          {tiktokCountriesToShow >= tiktokAudience.byCountry.length
-                            ? 'Show Top 10 Only'
-                            : `See 10 More Countries`}
-                        </button>
-                        {tiktokCountriesToShow > 10 && (
-                          <button
-                            style={{ width: '50%' }}
-                            onClick={() => setTiktokCountriesToShow(10)}
-                            className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                          >
-                            See Less Countries
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+
               {Object.keys(tiktokAudience.byGender).length > 0 && Object.keys(tiktokAudience.byAge).length > 0 ? (
                 <div className="flex flex-col lg:flex-row gap-8">
                   {/* Gender Distribution */}
@@ -1126,124 +996,222 @@ const ArtistDetails = () => {
                   )}
                 </>
               )}
-              {Object.keys(youtubeAudience.byCountry).length > 0 && (
-                <div className="w-full">
-                  <div className="text-xs font-medium text-gray-500 mb-2">
-                    YouTube Audience by Country
-                    {showAllYoutubeCountries
-                      ? `(${Object.keys(youtubeAudience.byCountry).length} countries)`
-                      : `(Top 10 of ${Object.keys(youtubeAudience.byCountry).length})`
-                    }
+
+              {Object.keys(youtubeAudience.byGender).length > 0 && Object.keys(youtubeAudience.byAge).length > 0 ? (
+                <div className="flex flex-col lg:flex-row gap-8">
+                  {/* Gender Distribution */}
+                  <div className="w-full flex-1">
+                    <div className="text-base font-medium text-black mb-2 mt-14">YouTube Gender Distribution</div>
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={Object.entries(youtubeAudience.byGender).map(([gender, data]) => ({
+                              name: gender.charAt(0).toUpperCase() + gender.slice(1),
+                              value: data.pct,
+                            }))}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="60%"
+                            outerRadius={75}
+                          >
+                            {Object.entries(youtubeAudience.byGender).map(([gender], idx) => (
+                              <Cell
+                                key={gender}
+                                fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
+                              />
+                            ))}
+                          </Pie>
+                          <Legend
+                            verticalAlign="bottom"
+                            height={36}
+                            content={() => {
+                              const data = Object.entries(youtubeAudience.byGender).map(([gender, d]) => ({
+                                name: gender.charAt(0).toUpperCase() + gender.slice(1),
+                                value: d.pct
+                              }));
+                              return (
+                                <ul className="flex justify-center gap-6 mt-4">
+                                  {data.map((entry, idx) => (
+                                    <li key={entry.name} className="flex items-center gap-2 text-sm">
+                                      <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: idx === 0 ? '#3B82F6' : idx === 1 ? '#EC4899' : '#A3A3A3' }}></span>
+                                      <span>{entry.name}: {entry.value.toFixed(1)}%</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              );
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                    <div className="space-y-1.5">
-                      {Object.entries(youtubeAudience.byCountry)
-                        .sort(([,a], [,b]) => b.alltime - a.alltime)
-                        .slice(0, showAllYoutubeCountries ? Object.keys(youtubeAudience.byCountry).length : 10)
-                        .map(([countryCode, data], index) => (
-                          <div key={countryCode} className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400">#{index + 1}</span>
-                              <span className="text-xs text-gray-900 font-medium uppercase">
-                                {countryCode}
-                              </span>
-                            </div>
-                            <div className="flex flex-col items-end">
-                              <span className="text-xs font-medium text-gray-900">
-                                {data.alltime.toLocaleString()}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                views
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                      Total: {Object.values(youtubeAudience.byCountry)
-                        .reduce((sum, country) => sum + country.alltime, 0)
-                        .toLocaleString()} views
-                    </div>
-                    {Object.keys(youtubeAudience.byCountry).length > 10 && (
-                      <div className="mt-3">
-                        <button
-                          onClick={() => setShowAllYoutubeCountries(!showAllYoutubeCountries)}
-                          className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                  {/* Age Distribution */}
+                  <div className="w-full flex-1 mt-8 lg:mt-0">
+                    <div className="text-base font-medium text-black mb-2 mt-8 lg:mt-14">YouTube Age Distribution</div>
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: Math.max(320, Object.keys(youtubeAudience.byAge).length * 48) }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={Object.entries(youtubeAudience.byAge)
+                            .filter(([, data]) => (data.male.total + data.female.total) > 0)
+                            .sort(([a, b]) => {
+                              const getAgeOrder = (age: string) => {
+                                if (age === '13-17') return 1;
+                                if (age === '18-24') return 2;
+                                if (age === '25-34') return 3;
+                                if (age === '35-44') return 4;
+                                if (age === '45-64') return 5;
+                                if (age === '65-') return 6;
+                                return 7;
+                              };
+                              return getAgeOrder(String(a)) - getAgeOrder(String(b));
+                            })
+                            .map(([ageGroup, data]) => ({
+                              age: ageGroup,
+                              Male: data.male.pct,
+                              Female: data.female.pct
+                            }))}
+                          layout="vertical"
+                          margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
                         >
-                          {showAllYoutubeCountries
-                            ? 'Show Top 10 Only'
-                            : `See All ${Object.keys(youtubeAudience.byCountry).length} Countries`
-                          }
-                        </button>
+                          <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={v => `${v}%`} />
+                          <YAxis dataKey="age" type="category" tick={{ fontSize: 12, fill: '#6B7280' }} width={80} interval={0} />
+                          <Tooltip
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                const male = payload.find(p => p.dataKey === 'Male')?.value || 0;
+                                const female = payload.find(p => p.dataKey === 'Female')?.value || 0;
+                                const total = Number(male) + Number(female);
+                                return (
+                                  <div className="bg-white p-3 rounded shadow text-xs text-gray-900">
+                                    <div className="font-semibold mb-1">{label}</div>
+                                    <div><span className="font-medium text-blue-600">Male:</span> {Number(male).toFixed(1)}%</div>
+                                    <div><span className="font-medium text-pink-600">Female:</span> {Number(female).toFixed(1)}%</div>
+                                    <div className="mt-1 font-semibold">Total: {total.toFixed(1)}%</div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Bar dataKey="Male" stackId="a" fill="#3B82F6" />
+                          <Bar dataKey="Female" stackId="a" fill="#EC4899" />
+                          <Legend verticalAlign="bottom" height={36} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Fallback: render as before if only one is present */}
+                  {Object.keys(youtubeAudience.byGender).length > 0 && (
+                    <div className="w-full">
+                      <div className="text-base font-medium text-black mb-2 mt-8">YouTube Gender Distribution</div>
+                      <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={Object.entries(youtubeAudience.byGender).map(([gender, data]) => ({
+                                name: gender.charAt(0).toUpperCase() + gender.slice(1),
+                                value: data.pct,
+                              }))}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="60%"
+                              outerRadius={75}
+                            >
+                              {Object.entries(youtubeAudience.byGender).map(([gender], idx) => (
+                                <Cell
+                                  key={gender}
+                                  fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
+                                />
+                              ))}
+                            </Pie>
+                            <Legend
+                              verticalAlign="bottom"
+                              height={36}
+                              content={() => {
+                                const data = Object.entries(youtubeAudience.byGender).map(([gender, d]) => ({
+                                  name: gender.charAt(0).toUpperCase() + gender.slice(1),
+                                  value: d.pct
+                                }));
+                                return (
+                                  <ul className="flex justify-center gap-6 mt-4">
+                                    {data.map((entry, idx) => (
+                                      <li key={entry.name} className="flex items-center gap-2 text-sm">
+                                        <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: idx === 0 ? '#3B82F6' : idx === 1 ? '#EC4899' : '#A3A3A3' }}></span>
+                                        <span>{entry.name}: {entry.value.toFixed(1)}%</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                );
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              {Object.keys(youtubeAudience.byGender).length > 0 && (
-                <div className="w-full">
-                  <div className="text-xs font-medium text-gray-500 mb-2">YouTube Gender Distribution</div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                    <div className="space-y-2">
-                      {Object.entries(youtubeAudience.byGender).map(([gender, data]) => (
-                        <div key={gender} className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}></div>
-                            <span className="text-xs text-gray-900 font-medium capitalize">{gender}</span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-xs font-medium text-gray-900">
-                              {data.pct.toFixed(1)}%
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {data.total.toLocaleString()} viewers
-                            </span>
-                          </div>
-                        </div>
-                      ))}
                     </div>
-                  </div>
-                </div>
-              )}
-              {Object.keys(youtubeAudience.byAge).length > 0 && (
-                <div className="w-full">
-                  <div className="text-xs font-medium text-gray-500 mb-2">YouTube Age Distribution</div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                    <div className="space-y-1.5">
-                      {Object.entries(youtubeAudience.byAge)
-                        .filter(([, data]) => (data.male.total + data.female.total) > 0)
-                        .sort(([a, b]) => {
-                          const getAgeOrder = (age: string) => {
-                            if (age === '13-17') return 1;
-                            if (age === '18-24') return 2;
-                            if (age === '25-34') return 3;
-                            if (age === '35-44') return 4;
-                            if (age === '45-64') return 5;
-                            if (age === '65-') return 6;
-                            return 7;
-                          };
-                          return getAgeOrder(String(a)) - getAgeOrder(String(b));
-                        })
-                        .map(([ageGroup, data]) => {
-                          const totalPct = data.male.pct + data.female.pct;
-                          return (
-                            <div key={ageGroup} className="border-b border-gray-200 pb-1.5 last:border-b-0">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs text-gray-900 font-medium">{ageGroup}</span>
-                                <span className="text-xs font-medium text-gray-900">
-                                  {totalPct.toFixed(1)}%
-                                </span>
-                              </div>
-                              <div className="flex justify-between text-xs text-gray-600 pl-2">
-                                <span>♂ {data.male.pct.toFixed(1)}% ({data.male.total.toLocaleString()})</span>
-                                <span>♀ {data.female.pct.toFixed(1)}% ({data.female.total.toLocaleString()})</span>
-                              </div>
-                            </div>
-                          );
-                        })}
+                  )}
+                  {Object.keys(youtubeAudience.byAge).length > 0 && (
+                    <div className="w-full">
+                      <div className="text-base font-medium text-black mb-2 mt-8">YouTube Age Distribution</div>
+                      <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: Math.max(320, Object.keys(youtubeAudience.byAge).length * 48) }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={Object.entries(youtubeAudience.byAge)
+                              .filter(([, data]) => (data.male.total + data.female.total) > 0)
+                              .sort(([a, b]) => {
+                                const getAgeOrder = (age: string) => {
+                                  if (age === '13-17') return 1;
+                                  if (age === '18-24') return 2;
+                                  if (age === '25-34') return 3;
+                                  if (age === '35-44') return 4;
+                                  if (age === '45-64') return 5;
+                                  if (age === '65-') return 6;
+                                  return 7;
+                                };
+                                return getAgeOrder(String(a)) - getAgeOrder(String(b));
+                              })
+                              .map(([ageGroup, data]) => ({
+                                age: ageGroup,
+                                Male: data.male.pct,
+                                Female: data.female.pct
+                              }))}
+                            layout="vertical"
+                            margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+                          >
+                            <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={v => `${v}%`} />
+                            <YAxis dataKey="age" type="category" tick={{ fontSize: 12, fill: '#6B7280' }} width={80} interval={0} />
+                            <Tooltip
+                              content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                  const male = payload.find(p => p.dataKey === 'Male')?.value || 0;
+                                  const female = payload.find(p => p.dataKey === 'Female')?.value || 0;
+                                  const total = Number(male) + Number(female);
+                                  return (
+                                    <div className="bg-white p-3 rounded shadow text-xs text-gray-900">
+                                      <div className="font-semibold mb-1">{label}</div>
+                                      <div><span className="font-medium text-blue-600">Male:</span> {Number(male).toFixed(1)}%</div>
+                                      <div><span className="font-medium text-pink-600">Female:</span> {Number(female).toFixed(1)}%</div>
+                                      <div className="mt-1 font-semibold">Total: {total.toFixed(1)}%</div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Bar dataKey="Male" stackId="a" fill="#3B82F6" />
+                            <Bar dataKey="Female" stackId="a" fill="#EC4899" />
+                            <Legend verticalAlign="bottom" height={36} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  )}
+                </>
               )}
               {/* --- END: Analytics Sections --- */}
 
