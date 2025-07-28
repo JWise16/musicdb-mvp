@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { useLocation } from 'react-router-dom';
 import { VenueService } from '../services/venueService';
@@ -28,9 +28,9 @@ export const useOnboarding = () => {
   const [previousProgress, setPreviousProgress] = useState<OnboardingProgress | null>(null);
 
   // Check if current route is public
-  const isPublicRoute = () => {
+  const isPublicRoute = useCallback(() => {
     return PUBLIC_ROUTES.includes(location.pathname);
-  };
+  }, [location.pathname]);
 
   // Check if user has seen onboarding before
   const hasSeenOnboarding = () => {
@@ -53,7 +53,7 @@ export const useOnboarding = () => {
   };
 
   // Check onboarding progress
-  const checkProgress = async () => {
+  const checkProgress = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
       return;
@@ -106,12 +106,12 @@ export const useOnboarding = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, previousProgress, isPublicRoute]);
 
   // Check progress when user changes or location changes
   useEffect(() => {
     checkProgress();
-  }, [user, location.pathname]);
+  }, [checkProgress, location.pathname]);
 
   // Function to close onboarding
   const closeOnboarding = () => {

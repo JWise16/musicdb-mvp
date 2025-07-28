@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { VenueService } from '../services/venueService';
@@ -34,7 +34,7 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Load user venues and set current venue
-  const loadVenues = async () => {
+  const loadVenues = useCallback(async () => {
     // Don't load venues if auth is still loading or if there's no user
     if (authLoading || !user) {
       setUserVenues([]);
@@ -67,7 +67,7 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [authLoading, user]);
 
   // Switch to a different venue
   const switchVenue = async (venueId: string) => {
@@ -86,7 +86,7 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
   // Load venues when user changes or auth loading completes
   useEffect(() => {
     loadVenues();
-  }, [user, authLoading]);
+  }, [loadVenues]);
 
   const value: VenueContextType = {
     currentVenue,

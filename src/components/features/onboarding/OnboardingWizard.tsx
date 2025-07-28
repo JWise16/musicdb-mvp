@@ -328,7 +328,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       //console.log('OnboardingWizard: Starting step completion for step:', step);
       
       switch (step) {
-        case 'profile':
+        case 'profile': {
           // Update user profile
           const profileResult = await UserProfileService.updateProfileWithAvatar(
             user.id,
@@ -361,8 +361,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             }
           }
           break;
+        }
 
-        case 'venue':
+        case 'venue': {
           // Create venue and associate with user
           const venueResult = await VenueService.createVenueWithImage(venue, venueImageFile || undefined);
           if (venueResult.error) {
@@ -383,13 +384,14 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             }
           }
           break;
+        }
 
         case 'early-access':
           // Early access validation is handled by the OnboardingEarlyAccess component
           // which calls onClose() directly when validation succeeds
           break;
 
-        case 'events':
+        case 'events': {
           // Get user's venue
           const userVenues = await VenueService.getUserVenues(user.id);
           //console.log('OnboardingWizard: User venues found:', userVenues.length);
@@ -426,6 +428,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
           //console.log(`OnboardingWizard: Event ${eventNumber} created successfully:`, eventResult.eventId);
           break;
+        }
       }
 
       //

@@ -92,13 +92,14 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
         return ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
       case 'Quarter':
         return ['Q1', 'Q2', 'Q3', 'Q4'];
-      case 'Year':
+      case 'Year': {
         const now = new Date();
         const years = [];
         for (let i = 4; i >= 0; i--) {
           years.push((now.getFullYear() - i).toString());
         }
         return years;
+      }
       default:
         return [];
     }
@@ -139,21 +140,24 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
     if (genreMetric === 'revenue') {
       // Handle revenue data
       switch (timeFrame) {
-        case 'Month':
+        case 'Month': {
           const monthRevData = analytics.monthlyGenreRevenue?.find(m => m.month === selectedPeriod) || 
                               analytics.monthlyGenreRevenue?.[0];
           genreBreakdownData = monthRevData?.genres || [];
           break;
-        case 'Quarter':
+        }
+        case 'Quarter': {
           const quarterRevData = analytics.quarterlyGenreRevenue?.find(q => q.quarter === selectedPeriod) || 
                                 analytics.quarterlyGenreRevenue?.[0];
           genreBreakdownData = quarterRevData?.genres || [];
           break;
-        case 'Year':
+        }
+        case 'Year': {
           const yearRevData = analytics.yearlyGenreRevenue?.find(y => y.year === selectedPeriod) || 
                              analytics.yearlyGenreRevenue?.[analytics.yearlyGenreRevenue?.length - 1];
           genreBreakdownData = yearRevData?.genres || [];
           break;
+        }
         default:
           genreBreakdownData = analytics.monthlyGenreRevenue?.[0]?.genres || [];
       }
@@ -171,21 +175,24 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
     } else {
       // Handle percentage data
       switch (timeFrame) {
-        case 'Month':
+        case 'Month': {
           const monthData = analytics.monthlyGenreBreakdown.find(m => m.month === selectedPeriod) || 
                            analytics.monthlyGenreBreakdown[0];
           genreBreakdownData = monthData?.genres || [];
           break;
-        case 'Quarter':
+        }
+        case 'Quarter': {
           const quarterData = analytics.quarterlyGenreBreakdown.find(q => q.quarter === selectedPeriod) || 
                              analytics.quarterlyGenreBreakdown[0];
           genreBreakdownData = quarterData?.genres || [];
           break;
-        case 'Year':
+        }
+        case 'Year': {
           const yearData = analytics.yearlyGenreBreakdown.find(y => y.year === selectedPeriod) || 
                           analytics.yearlyGenreBreakdown[analytics.yearlyGenreBreakdown.length - 1];
           genreBreakdownData = yearData?.genres || [];
           break;
+        }
         default:
           genreBreakdownData = analytics.monthlyGenreBreakdown[0]?.genres || [];
       }

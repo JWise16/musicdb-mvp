@@ -88,7 +88,7 @@ export class EventService {
       // Process artists
       for (const artistData of eventData.artists) {
         // Check if artist exists, create if not
-        let artistId = await this.getOrCreateArtist(artistData);
+        const artistId = await this.getOrCreateArtist(artistData);
         
         if (artistId) {
           // Create event_artist relationship
@@ -418,14 +418,16 @@ export class EventService {
               return (b.venues?.capacity || 0) - (a.venues?.capacity || 0);
             case 'capacity_asc':
               return (a.venues?.capacity || 0) - (b.venues?.capacity || 0);
-            case 'price_desc':
+            case 'price_desc': {
               const priceB = b.ticket_price || b.ticket_price_max || 0;
               const priceA = a.ticket_price || a.ticket_price_max || 0;
               return priceB - priceA;
-            case 'price_asc':
+            }
+            case 'price_asc': {
               const priceA2 = a.ticket_price || a.ticket_price_max || 0;
               const priceB2 = b.ticket_price || b.ticket_price_max || 0;
               return priceA2 - priceB2;
+            }
             default:
               return 0;
           }

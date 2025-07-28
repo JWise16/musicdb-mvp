@@ -477,7 +477,7 @@ export class VenueService {
         .sort(([,a], [,b]) => b - a)[0] || { name: 'N/A', count: 0 };
 
       // Calculate trends (last 6 months or periods)
-      const trends = this.calculateTrends(events, timeFrame);
+      const trends = this.calculateTrends(events);
       
       // Calculate percentage sold data for different time periods
       const monthlyPercentageSold = this.calculateMonthlyPercentageSold(events);
@@ -1414,7 +1414,7 @@ export class VenueService {
   }
 
   // Calculate trends for analytics metrics
-  private static calculateTrends(events: any[], _timeFrame: 'YTD' | 'MTD' | 'ALL'): VenueAnalytics['trends'] {
+  private static calculateTrends(events: any[]): VenueAnalytics['trends'] {
     // Group events by month for the last 6 months
     const now = new Date();
     const periods: Date[] = [];

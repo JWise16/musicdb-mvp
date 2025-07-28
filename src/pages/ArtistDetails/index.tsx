@@ -1020,7 +1020,7 @@ const ArtistDetails = () => {
                             cy="60%"
                             outerRadius={75}
                           >
-                            {Object.entries(instagramAudience.byGender).map(([gender], _) => (
+                            {Object.entries(instagramAudience.byGender).map(([gender]) => (
                               <Cell
                                 key={gender}
                                 fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1127,7 +1127,7 @@ const ArtistDetails = () => {
                               cy="60%"
                               outerRadius={75}
                             >
-                              {Object.entries(instagramAudience.byGender).map(([gender], _) => (
+                              {Object.entries(instagramAudience.byGender).map(([gender]) => (
                                 <Cell
                                   key={gender}
                                   fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1237,7 +1237,7 @@ const ArtistDetails = () => {
                             cy="60%"
                             outerRadius={75}
                           >
-                            {Object.entries(tiktokAudience.byGender).map(([gender], _) => (
+                            {Object.entries(tiktokAudience.byGender).map(([gender]) => (
                               <Cell
                                 key={gender}
                                 fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1344,7 +1344,7 @@ const ArtistDetails = () => {
                               cy="60%"
                               outerRadius={75}
                             >
-                              {Object.entries(tiktokAudience.byGender).map(([gender], _) => (
+                              {Object.entries(tiktokAudience.byGender).map(([gender]) => (
                                 <Cell
                                   key={gender}
                                   fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1454,7 +1454,7 @@ const ArtistDetails = () => {
                             cy="60%"
                             outerRadius={75}
                           >
-                            {Object.entries(youtubeAudience.byGender).map(([gender], _) => (
+                            {Object.entries(youtubeAudience.byGender).map(([gender]) => (
                               <Cell
                                 key={gender}
                                 fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1561,7 +1561,7 @@ const ArtistDetails = () => {
                               cy="60%"
                               outerRadius={75}
                             >
-                              {Object.entries(youtubeAudience.byGender).map(([gender], _) => (
+                              {Object.entries(youtubeAudience.byGender).map(([gender]) => (
                                 <Cell
                                   key={gender}
                                   fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { UserProfileService } from '../services/userProfileService';
 import type { Database } from '../types/database.types';
@@ -11,7 +11,7 @@ export const useUserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     //console.log('useUserProfile: fetchProfile called', { user: user?.email });
     
     if (!user) {
@@ -46,7 +46,7 @@ export const useUserProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) {
@@ -114,7 +114,7 @@ export const useUserProfile = () => {
   // Fetch profile when user changes
   useEffect(() => {
     fetchProfile();
-  }, [user]);
+  }, [fetchProfile]);
 
   return {
     profile,

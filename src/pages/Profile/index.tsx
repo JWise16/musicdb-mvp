@@ -70,7 +70,7 @@ export default function Profile() {
       } else {
         setError('Failed to update profile. Please try again.');
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsSaving(false);
