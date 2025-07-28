@@ -25,7 +25,7 @@ const getChannelStyle = (channel: string): string => {
     youtube: 'bg-red-500 text-white',
     instagram: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
     facebook: 'bg-blue-600 text-white',
-    twitter: 'bg-blue-400 text-white',
+    twitter: 'bg-black text-white',
     tiktok: 'bg-black text-white',
     soundcloud: 'bg-orange-500 text-white',
     bandcamp: 'bg-blue-700 text-white',
@@ -60,7 +60,7 @@ const getChannelIcon = (channel: string) => {
     case 'facebook':
       return <svg {...iconProps}><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>;
     case 'twitter':
-      return <svg {...iconProps}><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>;
+      return <svg {...iconProps}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>;
     case 'soundcloud':
       return (
         <svg {...iconProps} viewBox="0 0 24 24">
@@ -347,7 +347,9 @@ const ArtistDetails = () => {
                            'shazam',
                            'songkick',
                            'bandcamp',
-                           'napster'
+                           'napster',
+                           'bandsintown',
+                           'facebook'
                          ].includes(link.channel.toLowerCase()))
                          .map((link) => (
                            <a
@@ -361,7 +363,9 @@ const ArtistDetails = () => {
                              <div className={`w-5 h-5 rounded flex items-center justify-center ${getChannelStyle(link.channel)}`}>
                                {getChannelIcon(link.channel)}
                              </div>
-                             <span className="capitalize">{link.channel.replace('_', ' ')}</span>
+                             <span className="capitalize">
+                               {link.channel.toLowerCase() === 'twitter' ? 'X' : link.channel.replace('_', ' ')}
+                             </span>
                            </a>
                          ))}
                      </div>
@@ -689,12 +693,6 @@ const ArtistDetails = () => {
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Location
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Type
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Genres
-                              </th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
@@ -766,24 +764,6 @@ const ArtistDetails = () => {
                                   <div className="text-sm text-gray-500">
                                     {location.city}{location.country && `, ${location.country}`}
                                   </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span className={`px-2 py-1 text-xs rounded-full ${
-                                    event.type === 'event' ? 'bg-blue-100 text-blue-700' :
-                                    'bg-purple-100 text-purple-700'
-                                  }`}>
-                                    {event.type}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">
-                                    {event.genres?.[0]?.name || event.subgenres?.[0]?.name || 'N/A'}
-                                  </div>
-                                  {event.subgenres && event.subgenres.length > 0 && (
-                                    <div className="text-xs text-gray-500">
-                                      {event.subgenres.slice(0, 2).map((sg: any) => sg.name).join(', ')}
-                                    </div>
-                                  )}
                                 </td>
                               </tr>
                             );
@@ -970,7 +950,7 @@ const ArtistDetails = () => {
                   {/* Gender Distribution */}
                   <div className="w-full flex-1">
                     <div className="text-base font-medium text-black mb-2 mt-14">Instagram Gender Distribution</div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: Math.max(320, Object.keys(instagramAudience.byAge).length * 48) }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -1077,7 +1057,7 @@ const ArtistDetails = () => {
                   {Object.keys(instagramAudience.byGender).length > 0 && (
                     <div className="w-full">
                       <div className="text-base font-medium text-black mb-2 mt-14">Instagram Gender Distribution</div>
-                      <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                      <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 320 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -1187,7 +1167,7 @@ const ArtistDetails = () => {
                   {/* Gender Distribution */}
                   <div className="w-full flex-1">
                     <div className="text-base font-medium text-black mb-2 mt-14">TikTok Gender Distribution</div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: Math.max(320, Object.keys(tiktokAudience.byAge).length * 48) }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -1294,7 +1274,7 @@ const ArtistDetails = () => {
                   {Object.keys(tiktokAudience.byGender).length > 0 && (
                     <div className="w-full">
                       <div className="text-base font-medium text-black mb-2 mt-14">TikTok Gender Distribution</div>
-                      <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                      <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 320 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -1404,7 +1384,7 @@ const ArtistDetails = () => {
                   {/* Gender Distribution */}
                   <div className="w-full flex-1">
                     <div className="text-base font-medium text-black mb-2 mt-14">YouTube Gender Distribution</div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: Math.max(320, Object.keys(youtubeAudience.byAge).length * 48) }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -1511,7 +1491,7 @@ const ArtistDetails = () => {
                   {Object.keys(youtubeAudience.byGender).length > 0 && (
                     <div className="w-full">
                       <div className="text-base font-medium text-black mb-2 mt-8">YouTube Gender Distribution</div>
-                      <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 260 }}>
+                      <div className="bg-gray-50 rounded-lg p-3 text-sm flex items-center justify-center pt-4" style={{ height: 320 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
