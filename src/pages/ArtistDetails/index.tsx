@@ -130,10 +130,12 @@ const ArtistDetails = () => {
         // Import ArtistService dynamically
         const { ArtistService } = await import('../../services/artistService');
         const artistData = await ArtistService.getArtistWithEvents(id);
+        
+        // If we found a local artist, use it
         if (artistData) {
           setArtist(artistData);
           
-          // Fetch additional data from Viberate API (artist info + links + events + spotify listeners + instagram audience + tiktok audience + youtube audience)
+          // Fetch additional data from Viberate API using the local artist's name
           try {
             const { artist: vibrateData, links, upcomingEvents, pastEvents, audience, bio, spotifyListeners: spotifyListenersData, instagramAudience: instagramAudienceData, tiktokAudience: tiktokAudienceData, youtubeAudience: youtubeAudienceData } = await VibrateService.getArtistWithAllData(artistData.name);
             if (vibrateData) {
@@ -147,30 +149,89 @@ const ArtistDetails = () => {
               setInstagramAudience(instagramAudienceData);
               setTiktokAudience(tiktokAudienceData);
               setYoutubeAudience(youtubeAudienceData);
-              console.log('Found Viberate data for artist:', vibrateData);
-              console.log('Found artist links:', links);
-              console.log('Found upcoming events:', upcomingEvents);
-              console.log('Found past events:', pastEvents);
-              console.log('Found audience data:', audience);
-              console.log('Audience data keys:', Object.keys(audience));
-              console.log('Audience data length check:', Object.keys(audience).length > 0);
-              console.log('Found bio data:', bio);
-              console.log('Bio sections:', bio.BIO.length, 'FAQ items:', bio.FAQ.length);
-              console.log('Found Spotify listeners data:', spotifyListenersData);
-              console.log('Spotify listeners by city:', spotifyListenersData.byCity.length, 'countries:', Object.keys(spotifyListenersData.byCountry).length);
-              console.log('Found Instagram audience data:', instagramAudienceData);
-              console.log('Instagram audience by city:', instagramAudienceData.byCity.length, 'countries:', instagramAudienceData.byCountry.length);
-              console.log('Found TikTok audience data:', tiktokAudienceData);
-              console.log('TikTok audience by country:', tiktokAudienceData.byCountry.length);
-              console.log('Found YouTube audience data:', youtubeAudienceData);
-              console.log('YouTube audience by country:', Object.keys(youtubeAudienceData.byCountry).length);
+              console.log('Found Viberate data for local artist:', vibrateData);
             }
           } catch (vibrateError) {
-            console.warn('Could not fetch Viberate data:', vibrateError);
-            // Don't set error for Viberate failures - it's optional enhancement
+            console.warn('Could not fetch Viberate data for local artist:', vibrateError);
           }
         } else {
-          setError('Artist not found');
+          // No local artist found - this might be a Vibrate UUID from search results
+          // Try to fetch directly by UUID from Vibrate API
+          console.log('No local artist found, attempting to fetch Vibrate data by UUID:', id);
+          
+          try {
+            // Get Vibrate data directly by UUID using individual method calls
+            const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse, instagramAudienceResponse, tiktokAudienceResponse, youtubeAudienceResponse] = await Promise.all([
+              VibrateService.getArtistLinks(id),
+              VibrateService.getArtistEvents(id),
+              VibrateService.getArtistAudience(id),
+              VibrateService.getArtistBio(id),
+              VibrateService.getArtistSpotifyListeners(id),
+              VibrateService.getArtistInstagramAudience(id),
+              VibrateService.getArtistTikTokAudience(id),
+              VibrateService.getArtistYouTubeAudience(id)
+            ]);
+            
+            // If we got at least one successful response, we can proceed
+            if (linksResponse || eventsResponse || audienceResponse || bioResponse) {
+              // Create a minimal artist object from the UUID - we'll get the name from other data
+              const artistName = bioResponse?.artist?.name || 'Unknown Artist';
+              
+              setArtist({
+                id: id,
+                name: artistName,
+                genre: null,
+                description: null,
+                contact_info: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                is_admin_added: false,
+                social_media: {},
+                events: [] // No local events for external artists
+              });
+              
+              // Get full artist data (including image) by searching with the artist name
+              let fullArtistData = null;
+              if (artistName !== 'Unknown Artist') {
+                try {
+                  const searchResponse = await VibrateService.searchArtists(artistName);
+                  if (searchResponse?.artists && searchResponse.artists.length > 0) {
+                    // Find the artist with matching UUID
+                    fullArtistData = searchResponse.artists.find(artist => artist.uuid === id);
+                    if (!fullArtistData) {
+                      // If no exact UUID match, use the first result as it's likely the same artist
+                      fullArtistData = searchResponse.artists[0];
+                    }
+                  }
+                } catch (searchError) {
+                  console.warn('Could not search for full artist data:', searchError);
+                }
+              }
+              
+                              // Set the full vibrate artist data if we found it (this includes the image)
+                if (fullArtistData) {
+                  setVibrateArtist(fullArtistData);
+                  // Update the local artist genre from the full data
+                  setArtist(prev => prev ? { ...prev, genre: fullArtistData?.genre?.name || null } : prev);
+                }
+              
+              setArtistLinks(linksResponse?.links || []);
+              setVibrateUpcomingEvents(eventsResponse?.upcoming || []);
+              setVibratePastEvents(eventsResponse?.past || []);
+              setVibrateAudience(audienceResponse?.audience || {});
+              setVibrateBio(bioResponse?.bio || { BIO: [], FAQ: [] });
+              setSpotifyListeners(spotifyListenersResponse?.listeners || { byCity: [], byCountry: {} });
+              setInstagramAudience(instagramAudienceResponse?.audience || { byCity: [], byCountry: [], byGender: {} as any, byAge: {} });
+              setTiktokAudience(tiktokAudienceResponse?.audience || { byCountry: [], byGender: {} as any, byAge: {} });
+              setYoutubeAudience(youtubeAudienceResponse?.audience || { byCountry: {}, byGender: {} as any, byAge: {} });
+              console.log('Found Vibrate data by UUID:', id, 'with full artist data:', !!fullArtistData);
+            } else {
+              setError('Artist not found');
+            }
+          } catch (vibrateError) {
+            console.error('Could not fetch Vibrate data by UUID:', vibrateError);
+            setError('Artist not found');
+          }
         }
       } catch (error) {
         console.error('Error loading artist details:', error);
@@ -222,10 +283,10 @@ const ArtistDetails = () => {
                 {error || 'The artist you are looking for could not be found.'}
               </p>
               <button 
-                onClick={() => navigate('/events')}
+                onClick={() => navigate(-1)}
                 className="btn-primary"
               >
-                Back to Events
+                Go Back
               </button>
             </div>
           </div>
@@ -251,7 +312,7 @@ const ArtistDetails = () => {
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
             <button
-              onClick={() => navigate('/events')}
+              onClick={() => navigate(-1)}
               className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
