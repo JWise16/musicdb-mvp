@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run prebuild && vite build",
+    "prebuild": "npm run type-check && npm run lint",
+    "type-check": "tsc -b --noEmit",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "preview": "vite preview",
+    "check-all": "npm run type-check && npm run lint"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

@@ -105,17 +105,12 @@ const ArtistDetails = () => {
   const [instagramAudience, setInstagramAudience] = useState<VibrateInstagramAudienceData>({ byCity: [], byCountry: [], byGender: {} as any, byAge: {} });
   const [tiktokAudience, setTiktokAudience] = useState<VibrateTikTokAudienceData>({ byCountry: [], byGender: {} as any, byAge: {} });
   const [youtubeAudience, setYoutubeAudience] = useState<VibrateYouTubeAudienceData>({ byCountry: {}, byGender: {} as any, byAge: {} });
-  const [showAllCities, setShowAllCities] = useState(false);
-  const [showAllInstagramCities, setShowAllInstagramCities] = useState(false);
-  const [showAllTiktokCountries, setShowAllTiktokCountries] = useState(false);
-  const [showAllYoutubeCountries, setShowAllYoutubeCountries] = useState(false);
+
   const [showAllAudienceCountries, setShowAllAudienceCountries] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [citiesToShow, setCitiesToShow] = useState(10);
-  const [countriesToShow, setCountriesToShow] = useState(10);
   const [instagramCitiesToShow, setInstagramCitiesToShow] = useState(10);
-  const [tiktokCountriesToShow, setTiktokCountriesToShow] = useState(10);
   const [upcomingEventsToShow, setUpcomingEventsToShow] = useState(5);
   const [pastEventsToShow, setPastEventsToShow] = useState(5);
 
@@ -1025,7 +1020,7 @@ const ArtistDetails = () => {
                             cy="60%"
                             outerRadius={75}
                           >
-                            {Object.entries(instagramAudience.byGender).map(([gender], idx) => (
+                            {Object.entries(instagramAudience.byGender).map(([gender], _) => (
                               <Cell
                                 key={gender}
                                 fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1132,7 +1127,7 @@ const ArtistDetails = () => {
                               cy="60%"
                               outerRadius={75}
                             >
-                              {Object.entries(instagramAudience.byGender).map(([gender], idx) => (
+                              {Object.entries(instagramAudience.byGender).map(([gender], _) => (
                                 <Cell
                                   key={gender}
                                   fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1242,7 +1237,7 @@ const ArtistDetails = () => {
                             cy="60%"
                             outerRadius={75}
                           >
-                            {Object.entries(tiktokAudience.byGender).map(([gender], idx) => (
+                            {Object.entries(tiktokAudience.byGender).map(([gender], _) => (
                               <Cell
                                 key={gender}
                                 fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1349,7 +1344,7 @@ const ArtistDetails = () => {
                               cy="60%"
                               outerRadius={75}
                             >
-                              {Object.entries(tiktokAudience.byGender).map(([gender], idx) => (
+                              {Object.entries(tiktokAudience.byGender).map(([gender], _) => (
                                 <Cell
                                   key={gender}
                                   fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1459,7 +1454,7 @@ const ArtistDetails = () => {
                             cy="60%"
                             outerRadius={75}
                           >
-                            {Object.entries(youtubeAudience.byGender).map(([gender], idx) => (
+                            {Object.entries(youtubeAudience.byGender).map(([gender], _) => (
                               <Cell
                                 key={gender}
                                 fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
@@ -1566,7 +1561,7 @@ const ArtistDetails = () => {
                               cy="60%"
                               outerRadius={75}
                             >
-                              {Object.entries(youtubeAudience.byGender).map(([gender], idx) => (
+                              {Object.entries(youtubeAudience.byGender).map(([gender], _) => (
                                 <Cell
                                   key={gender}
                                   fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
