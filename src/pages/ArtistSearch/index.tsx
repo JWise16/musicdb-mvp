@@ -4,6 +4,142 @@ import Sidebar from '../../components/layout/Sidebar';
 import { Button } from '../../components/common/Button';
 import { VibrateService, type VibrateArtist } from '../../services/vibrateService';
 
+// Default featured artists to show before search
+const FEATURED_ARTISTS: VibrateArtist[] = [
+  {
+    uuid: '48eda2b7-29d2-483b-8c7b-b2945fa9a2d5',
+    name: 'Tyler, The Creator',
+    slug: 'tyler-the-creator',
+    image: 'https://viberate-upload.ams3.cdn.digitaloceanspaces.com/prod/entity/artist/tyler-the-creator-nHDdk',
+    rank: 1,
+    verified: true,
+    country: {
+      name: 'United States',
+      alpha2: 'US',
+      continent_code: 'NA'
+    },
+    genre: {
+      id: 1,
+      name: 'Hip Hop',
+      slug: 'hip-hop'
+    },
+    subgenres: [
+      { id: 1, name: 'Alternative Hip Hop', slug: 'alternative-hip-hop' },
+      { id: 2, name: 'Conscious Hip Hop', slug: 'conscious-hip-hop' }
+    ]
+  },
+  {
+    uuid: '51ea2de0-6294-4f2b-bb83-7abab5cb3aca',
+    name: 'Tame Impala',
+    slug: 'tame-impala',
+    image: 'https://viberate-upload.ams3.cdn.digitaloceanspaces.com/prod/entity/artist/tame-impala-EK5pl',
+    rank: 2,
+    verified: true,
+    country: {
+      name: 'Australia',
+      alpha2: 'AU',
+      continent_code: 'OC'
+    },
+    genre: {
+      id: 2,
+      name: 'Psychedelic Rock',
+      slug: 'psychedelic-rock'
+    },
+    subgenres: [
+      { id: 3, name: 'Indie Rock', slug: 'indie-rock' },
+      { id: 4, name: 'Dream Pop', slug: 'dream-pop' }
+    ]
+  },
+  {
+    uuid: '7a801821-bd5b-4686-9c2a-5a020a17e854',
+    name: 'Don Toliver',
+    slug: 'don-toliver',
+    image: 'https://viberate-upload.ams3.cdn.digitaloceanspaces.com/prod/entity/artist/don-toliver-PJ7G2',
+    rank: 3,
+    verified: true,
+    country: {
+      name: 'United States',
+      alpha2: 'US',
+      continent_code: 'NA'
+    },
+    genre: {
+      id: 3,
+      name: 'R&B',
+      slug: 'rnb'
+    },
+    subgenres: [
+      { id: 5, name: 'Trap', slug: 'trap' },
+      { id: 6, name: 'Contemporary R&B', slug: 'contemporary-rnb' }
+    ]
+  },
+  {
+    uuid: '2cbd7e47-e0b6-4144-a807-bf2a4189b96b',
+    name: 'Morgan Wallen',
+    slug: 'morgan-wallen',
+    image: 'https://viberate-upload.ams3.cdn.digitaloceanspaces.com/prod/entity/artist/morgan-wallen-i1t43',
+    rank: 4,
+    verified: true,
+    country: {
+      name: 'United States',
+      alpha2: 'US',
+      continent_code: 'NA'
+    },
+    genre: {
+      id: 4,
+      name: 'Country',
+      slug: 'country'
+    },
+    subgenres: [
+      { id: 7, name: 'Country Pop', slug: 'country-pop' },
+      { id: 8, name: 'Contemporary Country', slug: 'contemporary-country' }
+    ]
+  },
+  {
+    uuid: 'd17312ee-1a08-4d6a-9c94-67e4a9062927',
+    name: 'Hugel',
+    slug: 'hugel',
+    image: 'https://viberate-upload.ams3.cdn.digitaloceanspaces.com/prod/entity/artist/hugel-eAnLu',
+    rank: 5,
+    verified: false,
+    country: {
+      name: 'France',
+      alpha2: 'FR',
+      continent_code: 'EU'
+    },
+    genre: {
+      id: 5,
+      name: 'House',
+      slug: 'house'
+    },
+    subgenres: [
+      { id: 9, name: 'Deep House', slug: 'deep-house' },
+      { id: 10, name: 'Tech House', slug: 'tech-house' }
+    ]
+  },
+  {
+    uuid: '98ff8787-8848-4188-932f-21665019e6e2',
+    name: 'Sublime',
+    slug: 'sublime',
+    image: 'https://viberate-upload.ams3.cdn.digitaloceanspaces.com/prod/entity/artist/sublime-PNEgQ',
+    rank: 6,
+    verified: true,
+    country: {
+      name: 'United States',
+      alpha2: 'US',
+      continent_code: 'NA'
+    },
+    genre: {
+      id: 6,
+      name: 'Ska Punk',
+      slug: 'ska-punk'
+    },
+    subgenres: [
+      { id: 11, name: 'Reggae Rock', slug: 'reggae-rock' },
+      { id: 12, name: 'Alternative Rock', slug: 'alternative-rock' }
+    ]
+  }
+];
+
 const ArtistSearch = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +171,10 @@ const ArtistSearch = () => {
   const handleArtistClick = (artistUuid: string) => {
     navigate(`/artist/${artistUuid}`);
   };
+
+  // Show featured artists when no search has been performed, otherwise show search results
+  const displayArtists = !hasSearched ? FEATURED_ARTISTS : searchResults;
+  const displayTitle = !hasSearched ? "Featured Artists" : `Found ${searchResults.length} artist${searchResults.length !== 1 ? 's' : ''} for "${searchQuery}"`;
 
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
@@ -79,7 +219,7 @@ const ArtistSearch = () => {
             </div>
           </div>
 
-          {/* Search Results */}
+          {/* Results Section */}
           <div>
             {hasSearched && !isLoading && searchResults.length === 0 && (
               <div className="text-center py-12">
@@ -88,23 +228,16 @@ const ArtistSearch = () => {
               </div>
             )}
             
-            {!hasSearched && (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-lg mb-2">Ready to search</div>
-                <p className="text-gray-500">Enter an artist name to get started</p>
-              </div>
-            )}
-
-            {/* Search Results */}
-            {searchResults.length > 0 && (
+            {/* Featured Artists or Search Results */}
+            {displayArtists.length > 0 && (
               <div>
                 <div className="mb-4">
                   <p className="text-gray-600">
-                    Found {searchResults.length} artist{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+                    {displayTitle}
                   </p>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {searchResults.map((artist) => (
+                {displayArtists.map((artist) => (
                   <div
                     key={artist.uuid}
                     onClick={() => handleArtistClick(artist.uuid)}
@@ -131,11 +264,6 @@ const ArtistSearch = () => {
                           {artist.genre?.name}
                           {artist.country?.name && ` • ${artist.country.name}`}
                         </p>
-                        {artist.rank && (
-                          <p className="text-xs text-gray-500">
-                            Rank: #{artist.rank}
-                          </p>
-                        )}
                         {artist.subgenres && artist.subgenres.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {artist.subgenres.slice(0, 2).map((subgenre) => (
