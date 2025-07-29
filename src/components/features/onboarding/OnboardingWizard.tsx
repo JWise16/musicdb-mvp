@@ -441,23 +441,71 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     }
   };
 
+  // Helper function to format currency
+  const formatCurrency = (value: string | number) => {
+    if (!value && value !== 0) return '';
+    const numValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
+    if (isNaN(numValue)) return '';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(numValue);
+  };
+
+  // Helper function to parse currency value
+  const parseCurrency = (value: string) => {
+    const numValue = parseFloat(value.replace(/[^0-9.]/g, ''));
+    return isNaN(numValue) ? undefined : numValue;
+  };
+
+  // Handle currency field changes (while typing)
+  const handleCurrencyChange = (field: string, value: string) => {
+    // Store the raw input value temporarily for editing
+    const cleanValue = value.replace(/[^0-9.]/g, '');
+    setEvent(prev => ({
+      ...prev,
+      [`${field}_display`]: value, // Store display value
+      [field]: cleanValue ? parseFloat(cleanValue) : undefined // Store numeric value
+    }));
+  };
+
+  // Handle currency field blur (format when done typing)
+  const handleCurrencyBlur = (field: string, value: string) => {
+    const numValue = parseCurrency(value);
+    setEvent(prev => ({
+      ...prev,
+      [`${field}_display`]: undefined, // Clear display value
+      [field]: numValue
+    }));
+  };
+
+  // Get display value for currency field
+  const getCurrencyDisplayValue = (field: string) => {
+    const displayValue = (event as any)[`${field}_display`];
+    if (displayValue !== undefined) return displayValue;
+    const numValue = (event as any)[field];
+    return numValue ? formatCurrency(numValue) : '';
+  };
+
   const renderProfileStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-3 lg:space-y-4">
       <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Profile Setup</h3>
-        <p className="text-gray-600">Let's start with your basic information</p>
+        <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-1">Profile Setup</h3>
+        <p className="text-xs lg:text-sm text-gray-600">Let's start with your basic information</p>
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-2 lg:space-y-3">
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-xs font-bold text-gray-700 mb-1">
             Full Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={profile.full_name}
             onChange={(e) => handleProfileChange('full_name', e.target.value)}
-            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               validationErrors.profile_full_name ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Enter your full name"
@@ -466,14 +514,14 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
         
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-xs font-bold text-gray-700 mb-1">
             Email <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
             value={profile.email}
             onChange={(e) => handleProfileChange('email', e.target.value)}
-            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               validationErrors.profile_email ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Enter your email"
@@ -482,19 +530,19 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-xs font-bold text-gray-700 mb-1">
             Profile Picture (Optional)
           </label>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 lg:space-x-3">
             <Avatar 
               src={avatarPreview} 
-              size="lg" 
+              size="md" 
               fallback={profile.full_name}
             />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="px-2 lg:px-3 py-1 lg:py-1.5 border border-gray-300 rounded-md lg:rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
               Choose Photo
             </button>
@@ -509,23 +557,23 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-xs font-bold text-gray-700 mb-1">
             Bio (Optional)
           </label>
           <textarea
             value={profile.bio}
             onChange={(e) => handleProfileChange('bio', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border border-gray-300 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Tell us a bit about yourself..."
-            rows={3}
+            rows={2}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-xs font-bold text-gray-700 mb-1">
             Your Role <span className="text-red-500">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 lg:gap-2">
             {[
               { value: 'talent_buyer', label: 'Talent Buyer' },
               { value: 'owner', label: 'Owner' },
@@ -538,28 +586,28 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 key={role.value}
                 type="button"
                 onClick={() => handleProfileChange('role', role.value)}
-                className={`p-4 border-2 rounded-lg text-center transition-colors ${
+                className={`p-1.5 lg:p-2 border-2 rounded-md lg:rounded-lg text-center transition-colors ${
                   profile.role === role.value
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <div className="font-medium text-gray-900">{role.label}</div>
+                <div className="font-medium text-gray-900 text-xs leading-tight">{role.label}</div>
               </button>
             ))}
           </div>
           
           {/* Custom role input */}
           {profile.role === 'other' && (
-            <div className="mt-4">
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+            <div className="mt-2">
+              <label className="block text-xs font-bold text-gray-700 mb-1">
                 Please specify your role <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={profile.custom_role}
                 onChange={(e) => handleProfileChange('custom_role', e.target.value)}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   validationErrors.profile_custom_role ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="e.g., Sound Engineer, Booking Agent, etc."
@@ -573,54 +621,56 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   );
 
   const renderVenueStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-3 lg:space-y-4">
       <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Your Venue</h3>
-        <p className="text-gray-600">Tell us about your venue</p>
+        <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-1">Add Your Venue</h3>
+        <p className="text-xs lg:text-sm text-gray-600">Tell us about your venue</p>
       </div>
       
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Venue Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={venue.name}
-            onChange={(e) => handleVenueChange('name', e.target.value)}
-            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.venue_name ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="Enter venue name"
-            required
-          />
+      <div className="space-y-2 lg:space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-3">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              Venue Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={venue.name}
+              onChange={(e) => handleVenueChange('name', e.target.value)}
+              className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                validationErrors.venue_name ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter venue name"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              Location/City <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={venue.location}
+              onChange={(e) => handleVenueChange('location', e.target.value)}
+              className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                validationErrors.venue_location ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter city or location"
+              required
+            />
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Location/City <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={venue.location}
-            onChange={(e) => handleVenueChange('location', e.target.value)}
-            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.venue_location ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="Enter city or location"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-xs font-bold text-gray-700 mb-1">
             Address <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={venue.address}
             onChange={(e) => handleVenueChange('address', e.target.value)}
-            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               validationErrors.venue_address ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Enter full address"
@@ -628,76 +678,78 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Capacity <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            value={venue.capacity || ''}
-            onChange={(e) => handleVenueChange('capacity', e.target.value ? parseInt(e.target.value) : undefined)}
-            className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.venue_capacity ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="Enter venue capacity"
-            min="1"
-            required
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 lg:gap-3">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              Capacity <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={venue.capacity || ''}
+              onChange={(e) => handleVenueChange('capacity', e.target.value ? parseInt(e.target.value) : undefined)}
+              className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                validationErrors.venue_capacity ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter venue capacity"
+              min="1"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              Contact Email (Optional)
+            </label>
+            <input
+              type="email"
+              value={venue.contact_email}
+              onChange={(e) => handleVenueChange('contact_email', e.target.value)}
+              className="w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border border-gray-300 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter contact email"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              Contact Phone (Optional)
+            </label>
+            <input
+              type="tel"
+              value={venue.contact_phone}
+              onChange={(e) => handleVenueChange('contact_phone', e.target.value)}
+              className="w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border border-gray-300 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter contact phone"
+            />
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Contact Email (Optional)
-          </label>
-          <input
-            type="email"
-            value={venue.contact_email}
-            onChange={(e) => handleVenueChange('contact_email', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter contact email"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Contact Phone (Optional)
-          </label>
-          <input
-            type="tel"
-            value={venue.contact_phone}
-            onChange={(e) => handleVenueChange('contact_phone', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter contact phone"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-xs font-bold text-gray-700 mb-1">
             Description (Optional)
           </label>
           <textarea
             value={venue.description}
             onChange={(e) => handleVenueChange('description', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border border-gray-300 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Tell us about your venue..."
-            rows={3}
+            rows={2}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-xs font-bold text-gray-700 mb-1">
             Venue Image (Optional)
           </label>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 lg:space-x-3">
             <Avatar 
               src={venueImagePreview} 
-              size="lg" 
+              size="md" 
               fallback={venue.name}
             />
             <button
               type="button"
               onClick={() => venueImageInputRef.current?.click()}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="px-2 lg:px-3 py-1 lg:py-1.5 border border-gray-300 rounded-md lg:rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
               Choose Photo
             </button>
@@ -729,62 +781,75 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   );
 
   const renderEventStep = () => (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full max-w-3xl xl:max-w-4xl mx-auto">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="text-center mb-4 lg:mb-6">
+        <h2 className="text-base lg:text-lg xl:text-xl font-bold text-gray-900 mb-1">
           Add Event {eventNumber}
         </h2>
-        <p className="text-gray-600">
+        <p className="text-xs lg:text-sm text-gray-600">
           {eventNumber === 1
             ? 'Report your first event - this will be how you access the tool during future logins'
             : `Create your ${eventNumber === 2 ? 'second' : 'third'} event – if possible, report a show from this week or month so your dashboard is up to date.`}
         </p>
       </div>
-      <form className="space-y-6" onSubmit={e => { e.preventDefault(); handleComplete(); }}>
+      <form className="space-y-3 lg:space-y-4" onSubmit={e => { e.preventDefault(); handleComplete(); }}>
         {/* Event Details */}
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="card p-3 lg:p-4">
+          <h3 className="text-sm lg:text-base font-semibold text-gray-900 mb-2 lg:mb-3">Event Details</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date *
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={event.date}
                 onChange={e => handleEventChange('date', e.target.value)}
-                className="form-input w-full"
+                className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
                 required
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 mt-3 lg:mt-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Total Tickets
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Total Tickets <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
-                min="1"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={event.total_tickets || ''}
-                onChange={e => handleEventChange('total_tickets', parseInt(e.target.value) || 0)}
-                className="form-input w-full"
+                onChange={e => {
+                  const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+                  handleEventChange('total_tickets', value ? parseInt(value) : 0);
+                }}
+                onWheel={e => e.currentTarget.blur()} // Prevent scroll wheel changes
+                className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
                 placeholder="0"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tickets Sold
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Tickets Sold <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
-                min="0"
-                max={event.total_tickets}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={event.tickets_sold || ''}
-                onChange={e => handleEventChange('tickets_sold', parseInt(e.target.value) || undefined)}
-                className="form-input w-full"
+                onChange={e => {
+                  const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+                  const numValue = value ? parseInt(value) : undefined;
+                  // Ensure tickets sold doesn't exceed total tickets
+                  const maxValue = event.total_tickets || 0;
+                  const finalValue = numValue && numValue > maxValue ? maxValue : numValue;
+                  handleEventChange('tickets_sold', finalValue);
+                }}
+                onWheel={e => e.currentTarget.blur()} // Prevent scroll wheel changes
+                className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
                 placeholder="0"
               />
             </div>
@@ -792,53 +857,53 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
         
         {/* Artists */}
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Artists</h3>
+        <div className="card p-3 lg:p-4">
+          <h3 className="text-sm lg:text-base font-semibold text-gray-900 mb-2 lg:mb-3">Artists</h3>
           {event.artists.map((artist, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-medium text-gray-900">
+            <div key={index} className="border border-gray-200 rounded-md lg:rounded-lg p-2 lg:p-3 mb-2 lg:mb-3">
+              <div className="flex items-center justify-between mb-2 lg:mb-3">
+                <h4 className="font-medium text-gray-900 text-xs lg:text-sm">
                   Artist {index + 1} {artist.is_headliner && '(Headliner)'}
                 </h4>
                 {event.artists.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeArtist(index)}
-                    className="text-red-600 hover:text-red-800 text-sm"
+                    className="text-red-600 hover:text-red-800 text-xs"
                   >
                     Remove
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Artist Name *
                   </label>
                   <input
                     type="text"
                     value={artist.name}
                     onChange={e => handleArtistChange(index, 'name', e.target.value)}
-                    className="form-input w-full"
+                    className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
                     placeholder="e.g., The Rolling Stones"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Genre
                   </label>
                   <input
                     type="text"
                     value={artist.genre || ''}
                     onChange={e => handleArtistChange(index, 'genre', e.target.value)}
-                    className="form-input w-full"
+                    className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
                     placeholder="e.g., Rock"
                   />
                 </div>
               </div>
-              <div className="mt-4">
-                <div className="flex gap-6">
+              <div className="mt-2 lg:mt-3">
+                <div className="flex flex-col sm:flex-row gap-2 lg:gap-4">
                   <label className="flex items-center">
                     <input
                       type="checkbox"
@@ -848,9 +913,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                           handleArtistChange(index, 'is_headliner', true);
                         }
                       }}
-                      className="mr-2"
+                      className="mr-1.5"
                     />
-                    Headliner
+                    <span className="text-xs lg:text-sm">Headliner</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -861,9 +926,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                           handleArtistChange(index, 'is_headliner', false);
                         }
                       }}
-                      className="mr-2"
+                      className="mr-1.5"
                     />
-                    Supporting
+                    <span className="text-xs lg:text-sm">Supporting</span>
                   </label>
                 </div>
               </div>
@@ -872,17 +937,17 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           <button
             type="button"
             onClick={addArtist}
-            className="btn-secondary w-full py-3"
+            className="btn-secondary w-full py-1.5 lg:py-2 text-xs lg:text-sm"
           >
             + Add Another Artist
           </button>
         </div>
 
         {/* Ticket Pricing */}
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Pricing</h3>
-          <div className="mb-4">
-            <div className="flex gap-4">
+        <div className="card p-3 lg:p-4">
+          <h3 className="text-sm lg:text-base font-semibold text-gray-900 mb-2 lg:mb-3">Ticket Pricing <span className="text-red-500">*</span></h3>
+          <div className="mb-2 lg:mb-3">
+            <div className="flex flex-col sm:flex-row gap-2 lg:gap-3">
               <label className="flex items-center">
                 <input
                   type="radio"
@@ -890,9 +955,9 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                   value="single"
                   checked={priceType === 'single'}
                   onChange={() => setPriceType('single')}
-                  className="mr-2"
+                  className="mr-1.5"
                 />
-                Single Price
+                <span className="text-xs lg:text-sm">Single Price</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -901,56 +966,53 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                   value="range"
                   checked={priceType === 'range'}
                   onChange={() => setPriceType('range')}
-                  className="mr-2"
+                  className="mr-1.5"
                 />
-                Price Range
+                <span className="text-xs lg:text-sm">Price Range</span>
               </label>
             </div>
           </div>
           {priceType === 'single' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Ticket Price ($)
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={event.ticket_price || ''}
-                onChange={e => handleEventChange('ticket_price', parseFloat(e.target.value) || undefined)}
-                className="form-input w-full"
-                placeholder="25.00"
+                type="text"
+                value={getCurrencyDisplayValue('ticket_price')}
+                onChange={e => handleCurrencyChange('ticket_price', e.target.value)}
+                onBlur={e => handleCurrencyBlur('ticket_price', e.target.value)}
+                className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
+                placeholder="$25.00"
               />
             </div>
           )}
           {priceType === 'range' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Minimum Price ($)
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={event.ticket_price_min || ''}
-                  onChange={e => handleEventChange('ticket_price_min', parseFloat(e.target.value) || undefined)}
-                  className="form-input w-full"
-                  placeholder="20.00"
+                  type="text"
+                  value={getCurrencyDisplayValue('ticket_price_min')}
+                  onChange={e => handleCurrencyChange('ticket_price_min', e.target.value)}
+                  onBlur={e => handleCurrencyBlur('ticket_price_min', e.target.value)}
+                  className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
+                  placeholder="$20.00"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Maximum Price ($)
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={event.ticket_price_max || ''}
-                  onChange={e => handleEventChange('ticket_price_max', parseFloat(e.target.value) || undefined)}
-                  className="form-input w-full"
-                  placeholder="50.00"
+                  type="text"
+                  value={getCurrencyDisplayValue('ticket_price_max')}
+                  onChange={e => handleCurrencyChange('ticket_price_max', e.target.value)}
+                  onBlur={e => handleCurrencyBlur('ticket_price_max', e.target.value)}
+                  className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
+                  placeholder="$50.00"
                 />
               </div>
             </div>
@@ -958,53 +1020,51 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
         
         {/* Revenue Tracking */}
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Tracking (Optional)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="card p-3 lg:p-4">
+          <h3 className="text-sm lg:text-base font-semibold text-gray-900 mb-2 lg:mb-3">Revenue Tracking (Optional)</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Total Ticket Revenue
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={event.total_ticket_revenue || ''}
-                onChange={e => handleEventChange('total_ticket_revenue', parseFloat(e.target.value) || undefined)}
-                className="form-input w-full"
-                placeholder="0.00"
+                type="text"
+                value={getCurrencyDisplayValue('total_ticket_revenue')}
+                onChange={e => handleCurrencyChange('total_ticket_revenue', e.target.value)}
+                onBlur={e => handleCurrencyBlur('total_ticket_revenue', e.target.value)}
+                className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
+                placeholder="$0.00"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Total revenue from all ticket sales
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Bar Sales ($)
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={event.bar_sales || ''}
-                onChange={e => handleEventChange('bar_sales', parseFloat(e.target.value) || undefined)}
-                className="form-input w-full"
-                placeholder="0.00"
+                type="text"
+                value={getCurrencyDisplayValue('bar_sales')}
+                onChange={e => handleCurrencyChange('bar_sales', e.target.value)}
+                onBlur={e => handleCurrencyBlur('bar_sales', e.target.value)}
+                className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
+                placeholder="$0.00"
               />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-4">
+          <p className="text-xs text-gray-500 mt-2">
             Any additional details you report—like bar sales or show notes—are completely private. They're optional and only visible to you on your dashboard for your own reference.
           </p>
         </div>
         {/* Notes */}
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Notes</h3>
+        <div className="card p-3 lg:p-4">
+          <h3 className="text-sm lg:text-base font-semibold text-gray-900 mb-2 lg:mb-3">Additional Notes</h3>
           <textarea
             value={event.notes}
             onChange={e => handleEventChange('notes', e.target.value)}
-            className="form-textarea w-full"
-            rows={3}
+            className="form-textarea w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
+            rows={2}
             placeholder="Any additional notes about this event..."
           />
         </div>
@@ -1249,25 +1309,25 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-xl lg:rounded-2xl shadow-xl w-full max-w-[95vw] lg:max-w-5xl xl:max-w-6xl max-h-[95vh] overflow-hidden">
         {/* Header */}
-        <div className="border-b border-gray-200 p-6">
+        <div className="border-b border-gray-200 p-3 sm:p-4">
           <div className="flex items-center justify-center">
-            <div className="flex items-center space-x-3">
-              <img src={logo} alt="MusicDB Logo" className="w-12 h-12" />
-              <h2 className="text-3xl font-bold text-gray-900">MusicDB</h2>
+            <div className="flex items-center space-x-2">
+              <img src={logo} alt="MusicDB Logo" className="w-6 h-6 lg:w-8 lg:h-8" />
+              <h2 className="text-lg lg:text-xl font-bold text-gray-900">MusicDB</h2>
             </div>
           </div>
           {/* Progress Bar */}
-          <div className="mt-6 max-w-md mx-auto">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">{getStepLabel()}</span>
-              <span className="text-sm text-gray-500">{getProgressPercentage()}%</span>
+          <div className="mt-3 lg:mt-4 max-w-xs sm:max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-gray-700">{getStepLabel()}</span>
+              <span className="text-xs text-gray-500">{getProgressPercentage()}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
               <div 
-                className="bg-gradient-to-r from-gray-400 to-black h-2 rounded-full transition-all duration-300 ease-in-out"
+                className="bg-gradient-to-r from-gray-400 to-black h-1.5 rounded-full transition-all duration-300 ease-in-out"
                 style={{ width: `${getProgressPercentage()}%` }}
               ></div>
             </div>
@@ -1277,42 +1337,42 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         {/* Content */}
         {step === 'events' || step === 'early-access' ? (
           // Full-width form, no preview panel
-          <div className="p-6 overflow-y-auto h-[calc(90vh-320px)]">
+          <div className="p-3 sm:p-4 lg:p-5 overflow-y-auto" style={{ maxHeight: 'calc(95vh - 240px)' }}>
             {step === 'events' ? renderEventStep() : renderStepContent()}
           </div>
         ) : (
-          // Default: split panel with preview
-          <div className="flex h-[calc(90vh-320px)]">
+          // Default: split panel with preview - responsive layout
+          <div className="flex flex-col lg:flex-row" style={{ maxHeight: 'calc(95vh - 240px)' }}>
             {/* Left Panel - Form */}
-            <div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex-1 p-3 sm:p-4 lg:p-5 overflow-y-auto min-w-0">
               {renderStepContent()}
             </div>
             {/* Right Panel - Preview */}
-            <div className="w-96 border-l border-gray-200 p-6 overflow-y-auto">
+            <div className="w-full lg:w-72 xl:w-80 border-t lg:border-t-0 lg:border-l border-gray-200 p-3 sm:p-4 lg:p-5 overflow-y-auto">
               {renderPreview()}
             </div>
           </div>
         )}
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4 overflow-hidden">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
+        <div className="border-t border-gray-200 p-2 sm:p-3 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
+            <div className="flex-1 min-w-0">
               {hasAttemptedValidation && Object.keys(validationErrors).length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-2 max-w-md overflow-y-auto max-h-24">
-                  <p className="text-sm text-red-700 font-medium mb-1">Please complete the following required fields:</p>
+                <div className="bg-red-50 border border-red-200 rounded-md p-2 overflow-y-auto max-h-16">
+                  <p className="text-xs text-red-700 font-medium mb-1">Please complete the following required fields:</p>
                   <div className="flex flex-wrap gap-1">
-                    {validationErrors.profile_full_name && <span className="text-sm text-red-600">• Full Name</span>}
-                    {validationErrors.profile_email && <span className="text-sm text-red-600">• Email</span>}
-                    {validationErrors.profile_role && <span className="text-sm text-red-600">• Your Role</span>}
-                    {validationErrors.profile_custom_role && <span className="text-sm text-red-600">• Custom Role</span>}
-                    {validationErrors.venue_name && <span className="text-sm text-red-600">• Venue Name</span>}
-                    {validationErrors.venue_location && <span className="text-sm text-red-600">• Location/City</span>}
-                    {validationErrors.venue_address && <span className="text-sm text-red-600">• Address</span>}
-                    {validationErrors.venue_capacity && <span className="text-sm text-red-600">• Capacity</span>}
-                    {validationErrors.event_date && <span className="text-sm text-red-600">• Date</span>}
-                    {validationErrors.event_total_tickets && <span className="text-sm text-red-600">• Total Tickets</span>}
-                    {validationErrors.event_artists && <span className="text-sm text-red-600">• At least one Artist Name</span>}
+                    {validationErrors.profile_full_name && <span className="text-xs text-red-600">• Full Name</span>}
+                    {validationErrors.profile_email && <span className="text-xs text-red-600">• Email</span>}
+                    {validationErrors.profile_role && <span className="text-xs text-red-600">• Your Role</span>}
+                    {validationErrors.profile_custom_role && <span className="text-xs text-red-600">• Custom Role</span>}
+                    {validationErrors.venue_name && <span className="text-xs text-red-600">• Venue Name</span>}
+                    {validationErrors.venue_location && <span className="text-xs text-red-600">• Location/City</span>}
+                    {validationErrors.venue_address && <span className="text-xs text-red-600">• Address</span>}
+                    {validationErrors.venue_capacity && <span className="text-xs text-red-600">• Capacity</span>}
+                    {validationErrors.event_date && <span className="text-xs text-red-600">• Date</span>}
+                    {validationErrors.event_total_tickets && <span className="text-xs text-red-600">• Total Tickets</span>}
+                    {validationErrors.event_artists && <span className="text-xs text-red-600">• At least one Artist Name</span>}
                   </div>
                 </div>
               )}
@@ -1320,7 +1380,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             <button
               onClick={handleComplete}
               disabled={isLoading}
-              className={`px-6 py-2 rounded-lg font-medium transition-all flex-shrink-0 ${
+              className={`px-3 lg:px-4 py-1.5 lg:py-2 rounded-md lg:rounded-lg font-medium transition-all flex-shrink-0 text-xs lg:text-sm ${
                 isLoading 
                   ? 'bg-gray-400 text-white opacity-50 cursor-not-allowed'
                   : 'bg-black text-white hover:bg-gray-800'
@@ -1328,8 +1388,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             >
               {isLoading ? (
                 <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Completing...
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                  <span className="text-xs">Completing...</span>
                 </div>
               ) : (
                 step === 'early-access' ? 'Continue' : step === 'events' ? `Create Event ${eventNumber}` : 'Complete Step'

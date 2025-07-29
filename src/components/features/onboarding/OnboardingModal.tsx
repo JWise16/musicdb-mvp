@@ -38,9 +38,9 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-soft max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-8">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-xl lg:rounded-3xl shadow-soft w-full max-w-[95vw] lg:max-w-5xl xl:max-w-6xl max-h-[95vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 lg:p-8">
           {currentStep === 'form' ? (
             <OnboardingEventForm
               onEventAdded={handleEventAdded}
