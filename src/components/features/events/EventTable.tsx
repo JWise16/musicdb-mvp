@@ -81,177 +81,197 @@ const EventTable = ({ events, onEventClick }: EventTableProps) => {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Headliner
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Supporting
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Genre
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Venue Name
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Venue Location
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Capacity
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Tickets Sold
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Percentage Sold
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Ticket Price
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {events.map((event) => {
-            const headliners = getHeadliners(event);
-            const supportingActs = getSupportingActs(event);
-            const genres = getEventGenres(event);
+    <div className="w-full overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Headliner
+              </th>
+              <th className="hidden sm:table-cell px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Supporting
+              </th>
+              <th className="hidden md:table-cell px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Genre
+              </th>
+              <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Venue
+              </th>
+              <th className="hidden lg:table-cell px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Location
+              </th>
+              <th className="hidden xl:table-cell px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Capacity
+              </th>
+              <th className="hidden sm:table-cell px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Sold
+              </th>
+              <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                % Sold
+              </th>
+              <th className="hidden md:table-cell px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Price
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {events.map((event) => {
+              const headliners = getHeadliners(event);
+              const supportingActs = getSupportingActs(event);
+              const genres = getEventGenres(event);
 
-            return (
-              <tr
-                key={event.id}
-                className="hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => onEventClick(event.id)}
-              >
-                {/* Date */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {formatEventDate(event.date)}
-                  </div>
-                </td>
+              return (
+                <tr
+                  key={event.id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => onEventClick(event.id)}
+                >
+                  {/* Date */}
+                  <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
+                    <div className="text-xs lg:text-sm text-gray-900">
+                      {formatEventDate(event.date)}
+                    </div>
+                  </td>
 
-                {/* Headliners */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {headliners.length > 0 ? (
-                      <div>
-                        {headliners.slice(0, 2).map((name, index) => (
-                          <div key={index} className="font-medium">
-                            {name}
-                          </div>
-                        ))}
-                        {headliners.length > 2 && (
-                          <div className="text-gray-500 text-xs">
-                            +{headliners.length - 2} more
-                          </div>
-                        )}
+                  {/* Headliners */}
+                  <td className="px-3 lg:px-6 py-4">
+                    <div className="text-xs lg:text-sm text-gray-900 max-w-[120px] lg:max-w-none">
+                      {headliners.length > 0 ? (
+                        <div>
+                          {headliners.slice(0, 1).map((name, index) => (
+                            <div key={index} className="font-medium truncate">
+                              {name}
+                            </div>
+                          ))}
+                          {headliners.length > 1 && (
+                            <div className="text-gray-500 text-xs">
+                              +{headliners.length - 1} more
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Supporting Acts - Hidden on small screens */}
+                  <td className="hidden sm:table-cell px-3 lg:px-6 py-4">
+                    <div className="text-xs lg:text-sm text-gray-700 max-w-[120px] lg:max-w-none">
+                      {supportingActs.length > 0 ? (
+                        <div>
+                          {supportingActs.slice(0, 1).map((name, index) => (
+                            <div key={index} className="truncate">
+                              {name}
+                            </div>
+                          ))}
+                          {supportingActs.length > 1 && (
+                            <div className="text-gray-500 text-xs">
+                              +{supportingActs.length - 1} more
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Genres - Hidden on small/medium screens */}
+                  <td className="hidden md:table-cell px-3 lg:px-6 py-4">
+                    <div className="flex flex-wrap gap-1 max-w-[100px] lg:max-w-none">
+                      {genres.length > 0 ? (
+                        genres.slice(0, 1).map((genre, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 text-xs bg-accent-100 text-accent-700 rounded-full truncate"
+                          >
+                            {genre}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Venue Name */}
+                  <td className="px-3 lg:px-6 py-4">
+                    <div className="text-xs lg:text-sm font-medium text-gray-900 max-w-[120px] lg:max-w-none">
+                      <div className="truncate" title={event.venues?.name}>
+                        {event.venues?.name || '—'}
                       </div>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </div>
-                </td>
-
-                {/* Supporting Acts */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-700">
-                    {supportingActs.length > 0 ? (
-                      <div>
-                        {supportingActs.slice(0, 2).map((name, index) => (
-                          <div key={index}>
-                            {name}
-                          </div>
-                        ))}
-                        {supportingActs.length > 2 && (
-                          <div className="text-gray-500 text-xs">
-                            +{supportingActs.length - 2} more
-                          </div>
-                        )}
+                      {/* Show location on small screens where location column is hidden */}
+                      <div className="lg:hidden text-xs text-gray-500 truncate">
+                        {event.venues?.location || ''}
                       </div>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </div>
-                </td>
+                    </div>
+                  </td>
 
-                {/* Genres */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex flex-wrap gap-1">
-                    {genres.length > 0 ? (
-                      genres.map((genre, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 text-xs bg-accent-100 text-accent-700 rounded-full"
-                        >
-                          {genre}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </div>
-                </td>
+                  {/* Venue Location - Hidden on small/medium screens */}
+                  <td className="hidden lg:table-cell px-3 lg:px-6 py-4">
+                    <div className="text-sm text-gray-700 max-w-[120px] truncate" title={event.venues?.location}>
+                      {event.venues?.location || '—'}
+                    </div>
+                  </td>
 
-                {/* Venue Name */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {event.venues?.name || '—'}
-                  </div>
-                </td>
+                  {/* Venue Capacity - Hidden on small/medium/large screens */}
+                  <td className="hidden xl:table-cell px-3 lg:px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {event.venues?.capacity ? event.venues.capacity.toLocaleString() : '—'}
+                    </div>
+                  </td>
 
-                {/* Venue Location */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-700">
-                    {event.venues?.location || '—'}
-                  </div>
-                </td>
+                  {/* Tickets Sold - Hidden on small screens */}
+                  <td className="hidden sm:table-cell px-3 lg:px-6 py-4 whitespace-nowrap">
+                    <div className="text-xs lg:text-sm font-medium text-gray-900">
+                      {event.tickets_sold !== null ? (
+                        <span className="sm:hidden">{Math.round(event.tickets_sold / 1000)}k</span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                      <span className="hidden sm:inline">
+                        {event.tickets_sold !== null ? (
+                          event.tickets_sold.toLocaleString()
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </span>
+                    </div>
+                  </td>
 
-                {/* Venue Capacity */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {event.venues?.capacity ? event.venues.capacity.toLocaleString() : '—'}
-                  </div>
-                </td>
+                  {/* % Sold */}
+                  <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
+                    <div className="text-xs lg:text-sm font-medium text-gray-900">
+                      {event.tickets_sold !== null && event.venues?.capacity ? (
+                        `${Math.round((event.tickets_sold / event.venues.capacity) * 100)}%`
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </div>
+                  </td>
 
-                {/* Tickets Sold */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {event.tickets_sold !== null ? (
-                      event.tickets_sold.toLocaleString()
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </div>
-                </td>
-
-                {/* % Sold */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {event.tickets_sold !== null && event.venues?.capacity ? (
-                      `${Math.round((event.tickets_sold / event.venues.capacity) * 100)}%`
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </div>
-                </td>
-
-                {/* Ticket Price */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {formatTicketPrice(event)}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  {/* Ticket Price - Hidden on small/medium screens */}
+                  <td className="hidden md:table-cell px-3 lg:px-6 py-4 whitespace-nowrap">
+                    <div className="text-xs lg:text-sm font-medium text-gray-900">
+                      {formatTicketPrice(event)}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      
+      {/* Mobile-friendly note */}
+      <div className="mt-4 text-xs text-gray-500 md:hidden">
+        <p>Some columns are hidden on smaller screens. View on a larger screen for full details.</p>
+      </div>
     </div>
   );
 };
