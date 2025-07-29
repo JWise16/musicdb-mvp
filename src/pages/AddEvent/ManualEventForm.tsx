@@ -8,11 +8,38 @@ interface ManualEventFormProps {
   onCancel: () => void;
 }
 
+// Helper functions for currency formatting
+const formatCurrency = (value: number | undefined): string => {
+  if (value === undefined || value === null || isNaN(value)) return '';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
+const parseCurrency = (value: string): number | undefined => {
+  if (!value) return undefined;
+  // Remove all non-digit and non-decimal characters
+  const cleanValue = value.replace(/[^\d.-]/g, '');
+  const parsed = parseFloat(cleanValue);
+  return isNaN(parsed) ? undefined : parsed;
+};
+
 const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => {
   const { user } = useAuth();
   const { currentVenue, userVenues } = useVenue();
   const [isLoading, setIsLoading] = useState(false);
   const [priceType, setPriceType] = useState<'single' | 'range' | null>(null);
+  
+  // Display states for formatted currency inputs
+  const [totalRevenueDisplay, setTotalRevenueDisplay] = useState('');
+  const [barSalesDisplay, setBarSalesDisplay] = useState('');
+  const [ticketPriceDisplay, setTicketPriceDisplay] = useState('');
+  const [ticketPriceMinDisplay, setTicketPriceMinDisplay] = useState('');
+  const [ticketPriceMaxDisplay, setTicketPriceMaxDisplay] = useState('');
+  
   const [formData, setFormData] = useState<EventFormData>({
     name: 'Event',
     date: '',
@@ -46,8 +73,73 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
     }
   }, [currentVenue]);
 
+  // Update display values when formData changes
+  useEffect(() => {
+    setTotalRevenueDisplay(formatCurrency(formData.total_ticket_revenue));
+    setBarSalesDisplay(formatCurrency(formData.bar_sales));
+    setTicketPriceDisplay(formatCurrency(formData.ticket_price));
+    setTicketPriceMinDisplay(formatCurrency(formData.ticket_price_min));
+    setTicketPriceMaxDisplay(formatCurrency(formData.ticket_price_max));
+  }, [formData.total_ticket_revenue, formData.bar_sales, formData.ticket_price, formData.ticket_price_min, formData.ticket_price_max]);
+
   const handleInputChange = (field: keyof EventFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Prevent wheel events on number inputs to avoid accidental value changes when scrolling
+  const handleNumberInputWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    e.preventDefault(); // Completely disable wheel functionality
+  };
+
+  // Special handlers for currency fields
+  const handleCurrencyInputChange = (field: 'total_ticket_revenue' | 'bar_sales' | 'ticket_price' | 'ticket_price_min' | 'ticket_price_max', displayValue: string) => {
+    // Just update the display value while typing, don't format yet
+    if (field === 'total_ticket_revenue') {
+      setTotalRevenueDisplay(displayValue);
+    } else if (field === 'bar_sales') {
+      setBarSalesDisplay(displayValue);
+    } else if (field === 'ticket_price') {
+      setTicketPriceDisplay(displayValue);
+    } else if (field === 'ticket_price_min') {
+      setTicketPriceMinDisplay(displayValue);
+    } else if (field === 'ticket_price_max') {
+      setTicketPriceMaxDisplay(displayValue);
+    }
+  };
+
+  const handleCurrencyBlur = (field: 'total_ticket_revenue' | 'bar_sales' | 'ticket_price' | 'ticket_price_min' | 'ticket_price_max') => {
+    // Parse and update the form data, then format the display value on blur
+    let currentDisplayValue = '';
+    if (field === 'total_ticket_revenue') {
+      currentDisplayValue = totalRevenueDisplay;
+    } else if (field === 'bar_sales') {
+      currentDisplayValue = barSalesDisplay;
+    } else if (field === 'ticket_price') {
+      currentDisplayValue = ticketPriceDisplay;
+    } else if (field === 'ticket_price_min') {
+      currentDisplayValue = ticketPriceMinDisplay;
+    } else if (field === 'ticket_price_max') {
+      currentDisplayValue = ticketPriceMaxDisplay;
+    }
+    
+    const numericValue = parseCurrency(currentDisplayValue);
+    
+    if (field === 'total_ticket_revenue') {
+      handleInputChange('total_ticket_revenue', numericValue);
+      setTotalRevenueDisplay(formatCurrency(numericValue));
+    } else if (field === 'bar_sales') {
+      handleInputChange('bar_sales', numericValue);
+      setBarSalesDisplay(formatCurrency(numericValue));
+    } else if (field === 'ticket_price') {
+      handleInputChange('ticket_price', numericValue);
+      setTicketPriceDisplay(formatCurrency(numericValue));
+    } else if (field === 'ticket_price_min') {
+      handleInputChange('ticket_price_min', numericValue);
+      setTicketPriceMinDisplay(formatCurrency(numericValue));
+    } else if (field === 'ticket_price_max') {
+      handleInputChange('ticket_price_max', numericValue);
+      setTicketPriceMaxDisplay(formatCurrency(numericValue));
+    }
   };
 
   const handleArtistChange = (index: number, field: string, value: any) => {
@@ -160,13 +252,14 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Total Tickets
+                Total Tickets *
               </label>
               <input
                 type="number"
                 min="1"
                 value={formData.total_tickets || ''}
                 onChange={(e) => handleInputChange('total_tickets', parseInt(e.target.value) || 0)}
+                onWheel={handleNumberInputWheel}
                 className="form-input w-full"
                 placeholder="0"
                 required
@@ -175,7 +268,7 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tickets Sold
+                Tickets Sold *
               </label>
               <input
                 type="number"
@@ -183,8 +276,10 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
                 max={formData.total_tickets}
                 value={formData.tickets_sold || ''}
                 onChange={(e) => handleInputChange('tickets_sold', parseInt(e.target.value) || undefined)}
+                onWheel={handleNumberInputWheel}
                 className="form-input w-full"
                 placeholder="0"
+                required
               />
             </div>
           </div>
@@ -284,9 +379,12 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
 
         {/* Ticket Pricing */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Pricing</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Pricing *</h3>
           
           <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Price Type *
+            </label>
             <div className="flex gap-4">
               <label className="flex items-center">
                 <input
@@ -296,6 +394,7 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
                   checked={priceType === 'single'}
                   onChange={() => setPriceType('single')}
                   className="mr-2"
+                  required
                 />
                 Single Price
               </label>
@@ -307,6 +406,7 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
                   checked={priceType === 'range'}
                   onChange={() => setPriceType('range')}
                   className="mr-2"
+                  required
                 />
                 Price Range
               </label>
@@ -316,16 +416,16 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
           {priceType === 'single' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ticket Price ($)
+                Ticket Price ($) *
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.ticket_price || ''}
-                onChange={(e) => handleInputChange('ticket_price', parseFloat(e.target.value) || undefined)}
+                type="text"
+                value={ticketPriceDisplay}
+                onChange={(e) => handleCurrencyInputChange('ticket_price', e.target.value)}
+                onBlur={() => handleCurrencyBlur('ticket_price')}
                 className="form-input w-full"
-                placeholder="25.00"
+                placeholder="$25.00"
+                required
               />
             </div>
           )}
@@ -334,30 +434,30 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Minimum Price ($)
+                  Minimum Price ($) *
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.ticket_price_min || ''}
-                  onChange={(e) => handleInputChange('ticket_price_min', parseFloat(e.target.value) || undefined)}
+                  type="text"
+                  value={ticketPriceMinDisplay}
+                  onChange={(e) => handleCurrencyInputChange('ticket_price_min', e.target.value)}
+                  onBlur={() => handleCurrencyBlur('ticket_price_min')}
                   className="form-input w-full"
-                  placeholder="20.00"
+                  placeholder="$20.00"
+                  required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Maximum Price ($)
+                  Maximum Price ($) *
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.ticket_price_max || ''}
-                  onChange={(e) => handleInputChange('ticket_price_max', parseFloat(e.target.value) || undefined)}
+                  type="text"
+                  value={ticketPriceMaxDisplay}
+                  onChange={(e) => handleCurrencyInputChange('ticket_price_max', e.target.value)}
+                  onBlur={() => handleCurrencyBlur('ticket_price_max')}
                   className="form-input w-full"
-                  placeholder="50.00"
+                  placeholder="$50.00"
+                  required
                 />
               </div>
             </div>
@@ -374,13 +474,12 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
                 Total Ticket Revenue
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.total_ticket_revenue || ''}
-                onChange={(e) => handleInputChange('total_ticket_revenue', parseFloat(e.target.value) || undefined)}
+                type="text"
+                value={totalRevenueDisplay}
+                onChange={(e) => handleCurrencyInputChange('total_ticket_revenue', e.target.value)}
+                onBlur={() => handleCurrencyBlur('total_ticket_revenue')}
                 className="form-input w-full"
-                placeholder="0.00"
+                placeholder="$0.00"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Total revenue from all ticket sales
@@ -392,13 +491,12 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
                 Bar Sales ($)
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.bar_sales || ''}
-                onChange={(e) => handleInputChange('bar_sales', parseFloat(e.target.value) || undefined)}
+                type="text"
+                value={barSalesDisplay}
+                onChange={(e) => handleCurrencyInputChange('bar_sales', e.target.value)}
+                onBlur={() => handleCurrencyBlur('bar_sales')}
                 className="form-input w-full"
-                placeholder="0.00"
+                placeholder="$0.00"
               />
             </div>
           </div>
@@ -431,7 +529,16 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
           </button>
           <button
             type="submit"
-            disabled={isLoading || !formData.date || !formData.venue_id}
+            disabled={
+              isLoading || 
+              !formData.date || 
+              !formData.venue_id || 
+              !formData.total_tickets ||
+              formData.tickets_sold === undefined || 
+              !priceType || 
+              (priceType === 'single' && !formData.ticket_price) ||
+              (priceType === 'range' && (!formData.ticket_price_min || !formData.ticket_price_max))
+            }
             className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Creating Event...' : 'Create Event'}
