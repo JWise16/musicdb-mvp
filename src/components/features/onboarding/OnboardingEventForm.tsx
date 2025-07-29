@@ -42,12 +42,121 @@ export default function OnboardingEventForm({
     ]
   });
 
-  // Set venue_id when currentVenue changes
+  // Auto-save key for localStorage
+  const STORAGE_KEY = `onboarding-event-form-${currentEventNumber}`;
+
+  // Track if data was restored from localStorage
+  const [hasRestoredData, setHasRestoredData] = useState(false);
+
+  // Load saved data on mount
   useEffect(() => {
-    if (currentVenue) {
-      setFormData(prev => ({ ...prev, venue_id: currentVenue.id }));
+    try {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        console.log('Restoring event form data:', parsedData);
+        
+        // Clean up any display values before restoring
+        const cleanData = { ...parsedData };
+        Object.keys(cleanData).forEach(key => {
+          if (key.includes('_display')) {
+            delete cleanData[key];
+          }
+        });
+        delete cleanData.priceType; // Remove priceType from form data
+        
+        setFormData(cleanData); // Use direct assignment instead of spread
+        
+        // Restore price type if saved
+        if (parsedData.priceType) {
+          setPriceType(parsedData.priceType);
+        } else if (parsedData.ticket_price) {
+          setPriceType('single');
+        } else if (parsedData.ticket_price_min || parsedData.ticket_price_max) {
+          setPriceType('range');
+        }
+        
+        // Mark that data was restored
+        setHasRestoredData(true);
+        console.log('Event form data restored from localStorage');
+        
+        // Debug current state after restoration
+        setTimeout(() => {
+          console.log('Current formData after restoration:', formData);
+        }, 200);
+      }
+    } catch (error) {
+      console.warn('Failed to restore event form data:', error);
     }
-  }, [currentVenue]);
+  }, [currentEventNumber]);
+
+  // Auto-save form data (save any changes)
+  useEffect(() => {
+    const hasData = formData.date || formData.venue_id || formData.total_tickets || 
+                   formData.ticket_price || formData.ticket_price_min || formData.ticket_price_max ||
+                   formData.total_ticket_revenue || formData.bar_sales || formData.notes ||
+                   (formData.artists && formData.artists[0]?.name);
+    
+    if (hasData) {
+      const dataToSave = {
+        ...formData,
+        priceType // Also save price type preference
+      };
+      console.log('Auto-saving event form data:', dataToSave);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    }
+  }, [formData, priceType]);
+
+  // Save on page unload and tab changes
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const dataToSave = {
+        ...formData,
+        priceType
+      };
+      console.log('Page unloading - saving event form data');
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        const dataToSave = {
+          ...formData,
+          priceType
+        };
+        console.log('Tab hidden - saving event form data');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [formData, priceType]);
+
+  // Clear saved data when event is successfully submitted
+  const clearSavedData = () => {
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
+  // Set venue_id when currentVenue changes (but don't override restored data)
+  useEffect(() => {
+    // Add delay to ensure localStorage restoration happens first
+    const timer = setTimeout(() => {
+      if (currentVenue && !hasRestoredData) {
+        console.log('Setting venue_id from currentVenue (no localStorage data):', currentVenue.id);
+        setFormData(prev => ({ ...prev, venue_id: currentVenue.id }));
+      } else if (currentVenue && hasRestoredData) {
+        console.log('Skipping venue_id update - localStorage data was restored');
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [currentVenue, hasRestoredData]);
 
   const handleInputChange = (field: keyof EventFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -119,6 +228,8 @@ export default function OnboardingEventForm({
           ]
         });
         setPriceType(null);
+        // Clear saved data on successful submission
+        clearSavedData();
       } else {
         alert(`Error creating event: ${result.error}`);
       }
@@ -128,6 +239,12 @@ export default function OnboardingEventForm({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSkip = () => {
+    // Clear saved data when skipping
+    clearSavedData();
+    onSkip();
   };
 
   const getTips = () => {
@@ -536,7 +653,7 @@ export default function OnboardingEventForm({
         <div className="flex flex-col sm:flex-row justify-between items-center gap-2 lg:gap-3">
           <button
             type="button"
-            onClick={onSkip}
+            onClick={handleSkip}
             className="btn-secondary px-3 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm order-2 sm:order-1"
           >
             Skip for Now

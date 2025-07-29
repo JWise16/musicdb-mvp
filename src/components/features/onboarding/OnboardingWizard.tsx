@@ -68,6 +68,16 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
   const [earlyAccessError, setEarlyAccessError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-save keys for localStorage
+  const STORAGE_KEYS = {
+    profile: 'onboarding-profile-draft',
+    venue: 'onboarding-venue-draft', 
+    event: 'onboarding-event-draft'
+  };
+
+  // Track if data was restored from localStorage
+  const [hasRestoredData, setHasRestoredData] = useState(false);
   
   //console.log('OnboardingWizard: isOpen =', isOpen, 'user =', user?.email, 'prefillData =', prefillData, 'step =', step, 'eventNumber =', eventNumber);
   
@@ -106,25 +116,181 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
   const [priceType, setPriceType] = useState<'single' | 'range'>('single');
 
-  // Update profile when prefillData changes or component mounts
+  // Load saved data on mount
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        let dataRestored = false;
+
+        // Restore profile data
+        const savedProfile = localStorage.getItem(STORAGE_KEYS.profile);
+        if (savedProfile) {
+          const profileData = JSON.parse(savedProfile);
+          console.log('Restoring profile data:', profileData);
+          setProfile(profileData); // Use direct assignment instead of spread
+          dataRestored = true;
+        }
+
+        // Restore venue data
+        const savedVenue = localStorage.getItem(STORAGE_KEYS.venue);
+        if (savedVenue) {
+          const venueData = JSON.parse(savedVenue);
+          console.log('Restoring venue data:', venueData);
+          setVenue(venueData); // Use direct assignment instead of spread
+          dataRestored = true;
+        }
+
+        // Restore event data
+        const savedEvent = localStorage.getItem(STORAGE_KEYS.event);
+        if (savedEvent) {
+          const eventData = JSON.parse(savedEvent);
+          console.log('Restoring event data:', eventData);
+          // Clean up any display values before restoring
+          const cleanEventData = { ...eventData };
+          Object.keys(cleanEventData).forEach(key => {
+            if (key.includes('_display')) {
+              delete cleanEventData[key];
+            }
+          });
+          setEvent(cleanEventData); // Use direct assignment instead of spread
+          
+          // Restore price type
+          if (eventData.ticket_price) {
+            setPriceType('single');
+          } else if (eventData.ticket_price_min || eventData.ticket_price_max) {
+            setPriceType('range');
+          }
+          dataRestored = true;
+        }
+
+        // Set flag if any data was restored
+        if (dataRestored) {
+          setHasRestoredData(true);
+          console.log('Data restored from localStorage');
+          
+          // Force a re-render after a small delay to ensure state updates are applied
+          setTimeout(() => {
+            console.log('Current state after restoration:');
+            console.log('Profile state:', profile);
+            console.log('Venue state:', venue);
+            console.log('Event state:', event);
+          }, 200);
+        }
+      } catch (error) {
+        console.warn('Failed to restore onboarding data:', error);
+      }
+    }
+  }, [isOpen]);
+
+  // Auto-save profile data (save any changes, not just when full_name exists)
+  useEffect(() => {
+    if (isOpen) {
+      const hasProfileData = profile.full_name || profile.email || profile.bio || profile.role;
+      if (hasProfileData) {
+        console.log('Auto-saving profile data:', profile);
+        localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile));
+      }
+    }
+  }, [profile, isOpen]);
+
+  // Auto-save venue data (save any changes, not just when name exists)
+  useEffect(() => {
+    if (isOpen) {
+      const hasVenueData = venue.name || venue.location || venue.address || venue.description;
+      if (hasVenueData) {
+        console.log('Auto-saving venue data:', venue);
+        localStorage.setItem(STORAGE_KEYS.venue, JSON.stringify(venue));
+      }
+    }
+  }, [venue, isOpen]);
+
+  // Auto-save event data (save any changes, not just when date exists)
+  useEffect(() => {
+    if (isOpen) {
+      const hasEventData = event.date || event.total_tickets || event.ticket_price || 
+                           event.ticket_price_min || event.ticket_price_max || 
+                           event.total_ticket_revenue || event.bar_sales || 
+                           event.notes || (event.artists && event.artists[0]?.name);
+      if (hasEventData) {
+        console.log('Auto-saving event data:', event);
+        localStorage.setItem(STORAGE_KEYS.event, JSON.stringify(event));
+      }
+    }
+  }, [event, isOpen]);
+
+  // Save on page unload (always save current state)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isOpen) {
+        console.log('Page unloading - saving all data');
+        localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile));
+        localStorage.setItem(STORAGE_KEYS.venue, JSON.stringify(venue));
+        localStorage.setItem(STORAGE_KEYS.event, JSON.stringify(event));
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && isOpen) {
+        console.log('Tab hidden - saving all data');
+        localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile));
+        localStorage.setItem(STORAGE_KEYS.venue, JSON.stringify(venue));
+        localStorage.setItem(STORAGE_KEYS.event, JSON.stringify(event));
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [profile, venue, event, isOpen]);
+
+  // Clear saved data when onboarding is completed successfully
+  const clearSavedData = () => {
+    Object.values(STORAGE_KEYS).forEach(key => {
+      localStorage.removeItem(key);
+    });
+  };
+
+  // Update profile when prefillData changes or component mounts (but don't override restored data)
   useEffect(() => {
     //console.log('OnboardingWizard: useEffect triggered with prefillData =', prefillData);
-    if (prefillData) {
-      setProfile(prev => {
-        const updated = {
-          ...prev,
-          full_name: prefillData.full_name || prev.full_name,
-          email: prefillData.email || prev.email
-        };
-        //console.log('OnboardingWizard: Updated profile =', updated);
-        return updated;
-      });
-    }
-  }, [prefillData]);
+    
+    // Check for saved data directly instead of relying on hasRestoredData flag
+    const savedProfile = localStorage.getItem(STORAGE_KEYS.profile);
+    const hasSavedProfileData = savedProfile && JSON.parse(savedProfile);
+    
+    // Add a small delay to ensure localStorage restoration happens first
+    const timer = setTimeout(() => {
+      if (prefillData && !hasSavedProfileData) {
+        console.log('Applying prefillData (no localStorage data found):', prefillData);
+        setProfile(prev => {
+          const updated = {
+            ...prev,
+            full_name: prefillData.full_name || prev.full_name,
+            email: prefillData.email || prev.email
+          };
+          //console.log('OnboardingWizard: Updated profile =', updated);
+          return updated;
+        });
+      } else if (prefillData && hasSavedProfileData) {
+        console.log('Skipping prefillData application - localStorage data exists');
+      }
+    }, 100);
 
-  // Reset event form when eventNumber changes
+    return () => clearTimeout(timer);
+  }, [prefillData]); // Remove hasRestoredData dependency
+
+  // Reset event form when eventNumber changes (but don't override restored data)
   useEffect(() => {
-    if (step === 'events') {
+    // Check for saved data directly instead of relying on hasRestoredData flag
+    const savedEvent = localStorage.getItem(STORAGE_KEYS.event);
+    const hasSavedEventData = savedEvent && JSON.parse(savedEvent);
+    
+    if (step === 'events' && !hasSavedEventData) {
+      console.log('Resetting event form for new event number:', eventNumber);
       setEvent({
         name: `Event ${eventNumber}`,
         date: '',
@@ -138,9 +304,10 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         notes: '',
         artists: [{ name: '', is_headliner: true, is_opener: false, performance_order: 1 }]
       });
-      setPriceType('single');
+    } else if (step === 'events' && hasSavedEventData) {
+      console.log('Skipping event form reset - localStorage data exists');
     }
-  }, [step, eventNumber]);
+  }, [eventNumber, step]); // Remove hasRestoredData dependency
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
@@ -433,6 +600,10 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
 
       //
       // console.log('OnboardingWizard: Step completed successfully');
+      
+      // Clear saved data on successful completion
+      clearSavedData();
+      
       onClose();
     } catch (error) {
       console.error('Error completing onboarding step:', error);
@@ -496,6 +667,13 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         <p className="text-xs lg:text-sm text-gray-600">Let's start with your basic information</p>
       </div>
       
+      {/* Debug info - remove this later */}
+      {hasRestoredData && (
+        <div className="bg-yellow-100 p-2 rounded text-xs">
+          <strong>Debug:</strong> Profile state - Name: "{profile.full_name}", Email: "{profile.email}", Role: "{profile.role}"
+        </div>
+      )}
+      
       <div className="space-y-2 lg:space-y-3">
         <div>
           <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -503,7 +681,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           </label>
           <input
             type="text"
-            value={profile.full_name}
+            value={profile.full_name || ''}
             onChange={(e) => handleProfileChange('full_name', e.target.value)}
             className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               validationErrors.profile_full_name ? 'border-red-500' : 'border-gray-300'
@@ -519,7 +697,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           </label>
           <input
             type="email"
-            value={profile.email}
+            value={profile.email || ''}
             onChange={(e) => handleProfileChange('email', e.target.value)}
             className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               validationErrors.profile_email ? 'border-red-500' : 'border-gray-300'

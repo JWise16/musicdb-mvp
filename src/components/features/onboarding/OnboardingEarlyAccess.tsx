@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface OnboardingEarlyAccessProps {
   onValidCode: () => void;
@@ -8,6 +8,63 @@ interface OnboardingEarlyAccessProps {
 export default function OnboardingEarlyAccess({ onValidCode, onError }: OnboardingEarlyAccessProps) {
   const [code, setCode] = useState('');
   const [isValidating, setIsValidating] = useState(false);
+
+  // Auto-save key for localStorage
+  const STORAGE_KEY = 'onboarding-early-access-draft';
+
+  // Load saved data on mount
+  useEffect(() => {
+    try {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        const { code: savedCode } = JSON.parse(savedData);
+        if (savedCode) {
+          console.log('Restoring early access code:', savedCode);
+          setCode(savedCode);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to restore early access form data:', error);
+    }
+  }, []);
+
+  // Auto-save code (save any changes)
+  useEffect(() => {
+    if (code.trim()) {
+      console.log('Auto-saving early access code:', code);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ code }));
+    }
+  }, [code]);
+
+  // Save on page unload and tab changes
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (code.trim()) {
+        console.log('Page unloading - saving early access code');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ code }));
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && code.trim()) {
+        console.log('Tab hidden - saving early access code');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ code }));
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [code]);
+
+  // Clear saved data when successfully submitted
+  const clearSavedData = () => {
+    localStorage.removeItem(STORAGE_KEY);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +82,8 @@ export default function OnboardingEarlyAccess({ onValidCode, onError }: Onboardi
       const validCode = 'freemusicdb';
       
       if (normalizedCode === validCode) {
+        // Clear saved data on successful validation
+        clearSavedData();
         onValidCode();
       } else {
         onError('Invalid access code. Please try again.');
