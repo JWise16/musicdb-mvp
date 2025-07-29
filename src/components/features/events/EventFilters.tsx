@@ -114,7 +114,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
 
         {/* Percentage Sold Filter (% sold) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">% sold</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Percentage Sold</label>
           <PercentSoldDropdown
             value={filters.percentageSoldRange || [0, 100]}
             onChange={handlePercentageSoldRangeChange}
@@ -144,8 +144,8 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
             <option value="">Default</option>
             <option value="date_desc">Newest - Oldest</option>
             <option value="date_asc">Oldest - Newest</option>
-            <option value="percent_sold_desc">% sold ~ high - low</option>
-            <option value="percent_sold_asc">% sold ~ low - high</option>
+            <option value="percent_sold_desc">Percentage Sold ~ high - low</option>
+            <option value="percent_sold_asc">Percentage Sold ~ low - high</option>
             <option value="capacity_desc">Capacity ~ high - low</option>
             <option value="capacity_asc">Capacity ~ low - high</option>
             <option value="price_desc">Ticket Price ~ high - low</option>
@@ -252,7 +252,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
           
           {filters.percentageSoldRange && (filters.percentageSoldRange[0] !== 0 || filters.percentageSoldRange[1] !== 100) && (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-700">
-              % sold: {filters.percentageSoldRange[0]}%-{filters.percentageSoldRange[1]}%
+              Percentage Sold: {filters.percentageSoldRange[0]}%-{filters.percentageSoldRange[1]}%
               <button
                 onClick={() => clearFilter('percentageSoldRange')}
                 className="ml-2 text-red-500 hover:text-red-700"
@@ -313,8 +313,8 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
               Sort: {filters.sortBy === 'date_desc' ? 'Newest - Oldest' :
                      filters.sortBy === 'date_asc' ? 'Oldest - Newest' :
-                     filters.sortBy === 'percent_sold_desc' ? '% sold ~ high - low' :
-                     filters.sortBy === 'percent_sold_asc' ? '% sold ~ low - high' :
+                     filters.sortBy === 'percent_sold_desc' ? 'Percentage Sold ~ high - low' :
+                     filters.sortBy === 'percent_sold_asc' ? 'Percentage Sold ~ low - high' :
                      filters.sortBy === 'capacity_desc' ? 'Capacity ~ high - low' :
                      filters.sortBy === 'capacity_asc' ? 'Capacity ~ low - high' :
                      filters.sortBy === 'price_desc' ? 'Ticket Price ~ high - low' :

@@ -305,7 +305,7 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                % Sold
+                Percentage Sold
               </button>
               <button
                 onClick={() => setChartMetric('revenue')}
@@ -380,7 +380,7 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                % Sold
+                Percentage Sold
               </button>
               <button
                 onClick={() => setGenreMetric('revenue')}
