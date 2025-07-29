@@ -16,7 +16,6 @@ import AddVenue from './pages/AddVenue';
 import Verification from './pages/Verification';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
-import FindTalent from './pages/FindTalent';
 import ArtistSearch from './pages/ArtistSearch';
 import ProtectedRoute from './components/ProtectedRoute';
 import { VenueProvider } from './contexts/VenueContext';
@@ -134,14 +133,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <Onboarding />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/find-talent"
-            element={
-              <ProtectedRoute>
-                <FindTalent />
               </ProtectedRoute>
             }
           />
