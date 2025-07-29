@@ -1,11 +1,81 @@
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { type VenueAnalytics } from '../../../services/venueService';
 
 interface EventAnalyticsProps {
   analytics: VenueAnalytics;
 }
+
+// Format currency values
+const formatCurrency = (amount: number) => {
+  if (amount >= 1000000) {
+    return `$${(amount / 1000000).toFixed(1)}M`;
+  } else if (amount >= 1000) {
+    return `$${(amount / 1000).toFixed(1)}K`;
+  }
+  return `$${amount.toLocaleString()}`;
+};
+
+// Custom tooltip component for the performance chart
+const PerformanceTooltip = ({ active, payload, label, chartMetric, timeFrame }: any) => {
+  if (active && payload && payload.length) {
+    const value = payload[0].value;
+    
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[200px]">
+        <p className="text-sm font-semibold text-gray-900 mb-2">{label}</p>
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">
+              {chartMetric === 'percentage' ? 'Avg. Sold:' : 'Revenue:'}
+            </span>
+            <span className="text-sm font-medium text-gray-900">
+              {chartMetric === 'percentage' ? `${value.toFixed(1)}%` : formatCurrency(value)}
+            </span>
+          </div>
+          <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
+            {chartMetric === 'percentage' 
+              ? `${timeFrame === 'Month' ? 'Monthly' : timeFrame === 'Quarter' ? 'Quarterly' : 'Yearly'} average percentage of tickets sold`
+              : `Total gross revenue for this ${timeFrame.toLowerCase()}`
+            }
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Custom tooltip component for the genre chart
+const GenreTooltip = ({ active, payload, label, genreMetric, selectedPeriod }: any) => {
+  if (active && payload && payload.length) {
+    const value = payload[0].value;
+    
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[200px]">
+        <p className="text-sm font-semibold text-gray-900 mb-2">{label}</p>
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">
+              {genreMetric === 'percentage' ? 'Performance:' : 'Revenue:'}
+            </span>
+            <span className="text-sm font-medium text-gray-900">
+              {genreMetric === 'percentage' ? `${value.toFixed(1)}%` : formatCurrency(value)}
+            </span>
+          </div>
+          <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
+            {genreMetric === 'percentage' 
+              ? `Average percentage sold for ${label} events in ${selectedPeriod}`
+              : `Total revenue from ${label} events in ${selectedPeriod}`
+            }
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
   const [timeFrame, setTimeFrame] = useState<'Month' | 'Quarter' | 'Year'>('Month');
@@ -123,15 +193,7 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
     }
   }, [timeFrame]);
 
-  // Format currency values
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    } else if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}K`;
-    }
-    return `$${amount.toLocaleString()}`;
-  };
+
 
   // Get genre data based on selected timeframe and metric
   const getGenreChartData = () => {
@@ -293,6 +355,10 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
                   radius={[4, 4, 0, 0]}
                   opacity={0.8}
                 />
+                <Tooltip 
+                  content={<PerformanceTooltip chartMetric={chartMetric} timeFrame={timeFrame} />}
+                  cursor={false}
+                />
               </BarChart>
             </ResponsiveContainer>
         </div>
@@ -403,6 +469,10 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
                         fill="#14B8A6" 
                         radius={[4, 4, 0, 0]}
                         opacity={0.8}
+                      />
+                      <Tooltip 
+                        content={<GenreTooltip genreMetric={genreMetric} selectedPeriod={selectedPeriod} />}
+                        cursor={false}
                       />
                     </BarChart>
                   </ResponsiveContainer>
