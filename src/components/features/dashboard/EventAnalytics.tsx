@@ -87,17 +87,17 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
     {
       title: 'Top Month',
       value: analytics.topMonth.month,
-      subtitle: `${analytics.topMonth.count} shows`
+      subtitle: `${analytics.topMonth.avgPercentageSold}% avg sold`
     },
     {
       title: 'Top Genre',
       value: analytics.topGenre.genre,
-      subtitle: `${analytics.topGenre.count} performances`
+      subtitle: `${analytics.topGenre.avgPercentageSold}% avg sold`
     },
     {
       title: 'Top Artist',
       value: analytics.topArtist.name,
-      subtitle: `${analytics.topArtist.count} appearances`
+      subtitle: `${analytics.topArtist.avgPercentageSold}% avg sold`
     }
   ];
 

@@ -25,9 +25,9 @@ export type VenueAnalytics = {
   barSales: number;
   avgSelloutRate: number;
   avgTicketPrice: number;
-  topMonth: { month: string; count: number };
-  topGenre: { genre: string; count: number };
-  topArtist: { name: string; count: number };
+  topMonth: { month: string; count: number; avgPercentageSold: number };
+  topGenre: { genre: string; count: number; avgPercentageSold: number };
+  topArtist: { name: string; count: number; avgPercentageSold: number };
   trends: {
     showsReported: { value: number }[];
     ticketSales: { value: number }[];
@@ -429,10 +429,10 @@ export class VenueService {
       let totalTicketsAvailable = 0;
       let totalTicketRevenue = 0;
 
-      // Track months, genres, and artists
-      const monthCounts: { [key: string]: number } = {};
-      const genreCounts: { [key: string]: number } = {};
-      const artistCounts: { [key: string]: number } = {};
+      // Track months, genres, and artists with counts and percentage sold data
+      const monthData: { [key: string]: { count: number; totalPercentageSold: number } } = {};
+      const genreData: { [key: string]: { count: number; totalPercentageSold: number } } = {};
+      const artistData: { [key: string]: { count: number; totalPercentageSold: number } } = {};
 
       events.forEach(event => {
         // Financial calculations
@@ -446,18 +446,33 @@ export class VenueService {
         totalTicketRevenue += ticketsSold * ticketPrice;
         totalBarSales += barSales;
 
+        // Calculate percentage sold for this event
+        const eventPercentageSold = totalTickets > 0 ? (ticketsSold / totalTickets) * 100 : 0;
+
         // Month tracking
         const eventDate = parseEventDate(event.date);
         const monthKey = eventDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-        monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
+        if (!monthData[monthKey]) {
+          monthData[monthKey] = { count: 0, totalPercentageSold: 0 };
+        }
+        monthData[monthKey].count += 1;
+        monthData[monthKey].totalPercentageSold += eventPercentageSold;
 
         // Genre and artist tracking
         event.event_artists?.forEach((ea: any) => {
           if (ea.artists?.name) {
-            artistCounts[ea.artists.name] = (artistCounts[ea.artists.name] || 0) + 1;
+            if (!artistData[ea.artists.name]) {
+              artistData[ea.artists.name] = { count: 0, totalPercentageSold: 0 };
+            }
+            artistData[ea.artists.name].count += 1;
+            artistData[ea.artists.name].totalPercentageSold += eventPercentageSold;
           }
           if (ea.artists?.genre) {
-            genreCounts[ea.artists.genre] = (genreCounts[ea.artists.genre] || 0) + 1;
+            if (!genreData[ea.artists.genre]) {
+              genreData[ea.artists.genre] = { count: 0, totalPercentageSold: 0 };
+            }
+            genreData[ea.artists.genre].count += 1;
+            genreData[ea.artists.genre].totalPercentageSold += eventPercentageSold;
           }
         });
       });
@@ -466,15 +481,34 @@ export class VenueService {
       const avgSelloutRate = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
       const avgTicketPrice = showsReported > 0 ? totalTicketRevenue / totalTicketsSold : 0;
 
-      // Find top performers
-      const topMonth = Object.entries(monthCounts)
-        .sort(([,a], [,b]) => b - a)[0] || { month: 'N/A', count: 0 };
+      // Find top performers based on average percentage sold
+      const topMonthEntry = Object.entries(monthData)
+        .map(([month, data]) => ({
+          month,
+          count: data.count,
+          avgPercentageSold: data.count > 0 ? data.totalPercentageSold / data.count : 0
+        }))
+        .sort((a, b) => b.avgPercentageSold - a.avgPercentageSold)[0];
       
-      const topGenre = Object.entries(genreCounts)
-        .sort(([,a], [,b]) => b - a)[0] || { genre: 'N/A', count: 0 };
+      const topGenreEntry = Object.entries(genreData)
+        .map(([genre, data]) => ({
+          genre,
+          count: data.count,
+          avgPercentageSold: data.count > 0 ? data.totalPercentageSold / data.count : 0
+        }))
+        .sort((a, b) => b.avgPercentageSold - a.avgPercentageSold)[0];
       
-      const topArtist = Object.entries(artistCounts)
-        .sort(([,a], [,b]) => b - a)[0] || { name: 'N/A', count: 0 };
+      const topArtistEntry = Object.entries(artistData)
+        .map(([name, data]) => ({
+          name,
+          count: data.count,
+          avgPercentageSold: data.count > 0 ? data.totalPercentageSold / data.count : 0
+        }))
+        .sort((a, b) => b.avgPercentageSold - a.avgPercentageSold)[0];
+
+      const topMonth = topMonthEntry || { month: 'N/A', count: 0, avgPercentageSold: 0 };
+      const topGenre = topGenreEntry || { genre: 'N/A', count: 0, avgPercentageSold: 0 };
+      const topArtist = topArtistEntry || { name: 'N/A', count: 0, avgPercentageSold: 0 };
 
       // Calculate trends (last 6 months or periods)
       const trends = this.calculateTrends(events);
@@ -505,9 +539,9 @@ export class VenueService {
         barSales: totalBarSales,
         avgSelloutRate,
         avgTicketPrice,
-        topMonth: { month: topMonth[0], count: topMonth[1] },
-        topGenre: { genre: topGenre[0], count: topGenre[1] },
-        topArtist: { name: topArtist[0], count: topArtist[1] },
+        topMonth: { month: topMonth.month, count: topMonth.count, avgPercentageSold: Math.round(topMonth.avgPercentageSold) },
+        topGenre: { genre: topGenre.genre, count: topGenre.count, avgPercentageSold: Math.round(topGenre.avgPercentageSold) },
+        topArtist: { name: topArtist.name, count: topArtist.count, avgPercentageSold: Math.round(topArtist.avgPercentageSold) },
         trends,
         monthlyPercentageSold,
         quarterlyPercentageSold,
@@ -1494,9 +1528,9 @@ export class VenueService {
       barSales: 0,
       avgSelloutRate: 0,
       avgTicketPrice: 0,
-      topMonth: { month: 'N/A', count: 0 },
-      topGenre: { genre: 'N/A', count: 0 },
-      topArtist: { name: 'N/A', count: 0 },
+      topMonth: { month: 'N/A', count: 0, avgPercentageSold: 0 },
+      topGenre: { genre: 'N/A', count: 0, avgPercentageSold: 0 },
+      topArtist: { name: 'N/A', count: 0, avgPercentageSold: 0 },
       trends: {
         showsReported: emptyTrend,
         ticketSales: emptyTrend,
