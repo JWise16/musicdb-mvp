@@ -6,10 +6,15 @@ interface YourShowsProps {
   upcoming: VenueEvent[];
   past: VenueEvent[];
   onEventClick: (eventId: string) => void;
+  onArtistClick?: (artistId: string) => void;
 }
 
 // Individual Event Card Component
-const EventCard = ({ event, onEventClick }: { event: VenueEvent; onEventClick: (eventId: string) => void }) => {
+const EventCard = ({ event, onEventClick, onArtistClick }: { 
+  event: VenueEvent; 
+  onEventClick: (eventId: string) => void;
+  onArtistClick?: (artistId: string) => void;
+}) => {
   // Use the first headliner name for the image
   const headlinerName = event.event_artists?.find(ea => ea.is_headliner)?.artists?.name || null;
   const { imageUrl, loading } = useArtistImage(headlinerName);
@@ -26,7 +31,7 @@ const EventCard = ({ event, onEventClick }: { event: VenueEvent; onEventClick: (
 
   const headliners = event.event_artists
     ?.filter(ea => ea.is_headliner)
-    .map(ea => ea.artists?.name)
+    .map(ea => ({ name: ea.artists?.name, id: ea.artists?.id }))
     .filter(Boolean) || [];
   
   const supporting = event.event_artists
@@ -41,10 +46,20 @@ const EventCard = ({ event, onEventClick }: { event: VenueEvent; onEventClick: (
     return `$${amount.toLocaleString()}`;
   };
 
+  const handleCardClick = () => {
+    // If we have a headliner artist and artist click handler, navigate to artist page
+    if (headliners.length > 0 && headliners[0].id && onArtistClick) {
+      onArtistClick(headliners[0].id);
+    } else {
+      // Otherwise, navigate to event page
+      onEventClick(event.id);
+    }
+  };
+
   return (
     <div 
       className="card p-4 hover:shadow-medium transition-all duration-200 cursor-pointer group"
-      onClick={() => onEventClick(event.id)}
+      onClick={handleCardClick}
     >
       {/* Artist Image or Placeholder */}
       <div className="w-full aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative">
@@ -84,7 +99,12 @@ const EventCard = ({ event, onEventClick }: { event: VenueEvent; onEventClick: (
       {/* Headliner */}
       {headliners.length > 0 && (
         <p className="text-sm font-medium text-gray-900 mb-1 truncate">
-          {headliners.join(', ')}
+          {headliners.map((headliner, index) => (
+            <span key={headliner.id}>
+              {index > 0 && ', '}
+              {headliner.name}
+            </span>
+          ))}
         </p>
       )}
 
@@ -126,7 +146,7 @@ const EventCard = ({ event, onEventClick }: { event: VenueEvent; onEventClick: (
   );
 };
 
-const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
+const YourShows = ({ upcoming, past, onEventClick, onArtistClick }: YourShowsProps) => {
   return (
     <div className="mb-6 lg:mb-8 overflow-hidden">
       <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-4 lg:mb-6 truncate">Your Shows</h3>
@@ -137,7 +157,7 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
           <h4 className="text-md font-semibold text-gray-800 mb-3">Upcoming</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 overflow-hidden">
             {upcoming.slice(0, 3).map(event => (
-              <EventCard key={event.id} event={event} onEventClick={onEventClick} />
+              <EventCard key={event.id} event={event} onEventClick={onEventClick} onArtistClick={onArtistClick} />
             ))}
           </div>
         </div>
@@ -155,7 +175,7 @@ const YourShows = ({ upcoming, past, onEventClick }: YourShowsProps) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 overflow-hidden">
             {past.slice(0, 6).map(event => (
-              <EventCard key={event.id} event={event} onEventClick={onEventClick} />
+              <EventCard key={event.id} event={event} onEventClick={onEventClick} onArtistClick={onArtistClick} />
             ))}
           </div>
         )}

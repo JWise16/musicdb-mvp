@@ -177,6 +177,10 @@ const Dashboard = () => {
     navigate(`/event/${eventId}`);
   };
 
+  const handleArtistClick = async (artistId: string) => {
+    navigate(`/artist/${artistId}`);
+  };
+
   const handleTimeFrameChange = (newTimeFrame: 'YTD' | 'MTD' | 'ALL') => {
     setTimeFrame(newTimeFrame);
   };
@@ -244,6 +248,7 @@ const Dashboard = () => {
                 upcoming={events.upcoming}
                 past={events.past}
                 onEventClick={handleEventClick}
+                onArtistClick={handleArtistClick}
               />
             </div>
           </div>
