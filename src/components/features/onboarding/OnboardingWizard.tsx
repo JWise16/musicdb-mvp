@@ -94,9 +94,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     location: '',
     address: '',
     capacity: undefined,
-    contact_email: '',
-    contact_phone: '',
-    description: '',
     image_url: ''
   });
 
@@ -196,7 +193,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   // Auto-save venue data (save any changes, not just when name exists)
   useEffect(() => {
     if (isOpen) {
-      const hasVenueData = venue.name || venue.location || venue.address || venue.description;
+      const hasVenueData = venue.name || venue.location || venue.address;
       if (hasVenueData) {
         console.log('Auto-saving venue data:', venue);
         localStorage.setItem(STORAGE_KEYS.venue, JSON.stringify(venue));
@@ -856,63 +853,24 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 lg:gap-3">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
-              Capacity <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={venue.capacity || ''}
-              onChange={(e) => handleVenueChange('capacity', e.target.value ? parseInt(e.target.value) : undefined)}
-              className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                validationErrors.venue_capacity ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter venue capacity"
-              min="1"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
-              Contact Email (Optional)
-            </label>
-            <input
-              type="email"
-              value={venue.contact_email}
-              onChange={(e) => handleVenueChange('contact_email', e.target.value)}
-              className="w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border border-gray-300 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter contact email"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
-              Contact Phone (Optional)
-            </label>
-            <input
-              type="tel"
-              value={venue.contact_phone}
-              onChange={(e) => handleVenueChange('contact_phone', e.target.value)}
-              className="w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border border-gray-300 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter contact phone"
-            />
-          </div>
-        </div>
-
         <div>
           <label className="block text-xs font-bold text-gray-700 mb-1">
-            Description (Optional)
+            Capacity <span className="text-red-500">*</span>
           </label>
-          <textarea
-            value={venue.description}
-            onChange={(e) => handleVenueChange('description', e.target.value)}
-            className="w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border border-gray-300 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Tell us about your venue..."
-            rows={2}
+          <input
+            type="number"
+            value={venue.capacity || ''}
+            onChange={(e) => handleVenueChange('capacity', e.target.value ? parseInt(e.target.value) : undefined)}
+            className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              validationErrors.venue_capacity ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="Enter venue capacity"
+            min="1"
+            required
           />
         </div>
+
+
 
         <div>
           <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -1238,6 +1196,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         {/* Notes */}
         <div className="card p-3 lg:p-4">
           <h3 className="text-sm lg:text-base font-semibold text-gray-900 mb-2 lg:mb-3">Additional Notes</h3>
+          <p className="text-xs text-gray-600 mb-2 lg:mb-3">Add any additional notes you'll want to remember about this event…</p>
           <textarea
             value={event.notes}
             onChange={e => handleEventChange('notes', e.target.value)}
@@ -1350,12 +1309,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 </div>
               )}
               
-              {venue.description && (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-1">Description</div>
-                  <div className="text-sm text-gray-600">{venue.description}</div>
-                </div>
-              )}
+
             </div>
           </div>
         );
