@@ -301,10 +301,8 @@ export class EventService {
         `)
         .order('date', { ascending: false });
 
-      // Apply filters
-      if (filters.searchQuery) {
-        query = query.or(`name.ilike.%${filters.searchQuery}%,venues.name.ilike.%${filters.searchQuery}%`);
-      }
+      // Note: Search filtering is now handled in JavaScript after data retrieval
+      // to support searching through artist names from the joined event_artists table
 
       if (filters.city) {
         query = query.eq('venues.location', filters.city);
@@ -374,6 +372,26 @@ export class EventService {
           total_revenue: totalRevenue,
         };
       }) || [];
+
+      // Apply search query filter
+      if (filters.searchQuery) {
+        const searchLower = filters.searchQuery.toLowerCase();
+        processedEvents = processedEvents.filter(event => {
+          // Search in venue name
+          if (event.venues?.name?.toLowerCase().includes(searchLower)) {
+            return true;
+          }
+          
+          // Search in headliner and supporting artist names
+          if (event.event_artists?.some((ea: any) => 
+            ea.artists?.name?.toLowerCase().includes(searchLower)
+          )) {
+            return true;
+          }
+          
+          return false;
+        });
+      }
 
       // Apply percentage sold filter
       if (filters.percentageSoldRange) {

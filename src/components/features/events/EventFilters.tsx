@@ -62,7 +62,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
           </svg>
           <input
             type="text"
-            placeholder="Search events, venues, or artists..."
+            placeholder="Search venues, headliners, or supporting artists..."
             value={filters.searchQuery || ''}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-10 pr-10 py-2 lg:py-3 text-sm lg:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
