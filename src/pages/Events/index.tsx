@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useOnboarding } from '../../hooks/useOnboarding';
 import { EventService, type EventFilters as EventFiltersType, type EventWithDetails } from '../../services/eventService';
@@ -11,7 +11,6 @@ import EventFiltersComponent from '../../components/features/events/EventFilters
 const Events = () => {
   const { user } = useAuth();
   const { progress } = useOnboarding();
-  const navigate = useNavigate();
   const [filteredEvents, setFilteredEvents] = useState<EventWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<EventFiltersType>({});
@@ -130,20 +129,7 @@ const Events = () => {
     applyFilters();
   }, [filters, hasVenues, hasVenueEvents]);
 
-  const handleEventClick = async (eventId: string) => {
-    // Import ArtistService dynamically to avoid import issues
-    const { ArtistService } = await import('../../services/artistService');
-    
-    // Get the primary artist for this event
-    const primaryArtistId = await ArtistService.getPrimaryArtistFromEvent(eventId);
-    
-    if (primaryArtistId) {
-      navigate(`/artist/${primaryArtistId}`);
-    } else {
-      // Fallback to event details if no artist found
-      navigate(`/event/${eventId}`);
-    }
-  };
+
 
   // Show loading while checking verification
   if (isCheckingVerification) {
@@ -347,7 +333,6 @@ const Events = () => {
             ) : filteredEvents.length > 0 ? (
               <EventTable
                 events={filteredEvents}
-                onEventClick={handleEventClick}
               />
             ) : (
               <div className="text-center py-16">

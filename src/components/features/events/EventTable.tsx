@@ -1,12 +1,13 @@
 import { type EventWithDetails } from '../../../services/eventService';
 import { formatEventDate } from '../../../utils/dateUtils';
+import { useNavigate } from 'react-router-dom';
 
 interface EventTableProps {
   events: EventWithDetails[];
-  onEventClick: (eventId: string) => void;
 }
 
-const EventTable = ({ events, onEventClick }: EventTableProps) => {
+const EventTable = ({ events }: EventTableProps) => {
+  const navigate = useNavigate();
   // Debug: Log the first event to see the data structure
   if (events.length > 0) {
     console.log('Sample event data:', events[0]);
@@ -36,35 +37,58 @@ const EventTable = ({ events, onEventClick }: EventTableProps) => {
   };
 
   const getHeadliners = (event: EventWithDetails) => {
-    console.log('Getting headliners for event:', event.name);
-    console.log('event_artists array:', event.event_artists);
-    
     if (!event.event_artists) {
-      console.log('No event_artists found');
       return [];
     }
     
-    const headliners = event.event_artists
-      ?.filter(ea => {
-        console.log('Artist relationship:', ea, 'is_headliner:', ea.is_headliner);
-        return ea.is_headliner;
-      })
-      .map(ea => {
-        console.log('Artist object:', ea.artists, 'name:', ea.artists?.name);
-        return ea.artists?.name;
-      })
-      .filter(Boolean) || [];
-    
-    console.log('Final headliners:', headliners);
-    return headliners;
+    return event.event_artists
+      ?.filter(ea => ea.is_headliner)
+      .map(ea => ({
+        id: ea.artists?.id,
+        name: ea.artists?.name
+      }))
+      .filter(artist => artist.id && artist.name) || [];
   };
 
   const getSupportingActs = (event: EventWithDetails) => {
     return event.event_artists
       ?.filter(ea => !ea.is_headliner)
-      .map(ea => ea.artists?.name)
-      .filter(Boolean) || [];
+      .map(ea => ({
+        id: ea.artists?.id,
+        name: ea.artists?.name
+      }))
+      .filter(artist => artist.id && artist.name) || [];
   };
+
+  // Navigate to individual artist page
+  const handleArtistClick = (artistId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent row click from firing
+    navigate(`/artist/${artistId}`);
+  };
+
+  // Component for clickable artist names with visual indicators
+  const ClickableArtistName = ({ artist, className = "" }: { 
+    artist: { id: string; name: string }, 
+    className?: string 
+  }) => (
+    <button
+      onClick={(e) => handleArtistClick(artist.id, e)}
+      className={`text-left hover:text-accent-600 transition-colors group inline-flex items-center ${className}`}
+      title={`View ${artist.name}'s profile`}
+    >
+      <span className="truncate">{artist.name}</span>
+      <div className="w-3 h-3 flex-shrink-0 ml-1">
+        <svg 
+          className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+      </div>
+    </button>
+  );
 
   if (events.length === 0) {
     return (
@@ -127,8 +151,7 @@ const EventTable = ({ events, onEventClick }: EventTableProps) => {
               return (
                 <tr
                   key={event.id}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => onEventClick(event.id)}
+                  className="hover:bg-gray-50 transition-colors"
                 >
                   {/* Date */}
                   <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
@@ -142,9 +165,9 @@ const EventTable = ({ events, onEventClick }: EventTableProps) => {
                     <div className="text-xs lg:text-sm text-gray-900 max-w-[120px] lg:max-w-none">
                       {headliners.length > 0 ? (
                         <div>
-                          {headliners.slice(0, 1).map((name, index) => (
-                            <div key={index} className="font-medium truncate">
-                              {name}
+                          {headliners.slice(0, 1).map((artist, index) => (
+                            <div key={index} className="font-medium">
+                              <ClickableArtistName artist={artist} className="font-medium" />
                             </div>
                           ))}
                           {headliners.length > 1 && (
@@ -164,9 +187,9 @@ const EventTable = ({ events, onEventClick }: EventTableProps) => {
                     <div className="text-xs lg:text-sm text-gray-700 max-w-[120px] lg:max-w-none">
                       {supportingActs.length > 0 ? (
                         <div>
-                          {supportingActs.slice(0, 1).map((name, index) => (
-                            <div key={index} className="truncate">
-                              {name}
+                          {supportingActs.slice(0, 1).map((artist, index) => (
+                            <div key={index}>
+                              <ClickableArtistName artist={artist} />
                             </div>
                           ))}
                           {supportingActs.length > 1 && (
