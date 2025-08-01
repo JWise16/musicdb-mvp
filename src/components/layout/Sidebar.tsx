@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { supabase } from '../../supabaseClient';
 import { formatRole } from '../../utils/roleUtils';
 import Avatar from '../common/Avatar';
@@ -33,6 +34,7 @@ const Sidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { profile } = useUserProfile();
+  const { canViewAdminDashboard, adminLevel } = useAdminAuth();
   const [userVenue, setUserVenue] = useState<UserVenue | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -121,6 +123,27 @@ const Sidebar = () => {
               {link.name}
             </Link>
           ))}
+          
+          {/* Admin Link - Only show for admins */}
+          {canViewAdminDashboard && (
+            <>
+              <hr className="my-2 border-gray-300" />
+              <Link
+                to="/admin"
+                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-150 ${location.pathname === '/admin' ? 'bg-white text-black font-extrabold shadow' : 'text-gray-700 hover:bg-gray-100'}`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Admin
+                {adminLevel && (
+                  <span className="ml-auto inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                    {adminLevel === 'super_admin' ? 'Super' : 'Admin'}
+                  </span>
+                )}
+              </Link>
+            </>
+          )}
         </nav>
       </div>
       

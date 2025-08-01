@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { AdminService } from './adminService';
 import type { Database } from '../types/database.types';
 
 type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
@@ -43,6 +44,21 @@ export class UserProfileService {
         return { data: null, error: error.message };
       }
 
+      // Track profile update activity
+      try {
+        await AdminService.recordUserActivity(
+          userId,
+          'profile_update',
+          { 
+            fields_updated: Object.keys(updates),
+            timestamp: new Date().toISOString()
+          }
+        );
+      } catch (activityError) {
+        console.error('Failed to record profile update activity:', activityError);
+        // Don't fail the profile update if activity tracking fails
+      }
+
       return { data, error: null };
     } catch (error) {
       console.error('Error in updateUserProfile:', error);
@@ -61,6 +77,24 @@ export class UserProfileService {
       if (error) {
         console.error('Error creating user profile:', error);
         return { data: null, error: error.message };
+      }
+
+      // Track profile creation activity
+      if (data?.user_id) {
+        try {
+          await AdminService.recordUserActivity(
+            data.user_id,
+            'profile_created',
+            { 
+              full_name: data.full_name,
+              role: data.role,
+              timestamp: new Date().toISOString()
+            }
+          );
+        } catch (activityError) {
+          console.error('Failed to record profile creation activity:', activityError);
+          // Don't fail the profile creation if activity tracking fails
+        }
       }
 
       return { data, error: null };
@@ -171,6 +205,22 @@ export class UserProfileService {
       if (error) {
         console.error('Error upserting user profile:', error);
         return { data: null, error: error.message };
+      }
+
+      // Track profile update activity (with avatar)
+      try {
+        await AdminService.recordUserActivity(
+          userId,
+          'profile_update',
+          { 
+            fields_updated: [...Object.keys(profileUpdates), ...(avatarFile ? ['avatar'] : [])],
+            has_avatar_update: !!avatarFile,
+            timestamp: new Date().toISOString()
+          }
+        );
+      } catch (activityError) {
+        console.error('Failed to record profile update activity:', activityError);
+        // Don't fail the profile update if activity tracking fails
       }
 
       return { data, error: null };

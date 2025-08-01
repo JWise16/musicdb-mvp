@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import type { Tables } from '../types/database.types';
 import { isEventPast } from '../utils/dateUtils';
+import { AdminService } from './adminService';
 
 export type EventFormData = {
   name: string;
@@ -129,6 +130,36 @@ export class EventService {
             bar_sales_per_attendee: barSalesPerAttendee,
             is_public: true, // Default to public for now
           });
+      }
+
+      // Track event creation activity - find user who owns/manages this venue
+      try {
+        const { data: userVenues } = await supabase
+          .from('user_venues')
+          .select('user_id, role')
+          .eq('venue_id', eventData.venue_id)
+          .limit(1);
+        
+        if (userVenues && userVenues.length > 0) {
+          const userVenue = userVenues[0];
+          await AdminService.recordUserActivity(
+            userVenue.user_id,
+            'event_reported',
+            { 
+              event_id: event.id,
+              event_name: eventData.name,
+              venue_id: eventData.venue_id,
+              event_date: eventData.date,
+              total_revenue: eventData.total_ticket_revenue && eventData.bar_sales 
+                ? (eventData.total_ticket_revenue + eventData.bar_sales) 
+                : (eventData.total_ticket_revenue || eventData.bar_sales || 0),
+              timestamp: new Date().toISOString()
+            }
+          );
+        }
+      } catch (activityError) {
+        console.error('Failed to record event creation activity:', activityError);
+        // Don't fail the event creation if activity tracking fails
       }
 
       return { success: true, eventId: event.id };

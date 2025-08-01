@@ -18,6 +18,8 @@ import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import ArtistSearch from './pages/ArtistSearch';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
+import AdminDashboard from './pages/Admin';
 import { VenueProvider } from './contexts/VenueContext';
 
 function App() {
@@ -142,6 +144,14 @@ function App() {
               <ProtectedRoute>
                 <ArtistSearch />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
             }
           />
         </Routes>

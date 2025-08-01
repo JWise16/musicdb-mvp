@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import type { Tables } from '../types/database.types';
 import { parseEventDate } from '../utils/dateUtils';
+import { AdminService } from './adminService';
 
 export type VenueData = {
   name: string;
@@ -203,6 +204,9 @@ export class VenueService {
         return { success: false, error: error.message };
       }
 
+      // Note: We don't track venue creation activity here because we don't know the user_id
+      // Activity tracking happens in associateUserWithVenue when we know which user created it
+
       return { success: true, venueId: venue.id };
     } catch (error) {
       console.error('Error in createVenue:', error);
@@ -220,6 +224,24 @@ export class VenueService {
       if (error) {
         console.error('Error associating user with venue:', error);
         return { success: false, error: error.message };
+      }
+
+      // Track venue creation activity when user is associated
+      if (userVenueData.user_id) {
+        try {
+          await AdminService.recordUserActivity(
+            userVenueData.user_id,
+            'venue_created',
+            { 
+              venue_id: userVenueData.venue_id,
+              role: userVenueData.role,
+              timestamp: new Date().toISOString()
+            }
+          );
+        } catch (activityError) {
+          console.error('Failed to record venue creation activity:', activityError);
+          // Don't fail the venue association if activity tracking fails
+        }
       }
 
       return { success: true };
