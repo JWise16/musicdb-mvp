@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useOnboarding } from '../../hooks/useOnboarding';
+import { useVenue } from '../../contexts/VenueContext';
 import { EventService, type EventFilters as EventFiltersType, type EventWithDetails } from '../../services/eventService';
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
@@ -11,6 +12,7 @@ import EventFiltersComponent from '../../components/features/events/EventFilters
 const Events = () => {
   const { user } = useAuth();
   const { progress } = useOnboarding();
+  const { hasUserVenues, userVenues, isLoading: venueLoading } = useVenue();
   const [filteredEvents, setFilteredEvents] = useState<EventWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<EventFiltersType>({});
@@ -22,14 +24,13 @@ const Events = () => {
   });
   
   // Verification states
-  const [hasVenues, setHasVenues] = useState<boolean | null>(null);
   const [hasVenueEvents, setHasVenueEvents] = useState<boolean | null>(null);
   const [isCheckingVerification, setIsCheckingVerification] = useState(true);
 
   // Load filter options
   useEffect(() => {
     const loadFilterOptions = async () => {
-      if (!hasVenues || !hasVenueEvents) return;
+      if (!hasUserVenues || !hasVenueEvents) return;
       
       try {
         const options = await EventService.getFilterOptions();
@@ -40,26 +41,21 @@ const Events = () => {
     };
 
     loadFilterOptions();
-  }, [hasVenues, hasVenueEvents]);
+  }, [hasUserVenues, hasVenueEvents]);
 
   const handleFilterChange = (newFilters: Partial<EventFiltersType>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
 
-  // Check user verification status
+  // Check user verification status using venue context
   useEffect(() => {
     const checkVerificationStatus = async () => {
-      if (!user) return;
+      if (!user || venueLoading) return;
       
       setIsCheckingVerification(true);
       try {
-        // Check if user has associated venues
-        const userHasVenues = await VenueService.hasUserVenues(user.id);
-        setHasVenues(userHasVenues);
-        
-        if (userHasVenues) {
-          // Check if user's venues have any events
-          const userVenues = await VenueService.getUserVenues(user.id);
+        if (hasUserVenues) {
+          // Use userVenues from context instead of making additional API call
           const venueEvents = await Promise.all(
             userVenues.map(venue => VenueService.getVenueEvents(venue.id))
           );
@@ -74,7 +70,6 @@ const Events = () => {
         }
       } catch (error) {
         console.error('Error checking verification status:', error);
-        setHasVenues(false);
         setHasVenueEvents(false);
       } finally {
         setIsCheckingVerification(false);
@@ -82,12 +77,12 @@ const Events = () => {
     };
 
     checkVerificationStatus();
-  }, [user]);
+  }, [user, hasUserVenues, userVenues, venueLoading]);
 
   useEffect(() => {
     const loadEvents = async () => {
       // Only load events if user is verified and their venue has events
-      if (!user || !hasVenues || !hasVenueEvents) {
+      if (!user || !hasUserVenues || !hasVenueEvents) {
         setIsLoading(false);
         return;
       }
@@ -106,12 +101,12 @@ const Events = () => {
     };
 
     loadEvents();
-  }, [user, hasVenues, hasVenueEvents]);
+  }, [user, hasUserVenues, hasVenueEvents]);
 
   useEffect(() => {
     const applyFilters = async () => {
       // Only apply filters if we have events loaded
-      if (!hasVenues || !hasVenueEvents) return;
+      if (!hasUserVenues || !hasVenueEvents) return;
       
       setIsLoading(true);
       try {
@@ -127,7 +122,7 @@ const Events = () => {
     };
 
     applyFilters();
-  }, [filters, hasVenues, hasVenueEvents]);
+  }, [filters, hasUserVenues, hasVenueEvents]);
 
 
 
@@ -151,7 +146,7 @@ const Events = () => {
   }
 
   // Show verification prompt if user has no venues
-  if (!hasVenues) {
+  if (!hasUserVenues) {
     return (
       <div className="min-h-screen bg-[#F6F6F3] flex">
         <Sidebar />

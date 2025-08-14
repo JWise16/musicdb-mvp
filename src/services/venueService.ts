@@ -117,6 +117,11 @@ export type VenueEvent = Tables<'events'> & {
 };
 
 export class VenueService {
+  // Cache for hasUserVenues results to prevent repeated API calls
+  private static hasUserVenuesCache = new Map<string, { result: boolean; timestamp: number }>();
+  private static readonly CACHE_DURATION = 30000; // 30 seconds cache
+  private static activeRequests = new Map<string, Promise<boolean>>();
+
   // Get venues associated with a user
   static async getUserVenues(userId: string): Promise<Tables<'venues'>[]> {
     try {
@@ -142,9 +147,46 @@ export class VenueService {
     }
   }
 
-  // Check if user has any associated venues
+  // Check if user has any associated venues (with caching to prevent repeated calls)
   static async hasUserVenues(userId: string): Promise<boolean> {
     console.log('VenueService: hasUserVenues called with userId:', userId);
+    
+    // Check cache first
+    const now = Date.now();
+    const cached = this.hasUserVenuesCache.get(userId);
+    
+    if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
+      console.log('VenueService: hasUserVenues returning cached result:', cached.result);
+      return cached.result;
+    }
+
+    // Check if there's already an active request for this user
+    const activeRequest = this.activeRequests.get(userId);
+    if (activeRequest) {
+      console.log('VenueService: hasUserVenues waiting for active request');
+      return activeRequest;
+    }
+
+    // Create new request
+    const requestPromise = this.performHasUserVenuesQuery(userId);
+    this.activeRequests.set(userId, requestPromise);
+
+    try {
+      const result = await requestPromise;
+      
+      // Cache the result
+      this.hasUserVenuesCache.set(userId, { result, timestamp: now });
+      console.log('VenueService: hasUserVenues returning and caching result:', result);
+      
+      return result;
+    } finally {
+      // Clean up active request
+      this.activeRequests.delete(userId);
+    }
+  }
+
+  // Private method to perform the actual database query
+  private static async performHasUserVenuesQuery(userId: string): Promise<boolean> {
     try {
       const { data, error } = await supabase
         .from('user_venues')
@@ -160,11 +202,21 @@ export class VenueService {
       }
 
       const hasVenues = (data?.length || 0) > 0;
-      console.log('VenueService: hasUserVenues returning:', hasVenues);
       return hasVenues;
     } catch (error) {
-      console.error('Error in hasUserVenues:', error);
+      console.error('Error in hasUserVenues query:', error);
       return false;
+    }
+  }
+
+  // Method to clear cache (useful when venues are added/removed)
+  static clearHasUserVenuesCache(userId?: string) {
+    if (userId) {
+      this.hasUserVenuesCache.delete(userId);
+      console.log('VenueService: Cleared hasUserVenues cache for user:', userId);
+    } else {
+      this.hasUserVenuesCache.clear();
+      console.log('VenueService: Cleared all hasUserVenues cache');
     }
   }
 
@@ -225,6 +277,9 @@ export class VenueService {
         console.error('Error associating user with venue:', error);
         return { success: false, error: error.message };
       }
+
+      // Clear cache since user now has venues
+      this.clearHasUserVenuesCache(userVenueData.user_id);
 
       // Track venue creation activity when user is associated
       if (userVenueData.user_id) {

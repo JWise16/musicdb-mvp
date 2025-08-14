@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useOnboarding } from '../../hooks/useOnboarding';
+import { useVenue } from '../../contexts/VenueContext';
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import ReportTypeSelection from './ReportTypeSelection';
@@ -14,21 +15,20 @@ type Step = 'selection' | 'manual' | 'upload' | 'onboarding';
 const AddEvent = () => {
   const { user } = useAuth();
   const { refreshProgress } = useOnboarding();
+  const { hasUserVenues, userVenues, isLoading: venueLoading } = useVenue();
   const [currentStep, setCurrentStep] = useState<Step>('selection');
   const [isOnboardingMode, setIsOnboardingMode] = useState(false);
   const [currentEventNumber, setCurrentEventNumber] = useState(1);
   const navigate = useNavigate();
 
-  // Check if user should see onboarding flow
+  // Check if user should see onboarding flow using venue context
   useEffect(() => {
     const checkOnboardingMode = async () => {
-      if (!user) return;
+      if (!user || venueLoading) return;
 
       try {
-        const hasVenues = await VenueService.hasUserVenues(user.id);
-        
-        if (hasVenues) {
-          const userVenues = await VenueService.getUserVenues(user.id);
+        if (hasUserVenues) {
+          // Use userVenues from context instead of making API call
           const venueEvents = await Promise.all(
             userVenues.map(venue => VenueService.getVenueEvents(venue.id))
           );
@@ -49,7 +49,7 @@ const AddEvent = () => {
     };
 
     checkOnboardingMode();
-  }, [user]);
+  }, [user, hasUserVenues, userVenues, venueLoading]);
 
   const handleReportTypeSelect = (type: 'manual' | 'upload') => {
     setCurrentStep(type);

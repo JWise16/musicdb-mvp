@@ -18,7 +18,7 @@ const Dashboard = () => {
   
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
-  const { currentVenue, isLoading: venueLoading } = useVenue();
+  const { currentVenue, hasUserVenues: contextHasVenues, isLoading: venueLoading } = useVenue();
   const navigate = useNavigate();
   const [hasVenues, setHasVenues] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,9 +111,9 @@ const Dashboard = () => {
       }
 
       try {
-        // Check if user has venues
-        const hasVenues = await VenueService.hasUserVenues(user.id);
-        console.log('Dashboard: Venue check', { hasVenues, userId: user.id });
+        // Use venue context instead of making individual API call
+        const hasVenues = contextHasVenues;
+        console.log('Dashboard: Venue check from context', { hasVenues, userId: user.id });
         
         if (!hasVenues) {
           console.log('Dashboard: No venues found, redirecting to onboarding');

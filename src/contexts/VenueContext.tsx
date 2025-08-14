@@ -7,6 +7,7 @@ import type { Tables } from '../types/database.types';
 interface VenueContextType {
   currentVenue: Tables<'venues'> | null;
   userVenues: Tables<'venues'>[];
+  hasUserVenues: boolean;
   isLoading: boolean;
   switchVenue: (venueId: string) => Promise<void>;
   refreshVenues: () => Promise<void>;
@@ -31,6 +32,7 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
   const [currentVenue, setCurrentVenue] = useState<Tables<'venues'> | null>(null);
   const [userVenues, setUserVenues] = useState<Tables<'venues'>[]>([]);
+  const [hasUserVenues, setHasUserVenues] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load user venues and set current venue
@@ -39,6 +41,7 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
     if (authLoading || !user) {
       setUserVenues([]);
       setCurrentVenue(null);
+      setHasUserVenues(false);
       setIsLoading(false);
       return;
     }
@@ -47,6 +50,7 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
     try {
       const venues = await VenueService.getUserVenues(user.id);
       setUserVenues(venues);
+      setHasUserVenues(venues.length > 0);
 
       // Get current venue from localStorage or default to first venue
       const savedVenueId = localStorage.getItem('musicdb-current-venue-id');
@@ -64,6 +68,7 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
       console.error('Error loading venues:', error);
       setUserVenues([]);
       setCurrentVenue(null);
+      setHasUserVenues(false);
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +96,7 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
   const value: VenueContextType = {
     currentVenue,
     userVenues,
+    hasUserVenues,
     isLoading: authLoading || isLoading,
     switchVenue,
     refreshVenues,
