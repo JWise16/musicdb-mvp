@@ -42,19 +42,41 @@ const Dashboard = () => {
   useEffect(() => {
     // Set a timeout to prevent infinite loading
     const timeout = setTimeout(() => {
-      console.error('Dashboard: Loading timeout reached, forcing navigation to onboarding');
+      console.error('Dashboard: Loading timeout reached after 15 seconds');
+      console.error('Dashboard: Final state at timeout:', { 
+        user: user?.email, 
+        authLoading, 
+        profileLoading, 
+        profile: profile ? 'exists' : 'null',
+        venueLoading,
+        hasVenues 
+      });
+      
+      // If we're still stuck on profile loading, force it to complete
+      if (profileLoading) {
+        console.error('Dashboard: Profile still loading after timeout, this indicates a bug in useUserProfile');
+      }
+      
+      // Force navigation to onboarding to prevent infinite loading
       setHasVenues(false);
       navigate('/onboarding');
     }, 15000); // 15 second timeout
 
     const checkOnboardingNeeded = async () => {
       console.log('Dashboard: Starting onboarding check', { 
-        user: !!user, 
-        profile: !!profile, 
-        venueLoading,
-        profileData: profile ? { full_name: profile.full_name, role: profile.role } : null
+        user: user?.email,
+        authLoading,
+        profile: profile ? { full_name: profile.full_name, role: profile.role } : 'null', 
+        profileLoading,
+        venueLoading
       });
       
+      // Wait for auth to complete first
+      if (authLoading) {
+        console.log('Dashboard: Auth still loading, waiting...');
+        return;
+      }
+
       if (!user) {
         console.log('Dashboard: No user, redirecting to login');
         clearTimeout(timeout);
@@ -62,15 +84,18 @@ const Dashboard = () => {
         return;
       }
 
-      // Wait for profile to load
-      if (!profile) {
-        console.log('Dashboard: Profile not loaded yet, waiting...');
+      // Wait for profile loading to complete
+      if (profileLoading) {
+        console.log('Dashboard: Profile still loading, waiting...');
         return;
       }
 
       // Check if profile is complete
       const hasProfile = !!(profile?.full_name && profile?.role);
-      console.log('Dashboard: Profile check', { hasProfile, profile: { full_name: profile?.full_name, role: profile?.role } });
+      console.log('Dashboard: Profile check', { 
+        hasProfile, 
+        profile: profile ? { full_name: profile?.full_name, role: profile?.role } : null 
+      });
       
       if (!hasProfile) {
         console.log('Dashboard: Profile incomplete, redirecting to onboarding');
@@ -136,8 +161,8 @@ const Dashboard = () => {
       }
     };
 
-    // Only proceed if we have a user and venue loading is complete
-    if (user && !venueLoading && !profileLoading) {
+    // Only proceed if we have a user and all loading states are complete
+    if (!authLoading && user && !venueLoading && !profileLoading) {
       checkOnboardingNeeded();
     }
 
@@ -145,7 +170,7 @@ const Dashboard = () => {
     return () => {
       clearTimeout(timeout);
     };
-  }, [user, profile, venueLoading, profileLoading, navigate]);
+  }, [user, profile, authLoading, profileLoading, venueLoading, navigate]);
 
   // Load dashboard data
   useEffect(() => {
