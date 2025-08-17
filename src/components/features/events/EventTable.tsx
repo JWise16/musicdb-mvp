@@ -66,27 +66,7 @@ const EventTable = ({ events }: EventTableProps) => {
     navigate(`/artist/${artistId}`);
   };
 
-  // Component for clickable artist names with visual indicators
-  const ClickableArtistName = ({ artist, className = "" }: { 
-    artist: { id: string; name: string }, 
-    className?: string 
-  }) => (
-    <button
-      onClick={(e) => handleArtistClick(artist.id, e)}
-      className={`text-left hover:text-accent-600 inline-flex items-center gap-1 min-w-[140px] py-2 px-2 -mx-2 ${className}`}
-      title={`View ${artist.name}'s profile`}
-    >
-      <span>{artist.name}</span>
-      <svg 
-        className="w-3 h-3 flex-shrink-0 opacity-50" 
-        fill="none" 
-        stroke="currentColor" 
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-      </svg>
-    </button>
-  );
+
 
   if (events.length === 0) {
     return (
