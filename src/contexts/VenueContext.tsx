@@ -47,8 +47,19 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
     }
 
     setIsLoading(true);
+    
+    // Set a timeout to prevent infinite loading
+    const venueLoadingTimeout = setTimeout(() => {
+      console.warn('VenueContext: Venue loading taking longer than expected, completing with empty state');
+      setUserVenues([]);
+      setCurrentVenue(null);
+      setHasUserVenues(false);
+      setIsLoading(false);
+    }, 8000); // 8 second timeout
+
     try {
       const venues = await VenueService.getUserVenues(user.id);
+      clearTimeout(venueLoadingTimeout);
       setUserVenues(venues);
       setHasUserVenues(venues.length > 0);
 
@@ -65,6 +76,7 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
 
       setCurrentVenue(venueToSet);
     } catch (error) {
+      clearTimeout(venueLoadingTimeout);
       console.error('Error loading venues:', error);
       setUserVenues([]);
       setCurrentVenue(null);

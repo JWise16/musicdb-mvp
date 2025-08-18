@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useVenue } from '../../contexts/VenueContext';
@@ -29,7 +29,9 @@ const Dashboard = () => {
     past: []
   });
 
-  console.log('Dashboard: Hooks state', { 
+  // Only log state changes when there's an actual change to avoid spam
+  const stateRef = useRef<string>('');
+  const currentState = JSON.stringify({ 
     user: user?.email, 
     authLoading, 
     profileLoading,
@@ -37,6 +39,11 @@ const Dashboard = () => {
     currentVenue: currentVenue?.name,
     venueLoading 
   });
+  
+  if (stateRef.current !== currentState) {
+    console.log('Dashboard: Hooks state changed', JSON.parse(currentState));
+    stateRef.current = currentState;
+  }
 
   // Check if user needs onboarding
   useEffect(() => {

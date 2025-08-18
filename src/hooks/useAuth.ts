@@ -11,6 +11,12 @@ export const useAuth = () => {
   useEffect(() => {
     //console.log('useAuth: Initializing auth state');
     
+    // Set a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.warn('useAuth: Auth initialization taking longer than expected, forcing loading to false');
+      setLoading(false);
+    }, 10000); // 10 second timeout
+    
     // Get initial session
     const getInitialSession = async () => {
       //console.log('useAuth: Getting initial session');
@@ -21,6 +27,7 @@ export const useAuth = () => {
       } catch (error) {
         console.error('useAuth: Error getting initial session:', error);
       } finally {
+        clearTimeout(loadingTimeout);
         setLoading(false);
       }
     };
@@ -28,32 +35,39 @@ export const useAuth = () => {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       //console.log('useAuth: Auth state change:', event, session?.user?.email);
+      clearTimeout(loadingTimeout); // Clear timeout since auth state is updating
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Track login activity
+      // Track login activity (non-blocking)
       if (event === 'SIGNED_IN' && session?.user) {
-        try {
-          await AdminService.recordUserActivity(
-            session.user.id, 
-            'login',
-            {
-              timestamp: new Date().toISOString(),
-              user_agent: navigator.userAgent,
-              event_type: event
-            }
-          );
-          console.log('useAuth: Login activity recorded for user:', session.user.email);
-        } catch (error) {
-          console.error('useAuth: Failed to record login activity:', error);
-          // Don't throw - login tracking shouldn't break the auth flow
-        }
+        // Use setTimeout to make this truly non-blocking
+        setTimeout(async () => {
+          try {
+            await AdminService.recordUserActivity(
+              session.user.id, 
+              'login',
+              {
+                timestamp: new Date().toISOString(),
+                user_agent: navigator.userAgent,
+                event_type: event
+              }
+            );
+            console.log('useAuth: Login activity recorded for user:', session.user.email);
+          } catch (error) {
+            console.error('useAuth: Failed to record login activity:', error);
+            // This is just tracking - don't let it affect the user experience
+          }
+        }, 0);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(loadingTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   //console.log('useAuth: Current state:', { user: user?.email, loading });

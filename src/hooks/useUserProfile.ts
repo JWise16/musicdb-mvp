@@ -140,6 +140,7 @@ export const useUserProfile = () => {
       setProfile(null);
       setLoading(false);
       setError(null);
+      fetchInProgressRef.current = false;
     }
   }, [user?.id, authLoading]); // Depend on user.id and authLoading, not the fetchProfile function
 

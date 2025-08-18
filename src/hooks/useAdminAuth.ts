@@ -31,8 +31,11 @@ export const useAdminAuth = () => {
         .single();
 
       if (adminError && adminError.code !== 'PGRST116') { // PGRST116 is "not found"
-        console.error('Error checking admin status:', adminError);
-        setError('Failed to check admin status');
+        // Only log error if it's not a 406 "not acceptable" error (which means user isn't admin)
+        if (adminError.code !== '406') {
+          console.error('Error checking admin status:', adminError);
+          setError('Failed to check admin status');
+        }
         setIsAdmin(false);
         setAdminLevel(null);
       } else if (adminData) {
@@ -50,13 +53,18 @@ export const useAdminAuth = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]); // Use user.id instead of user object to prevent unnecessary re-renders
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && user?.id) {
       checkAdminStatus();
+    } else if (!authLoading && !user) {
+      // No user, set defaults immediately
+      setIsAdmin(false);
+      setAdminLevel(null);
+      setLoading(false);
     }
-  }, [checkAdminStatus, authLoading]);
+  }, [user?.id, authLoading]); // Remove checkAdminStatus from dependencies to prevent excessive calls
 
   const isSuperAdmin = adminLevel === 'super_admin';
   const canManageAdmins = isSuperAdmin;
