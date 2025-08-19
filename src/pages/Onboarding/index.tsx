@@ -236,7 +236,7 @@ export default function Onboarding() {
       
       <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to MusicDB!</h1>
       <p className="text-xl text-gray-600 mb-8">
-        Since you're an early supporter, MusicDB is free! But to make the tool as useful as possible for you and others using it, we'll need to setup your venue & get some shows logged.
+       Thanks for being an early supporter. To get started, let’s set up your venue and log a few shows so your account is ready to use.
       </p>
       
       <div className="bg-gray-50 rounded-lg p-6 mb-8">
@@ -244,7 +244,7 @@ export default function Onboarding() {
         <div className="space-y-3 text-left">
           <div className="flex items-center">
             <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">1</div>
-            <span className="text-gray-700">Your profile information</span>
+            <span className="text-gray-700">Complete your profile</span>
           </div>
           <div className="flex items-center">
             <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">2</div>
@@ -252,7 +252,7 @@ export default function Onboarding() {
           </div>
           <div className="flex items-center">
             <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3">3</div>
-            <span className="text-gray-700">Add 3 events to get started</span>
+            <span className="text-gray-700">Log 3 events</span>
           </div>
         </div>
       </div>
