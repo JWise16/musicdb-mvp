@@ -23,7 +23,6 @@ interface UserProfile {
   full_name: string;
   email: string;
   avatar_url?: string;
-  bio?: string;
   role?: string;
   custom_role?: string;
 }
@@ -84,7 +83,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const [profile, setProfile] = useState<UserProfile>({
     full_name: '',
     email: '',
-    bio: '',
     role: '',
     custom_role: ''
   });
@@ -182,7 +180,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   // Auto-save profile data (save any changes, not just when full_name exists)
   useEffect(() => {
     if (isOpen) {
-      const hasProfileData = profile.full_name || profile.email || profile.bio || profile.role;
+      const hasProfileData = profile.full_name || profile.email || profile.role;
       if (hasProfileData) {
         console.log('Auto-saving profile data:', profile);
         localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile));
@@ -498,7 +496,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             user.id,
             {
               full_name: profile.full_name,
-              bio: profile.bio,
               role: profile.role === 'other' ? profile.custom_role : profile.role
             },
             avatarFile || undefined
@@ -514,7 +511,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 user.id,
                 {
                   full_name: profile.full_name,
-                  bio: profile.bio,
                   role: profile.role === 'other' ? profile.custom_role : profile.role
                 }
               );
@@ -658,29 +654,23 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   };
 
   const renderProfileStep = () => (
-    <div className="space-y-3 lg:space-y-4">
-      <div>
-        <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-1">Profile Setup</h3>
-        <p className="text-xs lg:text-sm text-gray-600">Let's start with your basic information</p>
+    <div className="w-full max-w-2xl mx-auto space-y-3">
+      <div className="text-center mb-3">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Profile Setup</h3>
+        <p className="text-sm text-gray-600">Let's start with your basic information</p>
       </div>
       
-      {/* Debug info - remove this later */}
-      {hasRestoredData && (
-        <div className="bg-yellow-100 p-2 rounded text-xs">
-          <strong>Debug:</strong> Profile state - Name: "{profile.full_name}", Email: "{profile.email}", Role: "{profile.role}"
-        </div>
-      )}
       
-      <div className="space-y-2 lg:space-y-3">
+      <div className="space-y-3">
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
             Full Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={profile.full_name || ''}
             onChange={(e) => handleProfileChange('full_name', e.target.value)}
-            className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               validationErrors.profile_full_name ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Enter your full name"
@@ -689,14 +679,14 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
         
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
             Email <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
             value={profile.email || ''}
             onChange={(e) => handleProfileChange('email', e.target.value)}
-            className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               validationErrors.profile_email ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Enter your email"
@@ -705,10 +695,10 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
             Profile Picture (Optional)
           </label>
-          <div className="flex items-center space-x-2 lg:space-x-3">
+          <div className="flex items-center space-x-3">
             <Avatar 
               src={avatarPreview} 
               size="md" 
@@ -717,7 +707,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="px-2 lg:px-3 py-1 lg:py-1.5 border border-gray-300 rounded-md lg:rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Choose Photo
             </button>
@@ -731,24 +721,13 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
-            Bio (Optional)
-          </label>
-          <textarea
-            value={profile.bio}
-            onChange={(e) => handleProfileChange('bio', e.target.value)}
-            className="w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border border-gray-300 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Tell us a bit about yourself..."
-            rows={2}
-          />
-        </div>
+
 
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Your Role <span className="text-red-500">*</span>
           </label>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 lg:gap-2">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
             {[
               { value: 'talent_buyer', label: 'Talent Buyer' },
               { value: 'owner', label: 'Owner' },
@@ -761,7 +740,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 key={role.value}
                 type="button"
                 onClick={() => handleProfileChange('role', role.value)}
-                className={`p-1.5 lg:p-2 border-2 rounded-md lg:rounded-lg text-center transition-colors ${
+                className={`p-2 border-2 rounded-lg text-center transition-colors ${
                   profile.role === role.value
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
@@ -775,14 +754,14 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           {/* Custom role input */}
           {profile.role === 'other' && (
             <div className="mt-2">
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Please specify your role <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={profile.custom_role}
                 onChange={(e) => handleProfileChange('custom_role', e.target.value)}
-                className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   validationErrors.profile_custom_role ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="e.g., Sound Engineer, Booking Agent, etc."
@@ -861,6 +840,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             type="number"
             value={venue.capacity || ''}
             onChange={(e) => handleVenueChange('capacity', e.target.value ? parseInt(e.target.value) : undefined)}
+            onWheel={e => e.currentTarget.blur()} // Prevent scroll wheel changes
             className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               validationErrors.venue_capacity ? 'border-red-500' : 'border-gray-300'
             }`}
@@ -950,7 +930,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 mt-3 lg:mt-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Total Tickets <span className="text-red-500">*</span>
+                Total Tickets Available<span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -1249,12 +1229,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 </div>
               </div>
 
-              {profile.bio && (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-1">Bio</div>
-                  <div className="text-sm text-gray-600">{profile.bio}</div>
-                </div>
-              )}
+
 
               {profile.role && (
                 <div>
@@ -1360,7 +1335,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm font-medium text-gray-700 mb-1">Total Tickets</div>
+                  <div className="text-sm font-medium text-gray-700 mb-1">Total Tickets Available</div>
                   <div className="text-sm text-gray-900">{event.total_tickets ? event.total_tickets.toLocaleString() : 'Not specified'}</div>
                 </div>
                 
@@ -1467,22 +1442,15 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         </div>
 
         {/* Content */}
-        {step === 'events' || step === 'early-access' ? (
+        {step === 'profile' || step === 'venue' || step === 'events' || step === 'early-access' ? (
           // Full-width form, no preview panel
           <div className="p-3 sm:p-4 lg:p-5 overflow-y-auto" style={{ maxHeight: 'calc(95vh - 240px)' }}>
-            {step === 'events' ? renderEventStep() : renderStepContent()}
+            {renderStepContent()}
           </div>
         ) : (
-          // Default: split panel with preview - responsive layout
-          <div className="flex flex-col lg:flex-row" style={{ maxHeight: 'calc(95vh - 240px)' }}>
-            {/* Left Panel - Form */}
-            <div className="flex-1 p-3 sm:p-4 lg:p-5 overflow-y-auto min-w-0">
-              {renderStepContent()}
-            </div>
-            {/* Right Panel - Preview */}
-            <div className="w-full lg:w-72 xl:w-80 border-t lg:border-t-0 lg:border-l border-gray-200 p-3 sm:p-4 lg:p-5 overflow-y-auto">
-              {renderPreview()}
-            </div>
+          // This condition should no longer be reached since all steps now use full-width
+          <div className="p-3 sm:p-4 lg:p-5 overflow-y-auto" style={{ maxHeight: 'calc(95vh - 240px)' }}>
+            {renderStepContent()}
           </div>
         )}
 
@@ -1503,7 +1471,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                     {validationErrors.venue_address && <span className="text-xs text-red-600">• Address</span>}
                     {validationErrors.venue_capacity && <span className="text-xs text-red-600">• Capacity</span>}
                     {validationErrors.event_date && <span className="text-xs text-red-600">• Date</span>}
-                    {validationErrors.event_total_tickets && <span className="text-xs text-red-600">• Total Tickets</span>}
+                    {validationErrors.event_total_tickets && <span className="text-xs text-red-600">• Total Tickets Available</span>}
                     {validationErrors.event_artists && <span className="text-xs text-red-600">• At least one Artist Name</span>}
                   </div>
                 </div>
