@@ -322,6 +322,38 @@ const ArtistDetails = () => {
             </div>
           </div>
 
+          {/* Navigation Bar */}
+          <div className="mb-8">
+            <nav className="flex flex-wrap gap-2">
+              <button
+                onClick={() => document.getElementById('events-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Events
+              </button>
+              <button
+                onClick={() => document.getElementById('analytics-city-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Analytics - City
+              </button>
+              <button
+                onClick={() => document.getElementById('analytics-gender-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Analytics - Gender
+              </button>
+              {vibrateBio.FAQ.length > 0 && (
+                <button
+                  onClick={() => document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  FAQ
+                </button>
+              )}
+            </nav>
+          </div>
+
           {/* Main Content - Left/Right Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column - Artist Info */}
@@ -481,7 +513,8 @@ const ArtistDetails = () => {
             {/* Right Column - Analytics and Events List */}
             <div className="lg:col-span-9">
               {/* Events Section */}
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Events</h3>
+              <div id="events-section">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6">Events</h3>
                 
                 {/* Local Events Section */}
                 {artist.events.length > 0 && (
@@ -858,9 +891,13 @@ const ArtistDetails = () => {
                   </div>
                   </div>
                 )}
+              </div>
               {/* --- BEGIN: Analytics Sections (moved above events) --- */}
-              {/* Spotify Listeners by City */}
-              {spotifyListeners.byCity.length > 0 && (
+              <div id="analytics-section">
+                {/* City Analytics Section */}
+                <div id="analytics-city-section">
+                  {/* Spotify Listeners by City */}
+                  {spotifyListeners.byCity.length > 0 && (
                 <div className="w-full">
                   <div className="text-base font-medium text-black mb-2">
                     Spotify Listeners by City
@@ -1001,7 +1038,10 @@ const ArtistDetails = () => {
                   </div>
                 </div>
               )}
-              {Object.keys(instagramAudience.byGender).length > 0 && Object.keys(instagramAudience.byAge).length > 0 ? (
+                </div>
+                {/* Gender Analytics Section */}
+                <div id="analytics-gender-section">
+                  {Object.keys(instagramAudience.byGender).length > 0 && Object.keys(instagramAudience.byAge).length > 0 ? (
                 <div className="flex flex-col lg:flex-row gap-8">
                   {/* Gender Distribution */}
                   <div className="w-full flex-1">
@@ -1651,13 +1691,15 @@ const ArtistDetails = () => {
                   )}
                 </>
               )}
+                </div>
+              </div>
               {/* --- END: Analytics Sections --- */}
 
               <div className="card p-6">
 
                 {/* FAQ Section */}
                 {vibrateBio.FAQ.length > 0 && (
-                  <div className="mt-8">
+                  <div id="faq-section" className="mt-8">
                     <h3 className="text-xl font-semibold text-gray-900 mb-6">FAQ</h3>
 
                     <div className="mb-8">
