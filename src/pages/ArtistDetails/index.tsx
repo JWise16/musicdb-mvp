@@ -405,7 +405,7 @@ const ArtistDetails = () => {
                            'bandcamp',
                            'napster',
                            'bandsintown',
-                           'facebook'
+                           'beatport'
                          ].includes(link.channel.toLowerCase()))
                          .map((link) => (
                            <a
@@ -488,7 +488,7 @@ const ArtistDetails = () => {
                   <div className="mb-8">
                     <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
                       <span className="inline-block w-3 h-3 bg-purple-500 rounded-full"></span>
-                      Your Database Events ({artist.events.length})
+                      Our Database Events ({artist.events.length})
                     </h4>
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
@@ -572,7 +572,7 @@ const ArtistDetails = () => {
                   <div className="mb-8">
                     <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
                       <span className="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
-                      Upcoming Events via Viberate 
+                      Upcoming Events Tracked via External Partners 
                       {upcomingEventsToShow >= vibrateUpcomingEvents.length
                         ? ` (${vibrateUpcomingEvents.length})`
                         : ` (${upcomingEventsToShow} of ${vibrateUpcomingEvents.length})`}
@@ -730,7 +730,7 @@ const ArtistDetails = () => {
                   <div className="mb-8">
                     <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
                       <span className="inline-block w-3 h-3 bg-gray-500 rounded-full"></span>
-                      Past Events via Viberate 
+                      Past Events Tracked via External Partners 
                       {pastEventsToShow >= vibratePastEvents.length
                         ? ` (${vibratePastEvents.length})`
                         : ` (${pastEventsToShow} of ${vibratePastEvents.length})`}
@@ -1655,39 +1655,36 @@ const ArtistDetails = () => {
 
               <div className="card p-6">
 
-                {/* Artist Bio Section */}
-                {(vibrateBio.BIO.length > 0 || vibrateBio.FAQ.length > 0) && (
+                {/* FAQ Section */}
+                {vibrateBio.FAQ.length > 0 && (
                   <div className="mt-8">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Artist Bio & Information</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-6">FAQ</h3>
 
-                    {/* FAQ Section */}
-                    {vibrateBio.FAQ.length > 0 && (
-                      <div className="mb-8">
-                        <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                          <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
-                          Frequently Asked Questions
-                        </h4>
-                        <div className="space-y-4">
-                          {vibrateBio.FAQ.slice(0, 10).map((item, index) => (
-                            <details key={index} className="bg-white border border-gray-200 rounded-lg">
-                              <summary className="px-4 py-3 cursor-pointer hover:bg-gray-50 font-medium text-gray-900 text-sm">
-                                {item.question}
-                              </summary>
-                              <div className="px-4 pb-3 text-sm text-gray-700 leading-relaxed border-t border-gray-100 pt-3">
-                                {item.answer}
-                              </div>
-                            </details>
-                          ))}
-                          {vibrateBio.FAQ.length > 10 && (
-                            <div className="text-center">
-                              <p className="text-sm text-gray-500">
-                                Showing 10 of {vibrateBio.FAQ.length} questions
-                              </p>
+                    <div className="mb-8">
+                      <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
+                        Frequently Asked Questions
+                      </h4>
+                      <div className="space-y-4">
+                        {vibrateBio.FAQ.slice(0, 10).map((item, index) => (
+                          <details key={index} className="bg-white border border-gray-200 rounded-lg">
+                            <summary className="px-4 py-3 cursor-pointer hover:bg-gray-50 font-medium text-gray-900 text-sm">
+                              {item.question}
+                            </summary>
+                            <div className="px-4 pb-3 text-sm text-gray-700 leading-relaxed border-t border-gray-100 pt-3">
+                              {item.answer}
                             </div>
-                          )}
-                        </div>
+                          </details>
+                        ))}
+                        {vibrateBio.FAQ.length > 10 && (
+                          <div className="text-center">
+                            <p className="text-sm text-gray-500">
+                              Showing 10 of {vibrateBio.FAQ.length} questions
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
 
