@@ -3,7 +3,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { UserProfileService } from '../../../services/userProfileService';
 import { VenueService } from '../../../services/venueService';
 import { EventService } from '../../../services/eventService';
-import { formatSimpleDate } from '../../../utils/dateUtils';
+
 import Avatar from '../../common/Avatar';
 import OnboardingEarlyAccess from './OnboardingEarlyAccess';
 import logo from '../../../assets/logo.png';
@@ -65,7 +65,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
-  const [earlyAccessError, setEarlyAccessError] = useState<string>('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-save keys for localStorage
@@ -75,9 +75,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     event: 'onboarding-event-draft'
   };
 
-  // Track if data was restored from localStorage
-  const [hasRestoredData, setHasRestoredData] = useState(false);
-  
   //console.log('OnboardingWizard: isOpen =', isOpen, 'user =', user?.email, 'prefillData =', prefillData, 'step =', step, 'eventNumber =', eventNumber);
   
   const [profile, setProfile] = useState<UserProfile>({
@@ -158,9 +155,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           dataRestored = true;
         }
 
-        // Set flag if any data was restored
+        // Log if any data was restored
         if (dataRestored) {
-          setHasRestoredData(true);
           console.log('Data restored from localStorage');
           
           // Force a re-render after a small delay to ensure state updates are applied
@@ -885,13 +881,13 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const renderEarlyAccessStep = () => (
     <OnboardingEarlyAccess
       onValidCode={() => {
-        setEarlyAccessError('');
         // Mark early access as validated
         localStorage.setItem('musicdb-early-access-validated', 'true');
         onClose();
       }}
       onError={(message) => {
-        setEarlyAccessError(message);
+        // Error is handled by the OnboardingEarlyAccess component
+        console.log('Early access error:', message);
       }}
     />
   );
@@ -1204,199 +1200,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     }
   };
 
-  const renderPreview = () => {
-    switch (step) {
-      case 'profile':
-        return (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Preview</h3>
-            
-            <div className="space-y-4">
-              {/* Centered Avatar above name/email */}
-              <div className="flex flex-col items-center mb-2">
-                <Avatar 
-                  src={avatarPreview} 
-                  size="md" 
-                  fallback={profile.full_name || 'Your Name'}
-                />
-                <div className="mt-3 text-center">
-                  <div className="font-medium text-gray-900">
-                    {profile.full_name || 'Your Name'}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {profile.email || 'your.email@example.com'}
-                  </div>
-                </div>
-              </div>
 
-
-
-              {profile.role && (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-1">Role</div>
-                  <div className="text-sm text-gray-600 capitalize">
-                    {profile.role === 'other' 
-                      ? profile.custom_role 
-                      : profile.role.replace('_', ' ')
-                    }
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-
-      case 'venue':
-        return (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Venue Preview</h3>
-            
-            <div className="space-y-3">
-              {venueImagePreview && (
-                <div className="mb-4">
-                  <img 
-                    src={venueImagePreview} 
-                    alt="Venue preview" 
-                    className="w-full h-32 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-              
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-1">Name</div>
-                <div className="text-sm text-gray-900">{venue.name || 'Venue Name'}</div>
-              </div>
-              
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-1">Location</div>
-                <div className="text-sm text-gray-900">{venue.location || 'City, State'}</div>
-              </div>
-              
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-1">Address</div>
-                <div className="text-sm text-gray-900">{venue.address || 'Full Address'}</div>
-              </div>
-              
-              {venue.capacity && (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-1">Capacity</div>
-                  <div className="text-sm text-gray-900">{venue.capacity.toLocaleString()}</div>
-                </div>
-              )}
-              
-
-            </div>
-          </div>
-        );
-
-      case 'early-access':
-        return (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Early Access</h3>
-            
-            <div className="space-y-4">
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <div className="text-sm text-gray-600">
-                  Enter your early access code to unlock the platform and continue setting up your events.
-                </div>
-              </div>
-              
-              {earlyAccessError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-700">{earlyAccessError}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-
-      case 'events':
-        return (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Preview</h3>
-            
-            <div className="space-y-3">
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-1">Event Name</div>
-                <div className="text-sm text-gray-900">{event.name}</div>
-              </div>
-              
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-1">Date</div>
-                <div className="text-sm text-gray-900">
-                  {event.date ? formatSimpleDate(event.date) : 'Select Date'}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-1">Total Tickets Available</div>
-                  <div className="text-sm text-gray-900">{event.total_tickets ? event.total_tickets.toLocaleString() : 'Not specified'}</div>
-                </div>
-                
-                {event.tickets_sold !== undefined && (
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 mb-1">Tickets Sold</div>
-                    <div className="text-sm text-gray-900">{event.tickets_sold.toLocaleString()}</div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                {priceType === 'single' && event.ticket_price && (
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 mb-1">Ticket Price</div>
-                    <div className="text-sm text-gray-900">${event.ticket_price}</div>
-                  </div>
-                )}
-                
-                {priceType === 'range' && (event.ticket_price_min || event.ticket_price_max) && (
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 mb-1">Price Range</div>
-                    <div className="text-sm text-gray-900">
-                      ${event.ticket_price_min || 0} - ${event.ticket_price_max || 0}
-                    </div>
-                  </div>
-                )}
-                
-                {event.bar_sales && (
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 mb-1">Bar Sales</div>
-                    <div className="text-sm text-gray-900">${event.bar_sales}</div>
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-1">Artists</div>
-                <div className="space-y-1">
-                  {event.artists.map((artist, index) => (
-                    <div key={index} className="text-sm text-gray-900">
-                      {artist.name || 'Artist Name'} {artist.is_headliner && '(Headliner)'}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {event.notes && (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-1">Notes</div>
-                  <div className="text-sm text-gray-600">{event.notes}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
 
   const getProgressPercentage = () => {
     switch (step) {
