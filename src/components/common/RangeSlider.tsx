@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 interface RangeSliderProps {
   min: number;
@@ -21,10 +21,18 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState<'min' | 'max' | null>(null);
   const [localValue, setLocalValue] = useState(value);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{ value: [number, number]; clientX: number } | null>(null);
+  
+  // Generate unique ID for this slider instance
+  const sliderId = useMemo(() => `range-slider-${Math.random().toString(36).substr(2, 9)}`, []);
 
+  // Update local value only when not dragging to prevent conflicts
   useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
+    if (!isDragging) {
+      setLocalValue(value);
+    }
+  }, [value, isDragging]);
 
   const calculatePosition = useCallback((val: number) => {
     return ((val - min) / (max - min)) * 100;
@@ -32,50 +40,79 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
 
   const calculateValue = useCallback((position: number) => {
     const rawValue = min + (position / 100) * (max - min);
-    return Math.round(rawValue / step) * step;
+    const steppedValue = Math.round(rawValue / step) * step;
+    return Math.max(min, Math.min(max, steppedValue));
   }, [min, max, step]);
 
-  const handleMouseDown = (handle: 'min' | 'max') => (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(handle);
-  };
+  const updateValue = useCallback((clientX: number) => {
+    if (!sliderRef.current || !isDragging || !dragStartRef.current) return;
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) return;
-
-    const slider = document.getElementById('range-slider-track');
-    if (!slider) return;
-
-    const rect = slider.getBoundingClientRect();
-    const position = ((e.clientX - rect.left) / rect.width) * 100;
-    const newValue = Math.max(min, Math.min(max, calculateValue(position)));
+    const rect = sliderRef.current.getBoundingClientRect();
+    const position = ((clientX - rect.left) / rect.width) * 100;
+    const newValue = calculateValue(position);
 
     setLocalValue(prev => {
-      if (isDragging === 'min') {
-        return [Math.min(newValue, prev[1]), prev[1]];
-      } else {
-        return [prev[0], Math.max(newValue, prev[0])];
-      }
+      const updated: [number, number] = isDragging === 'min' 
+        ? [Math.min(newValue, prev[1]), prev[1]]
+        : [prev[0], Math.max(newValue, prev[0])];
+      
+      return updated;
     });
-  }, [isDragging, min, max, calculateValue]);
+  }, [isDragging, calculateValue]);
 
-  const handleMouseUp = useCallback(() => {
-    if (isDragging) {
-      onChange(localValue);
-      setIsDragging(null);
+  const handlePointerDown = (handle: 'min' | 'max') => (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Capture pointer for consistent tracking
+    if (e.currentTarget instanceof Element) {
+      e.currentTarget.setPointerCapture(e.pointerId);
     }
-  }, [isDragging, localValue, onChange]);
+    
+    setIsDragging(handle);
+    dragStartRef.current = {
+      value: localValue,
+      clientX: e.clientX
+    };
+  };
 
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    updateValue(e.clientX);
+  }, [isDragging, updateValue]);
+
+  const handlePointerUp = useCallback((e: PointerEvent) => {
+    if (!isDragging) return;
+    
+    e.preventDefault();
+    
+    // Release pointer capture
+    if (e.target instanceof Element) {
+      e.target.releasePointerCapture(e.pointerId);
+    }
+    
+    // Final update and commit changes
+    updateValue(e.clientX);
+    onChange(localValue);
+    setIsDragging(null);
+    dragStartRef.current = null;
+  }, [isDragging, localValue, onChange, updateValue]);
+
+  // Set up global event listeners when dragging starts
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('pointermove', handlePointerMove);
+      document.addEventListener('pointerup', handlePointerUp);
+      document.addEventListener('pointercancel', handlePointerUp);
+      
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('pointermove', handlePointerMove);
+        document.removeEventListener('pointerup', handlePointerUp);
+        document.removeEventListener('pointercancel', handlePointerUp);
       };
     }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, handlePointerMove, handlePointerUp]);
 
   const handleInputChange = (type: 'min' | 'max', inputValue: string) => {
     const numValue = parseInt(inputValue, 10);
@@ -129,13 +166,14 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
           
           {/* Slider track positioned at bottom as x-axis */}
           <div 
-            id="range-slider-track"
-            className="absolute w-full h-1 bg-gray-300 rounded-full cursor-pointer"
+            ref={sliderRef}
+            id={sliderId}
+            className="absolute w-full h-1 bg-gray-300 rounded-full cursor-pointer touch-none"
             style={{ bottom: '-1px' }}
           >
             {/* Active range */}
             <div
-              className="absolute h-full bg-gray-900 rounded-full"
+              className="absolute h-full bg-gray-900 rounded-full pointer-events-none"
               style={{
                 left: `${minPos}%`,
                 width: `${maxPos - minPos}%`,
@@ -144,16 +182,16 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
             
             {/* Min handle */}
             <div
-              className="absolute w-6 h-6 bg-white border-2 border-gray-400 rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 shadow-sm hover:border-gray-600 transition-colors"
+              className={`absolute w-6 h-6 bg-white border-2 border-gray-400 rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 shadow-sm hover:border-gray-600 transition-colors touch-none select-none ${isDragging === 'min' ? 'scale-110 border-gray-600' : ''}`}
               style={{ left: `${minPos}%`, top: '50%' }}
-              onMouseDown={handleMouseDown('min')}
+              onPointerDown={handlePointerDown('min')}
             />
             
             {/* Max handle */}
             <div
-              className="absolute w-6 h-6 bg-white border-2 border-gray-400 rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 shadow-sm hover:border-gray-600 transition-colors"
+              className={`absolute w-6 h-6 bg-white border-2 border-gray-400 rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 shadow-sm hover:border-gray-600 transition-colors touch-none select-none ${isDragging === 'max' ? 'scale-110 border-gray-600' : ''}`}
               style={{ left: `${maxPos}%`, top: '50%' }}
-              onMouseDown={handleMouseDown('max')}
+              onPointerDown={handlePointerDown('max')}
             />
           </div>
         </div>

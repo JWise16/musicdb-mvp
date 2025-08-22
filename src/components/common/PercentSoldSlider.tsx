@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 interface PercentSoldSliderProps {
   value: [number, number];
@@ -13,60 +13,96 @@ const PercentSoldSlider: React.FC<PercentSoldSliderProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState<'min' | 'max' | null>(null);
   const [localValue, setLocalValue] = useState(value);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{ value: [number, number]; clientX: number } | null>(null);
+  
+  // Generate unique ID for this slider instance
+  const sliderId = useMemo(() => `percent-slider-${Math.random().toString(36).substr(2, 9)}`, []);
 
+  // Update local value only when not dragging to prevent conflicts
   useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
+    if (!isDragging) {
+      setLocalValue(value);
+    }
+  }, [value, isDragging]);
 
   const calculatePosition = useCallback((val: number) => {
-    return val; // Already in percentage
+    return Math.max(0, Math.min(100, val)); // Clamp and return percentage
   }, []);
 
   const calculateValue = useCallback((position: number) => {
     return Math.round(Math.max(0, Math.min(100, position)));
   }, []);
 
-  const handleMouseDown = (handle: 'min' | 'max') => (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(handle);
-  };
+  const updateValue = useCallback((clientX: number) => {
+    if (!sliderRef.current || !isDragging || !dragStartRef.current) return;
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) return;
-
-    const slider = document.getElementById('percent-slider-track');
-    if (!slider) return;
-
-    const rect = slider.getBoundingClientRect();
-    const position = ((e.clientX - rect.left) / rect.width) * 100;
+    const rect = sliderRef.current.getBoundingClientRect();
+    const position = ((clientX - rect.left) / rect.width) * 100;
     const newValue = calculateValue(position);
 
     setLocalValue(prev => {
-      if (isDragging === 'min') {
-        return [Math.min(newValue, prev[1]), prev[1]];
-      } else {
-        return [prev[0], Math.max(newValue, prev[0])];
-      }
+      const updated: [number, number] = isDragging === 'min' 
+        ? [Math.min(newValue, prev[1]), prev[1]]
+        : [prev[0], Math.max(newValue, prev[0])];
+      
+      return updated;
     });
   }, [isDragging, calculateValue]);
 
-  const handleMouseUp = useCallback(() => {
-    if (isDragging) {
-      onChange(localValue);
-      setIsDragging(null);
+  const handlePointerDown = (handle: 'min' | 'max') => (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Capture pointer for consistent tracking
+    if (e.currentTarget instanceof Element) {
+      e.currentTarget.setPointerCapture(e.pointerId);
     }
-  }, [isDragging, localValue, onChange]);
+    
+    setIsDragging(handle);
+    dragStartRef.current = {
+      value: localValue,
+      clientX: e.clientX
+    };
+  };
 
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    updateValue(e.clientX);
+  }, [isDragging, updateValue]);
+
+  const handlePointerUp = useCallback((e: PointerEvent) => {
+    if (!isDragging) return;
+    
+    e.preventDefault();
+    
+    // Release pointer capture
+    if (e.target instanceof Element) {
+      e.target.releasePointerCapture(e.pointerId);
+    }
+    
+    // Final update and commit changes
+    updateValue(e.clientX);
+    onChange(localValue);
+    setIsDragging(null);
+    dragStartRef.current = null;
+  }, [isDragging, localValue, onChange, updateValue]);
+
+  // Set up global event listeners when dragging starts
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('pointermove', handlePointerMove);
+      document.addEventListener('pointerup', handlePointerUp);
+      document.addEventListener('pointercancel', handlePointerUp);
+      
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('pointermove', handlePointerMove);
+        document.removeEventListener('pointerup', handlePointerUp);
+        document.removeEventListener('pointercancel', handlePointerUp);
       };
     }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, handlePointerMove, handlePointerUp]);
 
   const handleInputChange = (type: 'min' | 'max', inputValue: string) => {
     const numValue = parseInt(inputValue, 10);
@@ -91,12 +127,13 @@ const PercentSoldSlider: React.FC<PercentSoldSliderProps> = ({
         <div className="relative h-6 mb-4">
           {/* Slider track */}
           <div 
-            id="percent-slider-track"
-            className="absolute top-1/2 transform -translate-y-1/2 w-full h-2 bg-gray-200 rounded-full cursor-pointer"
+            ref={sliderRef}
+            id={sliderId}
+            className="absolute top-1/2 transform -translate-y-1/2 w-full h-2 bg-gray-200 rounded-full cursor-pointer touch-none"
           >
             {/* Active range */}
             <div
-              className="absolute h-full bg-black rounded-full"
+              className="absolute h-full bg-black rounded-full pointer-events-none"
               style={{
                 left: `${minPos}%`,
                 width: `${maxPos - minPos}%`,
@@ -105,16 +142,16 @@ const PercentSoldSlider: React.FC<PercentSoldSliderProps> = ({
             
             {/* Min handle */}
             <div
-              className="absolute w-5 h-5 bg-white border-2 border-black rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 shadow-sm hover:border-gray-800 transition-colors"
+              className={`absolute w-5 h-5 bg-white border-2 border-black rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 shadow-sm hover:border-gray-800 transition-colors touch-none select-none ${isDragging === 'min' ? 'scale-110 border-gray-800' : ''}`}
               style={{ left: `${minPos}%`, top: '50%' }}
-              onMouseDown={handleMouseDown('min')}
+              onPointerDown={handlePointerDown('min')}
             />
             
             {/* Max handle */}
             <div
-              className="absolute w-5 h-5 bg-white border-2 border-black rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 shadow-sm hover:border-gray-800 transition-colors"
+              className={`absolute w-5 h-5 bg-white border-2 border-black rounded-full cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 shadow-sm hover:border-gray-800 transition-colors touch-none select-none ${isDragging === 'max' ? 'scale-110 border-gray-800' : ''}`}
               style={{ left: `${maxPos}%`, top: '50%' }}
-              onMouseDown={handleMouseDown('max')}
+              onPointerDown={handlePointerDown('max')}
             />
           </div>
         </div>
