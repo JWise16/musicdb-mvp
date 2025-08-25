@@ -11,7 +11,13 @@ interface VenueSizeDropdownProps {
 
 const formatRange = (range: [number, number]) => {
   const [min, max] = range;
-  return `${min} - ${max >= 1000 ? '1000+' : max}`;
+  const formatValue = (val: number) => {
+    if (val >= 1000) {
+      return '1000+';
+    }
+    return val.toString();
+  };
+  return `${formatValue(min)} - ${formatValue(max)}`;
 };
 
 const VenueSizeDropdown: React.FC<VenueSizeDropdownProps> = ({ min, max, value, onChange, histogram }) => {

@@ -21,18 +21,21 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState<'min' | 'max' | null>(null);
   const [localValue, setLocalValue] = useState(value);
+  const [inputValues, setInputValues] = useState({ min: value[0].toString(), max: value[1].toString() });
+  const [isInputFocused, setIsInputFocused] = useState<'min' | 'max' | null>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ value: [number, number]; clientX: number } | null>(null);
   
   // Generate unique ID for this slider instance
   const sliderId = useMemo(() => `range-slider-${Math.random().toString(36).substr(2, 9)}`, []);
 
-  // Update local value only when not dragging to prevent conflicts
+  // Update local value and input values when prop changes (but not when dragging or input is focused)
   useEffect(() => {
-    if (!isDragging) {
+    if (!isDragging && !isInputFocused) {
       setLocalValue(value);
+      setInputValues({ min: value[0].toString(), max: value[1].toString() });
     }
-  }, [value, isDragging]);
+  }, [value, isDragging, isInputFocused]);
 
   const calculatePosition = useCallback((val: number) => {
     return ((val - min) / (max - min)) * 100;
@@ -115,16 +118,67 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
   }, [isDragging, handlePointerMove, handlePointerUp]);
 
   const handleInputChange = (type: 'min' | 'max', inputValue: string) => {
-    const numValue = parseInt(inputValue, 10);
-    if (isNaN(numValue)) return;
+    // Update input display immediately
+    setInputValues(prev => ({
+      ...prev,
+      [type]: inputValue
+    }));
 
+    // Parse the value (remove any '+' symbols)
+    const cleanValue = inputValue.replace('+', '');
+    const numValue = parseInt(cleanValue, 10);
+    
+    // If invalid or empty, don't update the actual value yet
+    if (isNaN(numValue) || cleanValue === '') {
+      return;
+    }
+
+    // Clamp the value to valid range
     const clampedValue = Math.max(min, Math.min(max, numValue));
+    
+    // Create new range value
     const newValue: [number, number] = type === 'min' 
       ? [Math.min(clampedValue, localValue[1]), localValue[1]]
       : [localValue[0], Math.max(clampedValue, localValue[0])];
     
+    // Update local value and commit to parent
     setLocalValue(newValue);
     onChange(newValue);
+  };
+
+  const handleInputBlur = (type: 'min' | 'max') => () => {
+    setIsInputFocused(null);
+    
+    // Validate and fix input value on blur
+    const inputValue = inputValues[type];
+    const cleanValue = inputValue.replace('+', '');
+    const numValue = parseInt(cleanValue, 10);
+    
+    if (isNaN(numValue) || cleanValue === '') {
+      // Reset to current local value
+      setInputValues(prev => ({
+        ...prev,
+        [type]: localValue[type === 'min' ? 0 : 1].toString()
+      }));
+    } else {
+      // Ensure the value is properly clamped and formatted
+      const clampedValue = Math.max(min, Math.min(max, numValue));
+      setInputValues(prev => ({
+        ...prev,
+        [type]: clampedValue.toString()
+      }));
+    }
+  };
+
+  const handleInputFocus = (type: 'min' | 'max') => () => {
+    setIsInputFocused(type);
+  };
+
+  const handleInputKeyDown = (type: 'min' | 'max') => (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow Enter key to blur the input
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    }
   };
 
   const minPos = calculatePosition(localValue[0]);
@@ -205,8 +259,11 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
                 type="number"
                 min={min}
                 max={max}
-                value={localValue[0]}
+                value={inputValues.min}
                 onChange={(e) => handleInputChange('min', e.target.value)}
+                onFocus={handleInputFocus('min')}
+                onBlur={handleInputBlur('min')}
+                onKeyDown={handleInputKeyDown('min')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 text-center"
               />
             </div>
@@ -218,8 +275,11 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
                 type="number"
                 min={min}
                 max={max}
-                value={localValue[1] >= 1000 ? '1000+' : localValue[1]}
-                onChange={(e) => handleInputChange('max', e.target.value.replace('+', ''))}
+                value={inputValues.max}
+                onChange={(e) => handleInputChange('max', e.target.value)}
+                onFocus={handleInputFocus('max')}
+                onBlur={handleInputBlur('max')}
+                onKeyDown={handleInputKeyDown('max')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 text-center"
               />
             </div>
