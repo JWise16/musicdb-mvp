@@ -284,40 +284,6 @@ export class EventService {
   // Get all events with full details and filtering
   static async getEventsWithFilters(filters: EventFilters = {}): Promise<EventWithDetails[]> {
     try {
-      // Debug: Test direct query to event_artists table
-      const { data: testEventArtists, error: testError } = await supabase
-        .from('event_artists')
-        .select('*, artists(*), events(*)')
-        .limit(10);
-        
-      // Debug: Also try without the joins to see if that's the issue
-      const { data: simpleEventArtists, error: simpleError } = await supabase
-        .from('event_artists')
-        .select('*')
-        .limit(10);
-      
-        console.log('Direct event_artists query result:', testEventArtists);
-        console.log('Direct event_artists query error:', testError);
-        console.log('Simple event_artists query result:', simpleEventArtists);
-        console.log('Simple event_artists query error:', simpleError);
-      
-      // Show which events have artists
-      if (testEventArtists) {
-        testEventArtists.forEach(ea => {
-          console.log(`Event "${ea.events?.name}" has artist "${ea.artists?.name}" (headliner: ${ea.is_headliner})`);
-        });
-      }
-      
-      // Debug: Count total event_artists vs events with artists
-      const { count: totalEventArtists } = await supabase
-        .from('event_artists')
-        .select('*', { count: 'exact', head: true });
-      
-      const { count: totalEvents } = await supabase
-        .from('events')
-        .select('*', { count: 'exact', head: true });
-        
-      console.log(`Total event_artists records: ${totalEventArtists}, Total events: ${totalEvents}`);
       let query = supabase
         .from('events')
         .select(`
@@ -383,9 +349,7 @@ export class EventService {
         return [];
       }
 
-      // Debug: Log the raw data from the database
-      console.log('Raw events from database:', events);
-      console.log('First event event_artists:', events?.[0]?.event_artists);
+
 
       // Process events to add calculated fields and apply remaining filters
       let processedEvents = events?.map(event => {
@@ -486,6 +450,222 @@ export class EventService {
       return processedEvents as EventWithDetails[];
     } catch (error) {
       console.error('Error in getEventsWithFilters:', error);
+      return [];
+    }
+  }
+
+  // Get all events with full details and filtering (Improved version)
+  static async getEventsWithFiltersImproved(filters: EventFilters = {}): Promise<EventWithDetails[]> {
+    try {
+      
+      // First, get all events with basic venue data
+      let baseQuery = supabase
+        .from('events')
+        .select(`
+          *,
+          venues!inner (*)
+        `)
+        .order('date', { ascending: false });
+
+      // Apply database-level filters that don't affect joins
+      if (filters.timeFrame) {
+        const now = new Date().toISOString();
+        switch (filters.timeFrame) {
+          case 'upcoming':
+            baseQuery = baseQuery.gte('date', now);
+            break;
+          case 'past':
+            baseQuery = baseQuery.lt('date', now);
+            break;
+        }
+      }
+
+      if (filters.dateFrom) {
+        baseQuery = baseQuery.gte('date', filters.dateFrom);
+      }
+
+      if (filters.dateTo) {
+        const dateToEndOfDay = new Date(filters.dateTo);
+        dateToEndOfDay.setHours(23, 59, 59, 999);
+        baseQuery = baseQuery.lte('date', dateToEndOfDay.toISOString());
+      }
+
+      const { data: events, error } = await baseQuery;
+
+      if (error) {
+        console.error('Error fetching events:', error);
+        return [];
+      }
+
+
+
+      // Now get the additional data for these events
+      const eventIds = events?.map(e => e.id) || [];
+      
+      if (eventIds.length === 0) {
+        return [];
+      }
+
+      // Get event_artists data
+      const { data: eventArtists, error: artistsError } = await supabase
+        .from('event_artists')
+        .select(`
+          *,
+          artists (*)
+        `)
+        .in('event_id', eventIds);
+
+      if (artistsError) {
+        console.error('Error fetching event artists:', artistsError);
+      }
+
+      // Get event_metrics data
+      const { data: eventMetrics, error: metricsError } = await supabase
+        .from('event_metrics')
+        .select('*')
+        .in('event_id', eventIds);
+
+      if (metricsError) {
+        console.error('Error fetching event metrics:', metricsError);
+      }
+
+      // Combine the data
+      const eventsWithDetails = events?.map((event: any) => {
+        const eventArtistsForEvent = eventArtists?.filter((ea: any) => ea.event_id === event.id) || [];
+        const eventMetricsForEvent = eventMetrics?.find((em: any) => em.event_id === event.id) || null;
+
+        const percentageSold = event.tickets_sold && event.total_tickets 
+          ? (event.tickets_sold / event.total_tickets) * 100 
+          : 0;
+        
+        const totalRevenue = eventMetricsForEvent?.total_revenue || 
+          (event.tickets_sold ? event.tickets_sold * event.ticket_price : 0) + 
+          (event.bar_sales || 0);
+
+        return {
+          ...event,
+          event_artists: eventArtistsForEvent,
+          event_metrics: eventMetricsForEvent,
+          percentage_sold: percentageSold,
+          total_revenue: totalRevenue,
+        };
+      }) || [];
+
+      // Apply JavaScript-level filters
+      let filteredEvents = eventsWithDetails;
+
+      // Apply city filter
+      if (filters.city) {
+        filteredEvents = filteredEvents.filter((event: any) => 
+          event.venues?.location === filters.city
+        );
+      }
+
+      // Apply venue size filter
+      if (filters.venueSizeRange) {
+        filteredEvents = filteredEvents.filter((event: any) =>
+          event.venues?.capacity && 
+          event.venues.capacity >= filters.venueSizeRange![0] && 
+          event.venues.capacity <= filters.venueSizeRange![1]
+        );
+      } else if (filters.venueSize) {
+        const sizeRanges = {
+          small: { min: 0, max: 200 },
+          medium: { min: 201, max: 1000 },
+          large: { min: 1001, max: 999999 }
+        };
+        const range = sizeRanges[filters.venueSize];
+        filteredEvents = filteredEvents.filter((event: any) => 
+          event.venues?.capacity && 
+          event.venues.capacity >= range.min && 
+          event.venues.capacity <= range.max
+        );
+      }
+
+      // Apply search query filter
+      if (filters.searchQuery) {
+        const searchLower = filters.searchQuery.toLowerCase();
+        filteredEvents = filteredEvents.filter((event: any) => {
+          // Search in venue name
+          if (event.venues?.name?.toLowerCase().includes(searchLower)) {
+            return true;
+          }
+          
+          // Search in headliner and supporting artist names
+          if (event.event_artists?.some((ea: any) => 
+            ea.artists?.name?.toLowerCase().includes(searchLower)
+          )) {
+            return true;
+          }
+          
+          return false;
+        });
+      }
+
+      // Apply percentage sold filter
+      if (filters.percentageSoldRange) {
+        filteredEvents = filteredEvents.filter((event: any) =>
+          event.percentage_sold >= filters.percentageSoldRange![0] && 
+          event.percentage_sold <= filters.percentageSoldRange![1]
+        );
+      } else if (filters.percentageSold) {
+        const percentageRanges = {
+          low: { min: 0, max: 33 },
+          medium: { min: 34, max: 66 },
+          high: { min: 67, max: 100 }
+        };
+        const range = percentageRanges[filters.percentageSold];
+        filteredEvents = filteredEvents.filter((event: any) => 
+          event.percentage_sold >= range.min && event.percentage_sold <= range.max
+        );
+      }
+
+      // Apply genre filter
+      if (filters.genre) {
+        filteredEvents = filteredEvents.filter((event: any) =>
+          event.event_artists?.some((ea: any) => 
+            ea.artists?.genre?.toLowerCase().includes(filters.genre!.toLowerCase())
+          )
+        );
+      }
+
+      // Apply sorting
+      if (filters.sortBy) {
+        filteredEvents.sort((a: any, b: any) => {
+          switch (filters.sortBy) {
+            case 'date_asc':
+              return new Date(a.date).getTime() - new Date(b.date).getTime();
+            case 'date_desc':
+              return new Date(b.date).getTime() - new Date(a.date).getTime();
+            case 'percent_sold_desc':
+              return b.percentage_sold - a.percentage_sold;
+            case 'percent_sold_asc':
+              return a.percentage_sold - b.percentage_sold;
+            case 'capacity_desc':
+              return (b.venues?.capacity || 0) - (a.venues?.capacity || 0);
+            case 'capacity_asc':
+              return (a.venues?.capacity || 0) - (b.venues?.capacity || 0);
+            case 'price_desc': {
+              const priceB = b.ticket_price || b.ticket_price_max || 0;
+              const priceA = a.ticket_price || a.ticket_price_max || 0;
+              return priceB - priceA;
+            }
+            case 'price_asc': {
+              const priceA2 = a.ticket_price || a.ticket_price_max || 0;
+              const priceB2 = b.ticket_price || b.ticket_price_max || 0;
+              return priceA2 - priceB2;
+            }
+            default:
+              return 0;
+          }
+        });
+      }
+
+
+
+      return filteredEvents as EventWithDetails[];
+    } catch (error) {
+      console.error('Error in getEventsWithFiltersImproved:', error as Error);
       return [];
     }
   }
@@ -657,4 +837,6 @@ export class EventService {
       return { success: false, error: 'Failed to update event' };
     }
   }
+
+
 } 

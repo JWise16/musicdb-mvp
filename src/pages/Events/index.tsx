@@ -51,7 +51,7 @@ const Events = () => {
       setIsLoading(true);
       try {
         // Always force timeFrame to 'past' to exclude upcoming events
-        const eventsData = await EventService.getEventsWithFilters({ timeFrame: 'past' });
+        const eventsData = await EventService.getEventsWithFiltersImproved({ timeFrame: 'past' });
         
         setFilteredEvents(eventsData);
       } catch (error) {
@@ -72,7 +72,7 @@ const Events = () => {
       try {
         // Always force timeFrame to 'past' to exclude upcoming events, regardless of user selection
         const filtersWithPastOnly = { ...filters, timeFrame: 'past' as const };
-        const filteredData = await EventService.getEventsWithFilters(filtersWithPastOnly);
+        const filteredData = await EventService.getEventsWithFiltersImproved(filtersWithPastOnly);
         setFilteredEvents(filteredData);
       } catch (error) {
         console.error('Error applying filters:', error);
