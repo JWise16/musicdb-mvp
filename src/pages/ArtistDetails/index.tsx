@@ -3,8 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatEventDate } from '../../utils/dateUtils';
-import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData, type VibrateBioData, type VibrateSpotifyListenersData, type VibrateInstagramAudienceData, type VibrateTikTokAudienceData, type VibrateYouTubeAudienceData } from '../../services/vibrateService';
+import { VibrateService, type VibrateArtist, type VibrateArtistLink, type VibrateEvent, type VibrateAudienceData, type VibrateBioData, type VibrateSpotifyListenersData, type VibrateInstagramAudienceData, type VibrateTikTokAudienceData, type VibrateYouTubeAudienceData, type VibrateSoundCloudFanbaseData, type VibrateSoundCloudPlaysData, type VibrateSpotifyFanbaseData, type VibrateEnhancedSpotifyListenersData, type VibrateYouTubeViewsData, type VibrateYouTubeFanbaseData } from '../../services/vibrateService';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
+
+// Import the new chart components
+import {
+  SoundCloudFanbaseChart,
+  SoundCloudPlaysChart,
+  SpotifyFanbaseChart,
+  SpotifyListenersChart,
+  YouTubeViewsChart,
+  YouTubeFanbaseChart
+} from '../../components/features/artists';
 
 // Import types from the database
 import type { Tables } from '../../types/database.types';
@@ -105,6 +115,14 @@ const ArtistDetails = () => {
   const [instagramAudience, setInstagramAudience] = useState<VibrateInstagramAudienceData>({ byCity: [], byCountry: [], byGender: {} as any, byAge: {} });
   const [tiktokAudience, setTiktokAudience] = useState<VibrateTikTokAudienceData>({ byCountry: [], byGender: {} as any, byAge: {} });
   const [youtubeAudience, setYoutubeAudience] = useState<VibrateYouTubeAudienceData>({ byCountry: {}, byGender: {} as any, byAge: {} });
+  
+  // New chart data states
+  const [soundcloudFanbase, setSoundcloudFanbase] = useState<VibrateSoundCloudFanbaseData>({ total: {} });
+  const [soundcloudPlays, setSoundcloudPlays] = useState<VibrateSoundCloudPlaysData>({ plays: {} });
+  const [spotifyFanbase, setSpotifyFanbase] = useState<VibrateSpotifyFanbaseData>({ total: {} });
+  const [enhancedSpotifyListeners, setEnhancedSpotifyListeners] = useState<VibrateEnhancedSpotifyListenersData>({ total: {} });
+  const [youtubeViews, setYoutubeViews] = useState<VibrateYouTubeViewsData>({ views: {} });
+  const [youtubeFanbase, setYoutubeFanbase] = useState<VibrateYouTubeFanbaseData>({ total: {} });
 
   const [showAllAudienceCountries, setShowAllAudienceCountries] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -132,7 +150,24 @@ const ArtistDetails = () => {
           
           // Fetch additional data from Viberate API using the local artist's name
           try {
-            const { artist: vibrateData, links, upcomingEvents, pastEvents, audience, bio, spotifyListeners: spotifyListenersData, instagramAudience: instagramAudienceData, tiktokAudience: tiktokAudienceData, youtubeAudience: youtubeAudienceData } = await VibrateService.getArtistWithAllData(artistData.name);
+            const { 
+              artist: vibrateData, 
+              links, 
+              upcomingEvents, 
+              pastEvents, 
+              audience, 
+              bio, 
+              spotifyListeners: spotifyListenersData, 
+              instagramAudience: instagramAudienceData, 
+              tiktokAudience: tiktokAudienceData, 
+              youtubeAudience: youtubeAudienceData,
+              soundcloudFanbase: soundcloudFanbaseData,
+              soundcloudPlays: soundcloudPlaysData,
+              spotifyFanbase: spotifyFanbaseData,
+              enhancedSpotifyListeners: enhancedSpotifyListenersData,
+              youtubeViews: youtubeViewsData,
+              youtubeFanbase: youtubeFanbaseData
+            } = await VibrateService.getArtistWithAllData(artistData.name);
             if (vibrateData) {
               setVibrateArtist(vibrateData);
               setArtistLinks(links);
@@ -144,6 +179,12 @@ const ArtistDetails = () => {
               setInstagramAudience(instagramAudienceData);
               setTiktokAudience(tiktokAudienceData);
               setYoutubeAudience(youtubeAudienceData);
+              setSoundcloudFanbase(soundcloudFanbaseData);
+              setSoundcloudPlays(soundcloudPlaysData);
+              setSpotifyFanbase(spotifyFanbaseData);
+              setEnhancedSpotifyListeners(enhancedSpotifyListenersData);
+              setYoutubeViews(youtubeViewsData);
+              setYoutubeFanbase(youtubeFanbaseData);
               console.log('Found Viberate data for local artist:', vibrateData);
             }
           } catch (vibrateError) {
@@ -156,7 +197,7 @@ const ArtistDetails = () => {
           
           try {
             // Get Vibrate data directly by UUID using individual method calls
-            const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse, instagramAudienceResponse, tiktokAudienceResponse, youtubeAudienceResponse] = await Promise.all([
+            const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse, instagramAudienceResponse, tiktokAudienceResponse, youtubeAudienceResponse, soundcloudFanbaseResponse, soundcloudPlaysResponse, spotifyFanbaseResponse, enhancedSpotifyListenersResponse, youtubeViewsResponse, youtubeFanbaseResponse] = await Promise.all([
               VibrateService.getArtistLinks(id),
               VibrateService.getArtistEvents(id),
               VibrateService.getArtistAudience(id),
@@ -164,7 +205,13 @@ const ArtistDetails = () => {
               VibrateService.getArtistSpotifyListeners(id),
               VibrateService.getArtistInstagramAudience(id),
               VibrateService.getArtistTikTokAudience(id),
-              VibrateService.getArtistYouTubeAudience(id)
+              VibrateService.getArtistYouTubeAudience(id),
+              VibrateService.getArtistSoundCloudFanbase(id),
+              VibrateService.getArtistSoundCloudPlays(id),
+              VibrateService.getArtistSpotifyFanbase(id),
+              VibrateService.getArtistEnhancedSpotifyListeners(id),
+              VibrateService.getArtistYouTubeViews(id),
+              VibrateService.getArtistYouTubeFanbase(id)
             ]);
             
             // If we got at least one successful response, we can proceed
@@ -219,6 +266,12 @@ const ArtistDetails = () => {
               setInstagramAudience(instagramAudienceResponse?.audience || { byCity: [], byCountry: [], byGender: {} as any, byAge: {} });
               setTiktokAudience(tiktokAudienceResponse?.audience || { byCountry: [], byGender: {} as any, byAge: {} });
               setYoutubeAudience(youtubeAudienceResponse?.audience || { byCountry: {}, byGender: {} as any, byAge: {} });
+              setSoundcloudFanbase({ total: soundcloudFanbaseResponse?.total || {} });
+              setSoundcloudPlays({ plays: soundcloudPlaysResponse?.plays || {} });
+              setSpotifyFanbase({ total: spotifyFanbaseResponse?.total || {} });
+              setEnhancedSpotifyListeners({ total: enhancedSpotifyListenersResponse?.total || {} });
+              setYoutubeViews({ views: youtubeViewsResponse?.views || {} });
+              setYoutubeFanbase({ total: youtubeFanbaseResponse?.total || {} });
               console.log('Found Vibrate data by UUID:', id, 'with full artist data:', !!fullArtistData);
             } else {
               setError('Artist not found');
@@ -512,6 +565,32 @@ const ArtistDetails = () => {
 
             {/* Right Column - Analytics and Events List */}
             <div className="lg:col-span-9">
+              {/* --- NEW: Platform Analytics Charts (3x2 Grid) --- */}
+              {vibrateArtist && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold mb-6 text-gray-900">Platform Analytics</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    {/* Column 1: SoundCloud */}
+                    <div className="flex flex-col gap-4">
+                      <SoundCloudFanbaseChart data={soundcloudFanbase} loading={isLoading} />
+                      <SoundCloudPlaysChart data={soundcloudPlays} loading={isLoading} />
+                    </div>
+                    
+                    {/* Column 2: Spotify */}
+                    <div className="flex flex-col gap-4">
+                      <SpotifyFanbaseChart data={spotifyFanbase} loading={isLoading} />
+                      <SpotifyListenersChart data={enhancedSpotifyListeners} loading={isLoading} />
+                    </div>
+                    
+                    {/* Column 3: YouTube */}
+                    <div className="flex flex-col gap-4">
+                      <YouTubeFanbaseChart data={youtubeFanbase} loading={isLoading} />
+                      <YouTubeViewsChart data={youtubeViews} loading={isLoading} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Events Section */}
               <div id="events-section">
                 <h3 className="text-xl font-semibold text-gray-900 mb-6">Events</h3>
@@ -1011,14 +1090,25 @@ const ArtistDetails = () => {
                       <div className="mt-3 flex flex-row gap-2">
                         <button
                           style={{ width: '50%' }}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Instagram cities button clicked!', {
+                              currentShowing: instagramCitiesToShow,
+                              totalCities: instagramAudience.byCity.length,
+                              isShowingAll: instagramCitiesToShow >= instagramAudience.byCity.length
+                            });
+                            
                             if (instagramCitiesToShow >= instagramAudience.byCity.length) {
+                              console.log('Setting to show only 10 cities');
                               setInstagramCitiesToShow(10);
                             } else {
-                              setInstagramCitiesToShow(Math.min(instagramCitiesToShow + 10, instagramAudience.byCity.length));
+                              const newValue = Math.min(instagramCitiesToShow + 10, instagramAudience.byCity.length);
+                              console.log('Setting to show more cities:', newValue);
+                              setInstagramCitiesToShow(newValue);
                             }
                           }}
-                          className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
                         >
                           {instagramCitiesToShow >= instagramAudience.byCity.length
                             ? 'Show Top 10 Only'
@@ -1027,8 +1117,13 @@ const ArtistDetails = () => {
                         {instagramCitiesToShow > 10 && (
                           <button
                             style={{ width: '50%' }}
-                            onClick={() => setInstagramCitiesToShow(10)}
-                            className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Instagram "See Less" button clicked!');
+                              setInstagramCitiesToShow(10);
+                            }}
+                            className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
                           >
                             See Less Cities
                           </button>
