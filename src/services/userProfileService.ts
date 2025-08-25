@@ -1,6 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { AdminService } from './adminService';
-import type { Database } from '../types/database.types';
+import type { Database } from '../database.types';
 
 type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
 type UserProfileInsert = Database['public']['Tables']['user_profiles']['Insert'];

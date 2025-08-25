@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { UserProfileService } from '../services/userProfileService';
-import type { Database } from '../types/database.types';
+import type { Database } from '../database.types';
 
 type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
 

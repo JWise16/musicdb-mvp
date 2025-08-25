@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { VenueService } from '../services/venueService';
-import type { Tables } from '../types/database.types';
+import type { Tables } from '../database.types';
 
 interface VenueContextType {
   currentVenue: Tables<'venues'> | null;

@@ -7,10 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
@@ -133,6 +133,75 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_files: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          metadata: Json | null
+          mime_type: string
+          notes: string | null
+          original_file_name: string
+          public_url: string | null
+          status: string | null
+          storage_path: string
+          updated_at: string | null
+          user_id: string | null
+          venue_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          metadata?: Json | null
+          mime_type: string
+          notes?: string | null
+          original_file_name: string
+          public_url?: string | null
+          status?: string | null
+          storage_path: string
+          updated_at?: string | null
+          user_id?: string | null
+          venue_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          metadata?: Json | null
+          mime_type?: string
+          notes?: string | null
+          original_file_name?: string
+          public_url?: string | null
+          status?: string | null
+          storage_path?: string
+          updated_at?: string | null
+          user_id?: string | null
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_files_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "event_files_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
             referencedColumns: ["id"]
           },
         ]

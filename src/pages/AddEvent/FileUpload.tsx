@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { useVenue } from '../../contexts/VenueContext';
+import { EventFileService, type FileUploadProgress } from '../../services/eventFileService';
 
 interface FileUploadProps {
   onBack: () => void;
@@ -6,27 +9,75 @@ interface FileUploadProps {
 }
 
 const FileUpload = ({ onBack, onComplete }: FileUploadProps) => {
+  const { user } = useAuth();
+  const { currentVenue, userVenues } = useVenue();
   const [isUploading, setIsUploading] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<FileUploadProgress | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+      setUploadError(null); // Clear any previous errors
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !user) {
+      setUploadError('Please select a file and ensure you are logged in.');
+      return;
+    }
+
+    // Determine which venue to use
+    let venueId: string;
+    if (currentVenue) {
+      venueId = currentVenue.id;
+    } else if (userVenues && userVenues.length > 0) {
+      venueId = userVenues[0].id; // Use first venue if no specific venue selected
+    } else {
+      setUploadError('No venue found. Please add a venue first.');
+      return;
+    }
+
+    // Validate file before upload
+    const validation = EventFileService.validateFile(selectedFile);
+    if (!validation.valid) {
+      setUploadError(validation.error || 'Invalid file');
+      return;
+    }
 
     setIsUploading(true);
+    setUploadError(null);
+    setUploadProgress(null);
     
-    // Simulate upload process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsUploading(false);
-    setIsUploaded(true);
+    try {
+      const result = await EventFileService.uploadEventFile(
+        user.id,
+        venueId,
+        selectedFile,
+        (progress) => {
+          setUploadProgress(progress);
+        }
+      );
+
+      if (result.success) {
+        setUploadedFileId(result.fileId || null);
+        setIsUploaded(true);
+        console.log('File uploaded successfully:', result);
+      } else {
+        setUploadError(result.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadError('An unexpected error occurred during upload');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(null);
+    }
   };
 
   if (isUploaded) {
@@ -43,8 +94,19 @@ const FileUpload = ({ onBack, onComplete }: FileUploadProps) => {
         </h3>
         
         <p className="text-gray-600 mb-6">
-          Thank you for uploading your event file. Our team will process it manually and add it to the database. You'll be notified once the processing is complete.
+          Thank you for uploading your event file! Your file has been successfully stored and our team will process it manually. You'll be notified once the processing is complete.
         </p>
+        
+        {uploadedFileId && (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">
+              <strong>File ID:</strong> {uploadedFileId}
+            </p>
+            <p className="text-sm text-gray-600">
+              <strong>File:</strong> {selectedFile?.name}
+            </p>
+          </div>
+        )}
         
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
           <h4 className="font-semibold text-blue-900 mb-2">What happens next?</h4>
@@ -78,20 +140,34 @@ const FileUpload = ({ onBack, onComplete }: FileUploadProps) => {
       </div>
 
       <div className="card p-8">
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-accent-300 transition-colors">
-          <div className="w-16 h-16 bg-accent-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
+        <div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+          uploadError ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-accent-300'
+        }`}>
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+            uploadError ? 'bg-red-100' : 'bg-accent-100'
+          }`}>
+            {uploadError ? (
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : (
+              <svg className="w-8 h-8 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            )}
           </div>
           
-          <h4 className="text-lg font-semibold text-gray-900 mb-2">
-            {selectedFile ? selectedFile.name : 'Choose a file or drag it here'}
+          <h4 className={`text-lg font-semibold mb-2 ${uploadError ? 'text-red-900' : 'text-gray-900'}`}>
+            {uploadError ? 'Upload Error' : (selectedFile ? selectedFile.name : 'Choose a file or drag it here')}
           </h4>
           
-          <p className="text-gray-600 mb-4">
-            Supported formats: CSV, Excel (.xlsx, .xls), PDF
-          </p>
+          {uploadError ? (
+            <p className="text-red-600 mb-4">{uploadError}</p>
+          ) : (
+            <p className="text-gray-600 mb-4">
+              Supported formats: CSV, Excel (.xlsx, .xls), PDF
+            </p>
+          )}
           
           <input
             type="file"
@@ -126,15 +202,39 @@ const FileUpload = ({ onBack, onComplete }: FileUploadProps) => {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedFile(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              {!isUploading && (
+                <button
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setUploadError(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
+            
+            {/* Upload Progress */}
+            {isUploading && uploadProgress && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-900">Uploading...</span>
+                  <span className="text-sm text-blue-700">{uploadProgress.percentage}%</span>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress.percentage}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  {(uploadProgress.loaded / 1024 / 1024).toFixed(2)} MB of {(uploadProgress.total / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -172,14 +272,14 @@ const FileUpload = ({ onBack, onComplete }: FileUploadProps) => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Uploading...
+              {uploadProgress ? `Uploading... ${uploadProgress.percentage}%` : 'Uploading...'}
             </>
           ) : (
             <>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              Upload File
+              {uploadError ? 'Try Again' : 'Upload File'}
             </>
           )}
         </button>

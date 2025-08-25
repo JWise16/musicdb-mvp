@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { VenueService } from '../../services/venueService';
-import { type Tables } from '../../types/database.types';
+import { type Tables } from '../../database.types';
 import Sidebar from '../../components/layout/Sidebar';
 
 const Venues = () => {

@@ -5,7 +5,7 @@ import { useVenue } from '../../contexts/VenueContext';
 import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatRole, isValidRole } from '../../utils/roleUtils';
-import type { Tables } from '../../types/database.types';
+import type { Tables } from '../../database.types';
 
 interface VenueFormData {
   name: string;

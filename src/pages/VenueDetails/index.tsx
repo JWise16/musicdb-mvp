@@ -8,7 +8,7 @@ import TimeFrameSelector from '../../components/features/dashboard/TimeFrameSele
 import AnalyticsCards from '../../components/features/dashboard/AnalyticsCards';
 import EventAnalytics from '../../components/features/dashboard/EventAnalytics';
 import YourShows from '../../components/features/dashboard/YourShows';
-import type { Tables } from '../../types/database.types';
+import type { Tables } from '../../database.types';
 
 const VenueDetails = () => {
   const { id } = useParams<{ id: string }>();

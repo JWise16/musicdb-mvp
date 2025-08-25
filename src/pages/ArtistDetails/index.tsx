@@ -17,7 +17,7 @@ import {
 } from '../../components/features/artists';
 
 // Import types from the database
-import type { Tables } from '../../types/database.types';
+import type { Tables } from '../../database.types';
 
 // Define the ArtistWithEvents type locally for now
 type ArtistWithEvents = Tables<'artists'> & {
