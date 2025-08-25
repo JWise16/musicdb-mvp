@@ -162,7 +162,7 @@ const PercentSoldSlider: React.FC<PercentSoldSliderProps> = ({
     setIsInputFocused(type);
   };
 
-  const handleInputKeyDown = (type: 'min' | 'max') => (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Allow Enter key to blur the input
     if (e.key === 'Enter') {
       e.currentTarget.blur();
@@ -220,7 +220,7 @@ const PercentSoldSlider: React.FC<PercentSoldSliderProps> = ({
               onChange={(e) => handleInputChange('min', e.target.value)}
               onFocus={handleInputFocus('min')}
               onBlur={handleInputBlur('min')}
-              onKeyDown={handleInputKeyDown('min')}
+              onKeyDown={handleInputKeyDown}
               className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 text-center"
             />
           </div>
@@ -234,7 +234,7 @@ const PercentSoldSlider: React.FC<PercentSoldSliderProps> = ({
               onChange={(e) => handleInputChange('max', e.target.value)}
               onFocus={handleInputFocus('max')}
               onBlur={handleInputBlur('max')}
-              onKeyDown={handleInputKeyDown('max')}
+              onKeyDown={handleInputKeyDown}
               className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 text-center"
             />
           </div>

@@ -174,7 +174,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
     setIsInputFocused(type);
   };
 
-  const handleInputKeyDown = (type: 'min' | 'max') => (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Allow Enter key to blur the input
     if (e.key === 'Enter') {
       e.currentTarget.blur();
@@ -263,7 +263,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
                 onChange={(e) => handleInputChange('min', e.target.value)}
                 onFocus={handleInputFocus('min')}
                 onBlur={handleInputBlur('min')}
-                onKeyDown={handleInputKeyDown('min')}
+                onKeyDown={handleInputKeyDown}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 text-center"
               />
             </div>
@@ -279,7 +279,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
                 onChange={(e) => handleInputChange('max', e.target.value)}
                 onFocus={handleInputFocus('max')}
                 onBlur={handleInputBlur('max')}
-                onKeyDown={handleInputKeyDown('max')}
+                onKeyDown={handleInputKeyDown}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 text-center"
               />
             </div>
