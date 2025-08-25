@@ -17,7 +17,7 @@ const SpotifyFanbaseChart = ({ data, loading = false }: SpotifyFanbaseChartProps
       <div className="card p-4 h-64">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">Spotify Fanbase</h3>
+            <h3 className="text-sm font-medium text-gray-900">Spotify Followers</h3>
             <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mt-1"></div>
           </div>
           <div className="w-16 h-6 bg-gray-200 rounded animate-pulse"></div>
@@ -32,7 +32,7 @@ const SpotifyFanbaseChart = ({ data, loading = false }: SpotifyFanbaseChartProps
       <div className="card p-4 h-64">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">Spotify Fanbase</h3>
+            <h3 className="text-sm font-medium text-gray-900">Spotify Followers</h3>
             <p className="text-xs text-gray-500">No data available</p>
           </div>
         </div>
@@ -47,7 +47,7 @@ const SpotifyFanbaseChart = ({ data, loading = false }: SpotifyFanbaseChartProps
     <div className="card p-4 h-64">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-medium text-gray-900">Spotify Fanbase</h3>
+          <h3 className="text-sm font-medium text-gray-900">Spotify Followers</h3>
           <p className="text-lg font-semibold text-gray-900">{formatNumber(currentValue)}</p>
         </div>
         <div className={`text-xs px-2 py-1 rounded ${
