@@ -725,19 +725,29 @@ export class VenueService {
         topArtist: analytics.topArtist.count > acc.topArtist.count ? analytics.topArtist : acc.topArtist,
         trends: {
           showsReported: acc.trends.showsReported.map((point, index) => ({
-            value: point.value + (analytics.trends.showsReported[index]?.value || 0)
+            value: point.value + (analytics.trends.showsReported[index]?.value || 0),
+            date: point.date,
+            formattedDate: point.formattedDate
           })),
           ticketSales: acc.trends.ticketSales.map((point, index) => ({
-            value: point.value + (analytics.trends.ticketSales[index]?.value || 0)
+            value: point.value + (analytics.trends.ticketSales[index]?.value || 0),
+            date: point.date,
+            formattedDate: point.formattedDate
           })),
           barSales: acc.trends.barSales.map((point, index) => ({
-            value: point.value + (analytics.trends.barSales[index]?.value || 0)
+            value: point.value + (analytics.trends.barSales[index]?.value || 0),
+            date: point.date,
+            formattedDate: point.formattedDate
           })),
           avgSelloutRate: acc.trends.avgSelloutRate.map((point, index) => ({
-            value: point.value + (analytics.trends.avgSelloutRate[index]?.value || 0)
+            value: point.value + (analytics.trends.avgSelloutRate[index]?.value || 0),
+            date: point.date,
+            formattedDate: point.formattedDate
           })),
           avgTicketPrice: acc.trends.avgTicketPrice.map((point, index) => ({
-            value: point.value + (analytics.trends.avgTicketPrice[index]?.value || 0)
+            value: point.value + (analytics.trends.avgTicketPrice[index]?.value || 0),
+            date: point.date,
+            formattedDate: point.formattedDate
           }))
         },
         monthlyPercentageSold: acc.monthlyPercentageSold.map((monthData, index) => ({
@@ -780,10 +790,14 @@ export class VenueService {
         
         // Average the trend data for rate-based metrics
         combined.trends.avgSelloutRate = combined.trends.avgSelloutRate.map(point => ({
-          value: point.value / venueCount
+          value: point.value / venueCount,
+          date: point.date,
+          formattedDate: point.formattedDate
         }));
         combined.trends.avgTicketPrice = combined.trends.avgTicketPrice.map(point => ({
-          value: point.value / venueCount
+          value: point.value / venueCount,
+          date: point.date,
+          formattedDate: point.formattedDate
         }));
         
         // Average the monthly percentage sold data
