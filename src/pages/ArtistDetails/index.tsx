@@ -1087,7 +1087,7 @@ const ArtistDetails = () => {
                       </BarChart>
                     </ResponsiveContainer>
                     {instagramAudience.byCity.length > 10 && (
-                      <div className="mt-3 flex flex-row gap-2">
+                      <div className="mt-3 flex flex-row gap-2 select-none">
                         <button
                           style={{ width: '50%' }}
                           onClick={(e) => {
@@ -1108,7 +1108,7 @@ const ArtistDetails = () => {
                               setInstagramCitiesToShow(newValue);
                             }
                           }}
-                          className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
+                          className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer select-none relative z-10"
                         >
                           {instagramCitiesToShow >= instagramAudience.byCity.length
                             ? 'Show Top 10 Only'
@@ -1123,7 +1123,7 @@ const ArtistDetails = () => {
                               console.log('Instagram "See Less" button clicked!');
                               setInstagramCitiesToShow(10);
                             }}
-                            className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
+                            className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer select-none relative z-10"
                           >
                             See Less Cities
                           </button>
