@@ -242,8 +242,8 @@ const Dashboard = () => {
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 lg:mb-8">
             <div className="min-w-0">
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 truncate">Dashboard</h2>
-              <p className="text-gray-600 truncate">
+              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 break-words">Dashboard</h2>
+              <p className="text-gray-600 break-words">
                 {currentVenue 
                   ? `Analytics for ${currentVenue.name}`
                   : 'Welcome to your music venue dashboard'

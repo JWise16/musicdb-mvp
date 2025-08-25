@@ -282,8 +282,8 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
           <div key={index} className="card p-5 lg:p-6 min-w-0 hover:shadow-medium transition-shadow duration-200">
             <div className="min-w-0">
               <h4 className="text-sm lg:text-sm font-medium text-gray-600 mb-2 truncate">{item.title}</h4>
-              <p className="text-base lg:text-lg font-semibold text-gray-900 mb-1 truncate">{item.value}</p>
-              <p className="text-sm text-gray-500 truncate">{item.subtitle}</p>
+              <p className="text-base lg:text-lg font-semibold text-gray-900 mb-1 break-words">{item.value}</p>
+              <p className="text-sm text-gray-500 break-words">{item.subtitle}</p>
             </div>
           </div>
         ))}

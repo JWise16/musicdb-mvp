@@ -58,11 +58,11 @@ const EventCard = ({ event, onEventClick, onArtistClick }: {
 
   return (
     <div 
-      className="card p-4 hover:shadow-medium transition-all duration-200 cursor-pointer group"
+      className="card p-3 sm:p-4 lg:p-5 hover:shadow-medium transition-all duration-200 cursor-pointer group flex flex-col h-full"
       onClick={handleCardClick}
     >
       {/* Artist Image or Placeholder */}
-      <div className="w-full aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative">
+      <div className="w-full aspect-square bg-gray-200 rounded-lg mb-3 sm:mb-4 flex items-center justify-center overflow-hidden relative flex-shrink-0">
         {loading ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
@@ -75,71 +75,77 @@ const EventCard = ({ event, onEventClick, onArtistClick }: {
             onError={e => { e.currentTarget.style.display = 'none'; }}
           />
         ) : (
-          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         )}
       </div>
 
-      {/* Venue Name and Location */}
-      <div className="mb-1">
-        <h4 className="font-semibold text-gray-900 truncate">
-          {event.venues?.name}
-        </h4>
-        <p className="text-sm text-gray-600 truncate">
-          {event.venues?.location}
+      {/* Content Container - Flex grow to fill remaining space */}
+      <div className="flex flex-col flex-1 min-h-0">
+        {/* Venue Name and Location */}
+        <div className="mb-2 flex-shrink-0">
+          <h4 className="font-semibold text-gray-900 break-words leading-tight text-sm sm:text-base">
+            {event.venues?.name}
+          </h4>
+          <p className="text-sm text-gray-600 break-words leading-tight">
+            {event.venues?.location}
+          </p>
+        </div>
+
+        {/* Lineup + Date */}
+        <p className="text-sm text-gray-600 mb-2 flex-shrink-0">
+          Lineup {formatSimpleDate(event.date)}
         </p>
-      </div>
 
-      {/* Lineup + Date */}
-      <p className="text-sm text-gray-600 mb-2">
-        Lineup {formatSimpleDate(event.date)}
-      </p>
+        {/* Artists Section - Allow to grow */}
+        <div className="flex-1 min-h-0 mb-3">
+          {/* Headliner */}
+          {headliners.length > 0 && (
+            <p className="text-sm font-medium text-gray-900 mb-1 break-words leading-tight">
+              {headliners.map((headliner, index) => (
+                <span key={headliner.id}>
+                  {index > 0 && ', '}
+                  {headliner.name}
+                </span>
+              ))}
+            </p>
+          )}
 
-      {/* Headliner */}
-      {headliners.length > 0 && (
-        <p className="text-sm font-medium text-gray-900 mb-1 truncate">
-          {headliners.map((headliner, index) => (
-            <span key={headliner.id}>
-              {index > 0 && ', '}
-              {headliner.name}
+          {/* Supporting */}
+          {supporting.length > 0 && (
+            <p className="text-sm text-gray-600 break-words leading-tight">
+              {supporting.join(', ')}
+            </p>
+          )}
+        </div>
+
+        {/* Sales and Pricing - Fixed at bottom */}
+        <div className="space-y-1 text-sm flex-shrink-0 mt-auto">
+          {/* Bar Sales */}
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-gray-600">Bar Sales:</span>
+            <span className="font-medium break-words">
+              {event.bar_sales ? formatCurrency(event.bar_sales) : '$0'}
             </span>
-          ))}
-        </p>
-      )}
+          </div>
 
-      {/* Supporting */}
-      {supporting.length > 0 && (
-        <p className="text-sm text-gray-600 mb-3 truncate">
-          {supporting.join(', ')}
-        </p>
-      )}
+          {/* Ticket Sales */}
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-gray-600">Ticket Sales:</span>
+            <span className="font-medium break-words">
+              {event.tickets_sold && event.total_tickets 
+                ? `${event.tickets_sold}/${event.total_tickets}`
+                : 'N/A'
+              }
+            </span>
+          </div>
 
-      {/* Sales and Pricing */}
-      <div className="space-y-1 text-sm">
-        {/* Bar Sales */}
-        <div className="flex justify-between">
-          <span className="text-gray-600">Bar Sales:</span>
-          <span className="font-medium">
-            {event.bar_sales ? formatCurrency(event.bar_sales) : '$0'}
-          </span>
-        </div>
-
-        {/* Ticket Sales */}
-        <div className="flex justify-between">
-          <span className="text-gray-600">Ticket Sales:</span>
-          <span className="font-medium">
-            {event.tickets_sold && event.total_tickets 
-              ? `${event.tickets_sold}/${event.total_tickets}`
-              : 'N/A'
-            }
-          </span>
-        </div>
-
-        {/* Ticket Price */}
-        <div className="flex justify-between">
-          <span className="text-gray-600">Ticket Price:</span>
-          <span className="font-medium">{formatTicketPrice(event)}</span>
+          {/* Ticket Price */}
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-gray-600">Ticket Price:</span>
+            <span className="font-medium break-words">{formatTicketPrice(event)}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -149,13 +155,13 @@ const EventCard = ({ event, onEventClick, onArtistClick }: {
 const YourShows = ({ upcoming, past, onEventClick, onArtistClick }: YourShowsProps) => {
   return (
     <div className="mb-6 lg:mb-8 overflow-hidden">
-      <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-4 lg:mb-6 truncate">Your Shows</h3>
+      <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-4 lg:mb-6 break-words">Your Shows</h3>
       
       {/* Upcoming Shows */}
       {upcoming.length > 0 && (
         <div className="mb-6">
           <h4 className="text-md font-semibold text-gray-800 mb-3">Upcoming</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 lg:gap-6 auto-rows-fr">
             {upcoming.slice(0, 3).map(event => (
               <EventCard key={event.id} event={event} onEventClick={onEventClick} onArtistClick={onArtistClick} />
             ))}
@@ -173,7 +179,7 @@ const YourShows = ({ upcoming, past, onEventClick, onArtistClick }: YourShowsPro
             <p className="text-sm lg:text-base text-gray-600">No past shows found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 lg:gap-6 auto-rows-fr">
             {past.slice(0, 6).map(event => (
               <EventCard key={event.id} event={event} onEventClick={onEventClick} onArtistClick={onArtistClick} />
             ))}
