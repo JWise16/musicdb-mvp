@@ -396,14 +396,6 @@ const ArtistDetails = () => {
               >
                 Analytics - Gender
               </button>
-              {vibrateBio.FAQ.length > 0 && (
-                <button
-                  onClick={() => document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  FAQ
-                </button>
-              )}
             </nav>
           </div>
 
@@ -1790,54 +1782,18 @@ const ArtistDetails = () => {
               </div>
               {/* --- END: Analytics Sections --- */}
 
-              <div className="card p-6">
-
-                {/* FAQ Section */}
-                {vibrateBio.FAQ.length > 0 && (
-                  <div id="faq-section" className="mt-8">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-6">FAQ</h3>
-
-                    <div className="mb-8">
-                      <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                        <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
-                        Frequently Asked Questions
-                      </h4>
-                      <div className="space-y-4">
-                        {vibrateBio.FAQ.slice(0, 10).map((item, index) => (
-                          <details key={index} className="bg-white border border-gray-200 rounded-lg">
-                            <summary className="px-4 py-3 cursor-pointer hover:bg-gray-50 font-medium text-gray-900 text-sm">
-                              {item.question}
-                            </summary>
-                            <div className="px-4 pb-3 text-sm text-gray-700 leading-relaxed border-t border-gray-100 pt-3">
-                              {item.answer}
-                            </div>
-                          </details>
-                        ))}
-                        {vibrateBio.FAQ.length > 10 && (
-                          <div className="text-center">
-                            <p className="text-sm text-gray-500">
-                              Showing 10 of {vibrateBio.FAQ.length} questions
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+              {/* No Events Message */}
+              {artist.events.length === 0 && vibrateUpcomingEvents.length === 0 && vibratePastEvents.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
+                    </svg>
                   </div>
-                )}
-
-                {/* No Events Message */}
-                {artist.events.length === 0 && vibrateUpcomingEvents.length === 0 && vibratePastEvents.length === 0 && (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
-                      </svg>
-                    </div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">No events found</h4>
-                    <p className="text-gray-600">This artist hasn't performed at any events yet.</p>
-                  </div>
-                )}
-              </div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">No events found</h4>
+                  <p className="text-gray-600">This artist hasn't performed at any events yet.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
