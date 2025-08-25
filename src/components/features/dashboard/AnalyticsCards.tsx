@@ -1,5 +1,5 @@
+import { LineChart, Line, XAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { type VenueAnalytics } from '../../../services/venueService';
-import TrendChart from '../../common/TrendChart';
 
 interface AnalyticsCardsProps {
   analytics: VenueAnalytics;
@@ -39,6 +39,24 @@ const AnalyticsCards = ({ analytics }: AnalyticsCardsProps) => {
 
   const formatPercentage = (value: number) => {
     return `${value.toFixed(1)}%`;
+  };
+
+  const calculateGrowth = (data: { value: number; date: string; formattedDate: string }[]): number => {
+    if (data.length < 2) return 0;
+    
+    const first = data[0].value;
+    const last = data[data.length - 1].value;
+    
+    if (first === 0) return 0;
+    
+    return ((last - first) / first) * 100;
+  };
+
+  const formatTrendData = (data: { value: number; date: string; formattedDate: string }[]) => {
+    return data.map((item) => ({
+      ...item,
+      period: item.formattedDate
+    }));
   };
 
   const cards = [
@@ -91,35 +109,76 @@ const AnalyticsCards = ({ analytics }: AnalyticsCardsProps) => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6 mb-6 lg:mb-8">
-      {cards.map((card, index) => (
-        <div key={index} className="card p-4 lg:p-6 relative group">
-          <div className="flex flex-col h-full">
-            <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 leading-tight">{card.title}</p>
-            <div className="flex items-center justify-between flex-1 min-w-0">
-              <div className="flex-1 min-w-0 relative">
-                <p 
-                  className="text-lg lg:text-2xl font-bold text-gray-900 leading-tight cursor-help"
-                  title={card.fullValue !== card.value ? card.fullValue : undefined}
-                >
+      {cards.map((card, index) => {
+        const growth = calculateGrowth(card.trendData);
+        const chartData = formatTrendData(card.trendData);
+        
+        return (
+          <div key={index} className="card p-4 lg:p-6 h-64">
+            <div className="flex items-center justify-between mb-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-medium text-gray-900 break-words">{card.title}</h3>
+                <p className="text-lg lg:text-xl font-semibold text-gray-900 mt-1" title={card.fullValue}>
                   {card.value}
                 </p>
-                {/* Tooltip for full value when abbreviated */}
-                {card.fullValue !== card.value && (
-                  <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
-                    {card.fullValue}
-                    <div className="absolute top-full left-2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-900"></div>
-                  </div>
-                )}
               </div>
-              <TrendChart 
-                data={card.trendData} 
-                color={card.chartColor}
-                className="flex-shrink-0 ml-2"
-              />
+              <div className={`text-xs px-2 py-1 rounded whitespace-nowrap ml-2 ${
+                growth >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              }`}>
+                {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
+              </div>
+            </div>
+            
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                  <XAxis 
+                    dataKey="period" 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: '#6B7280' }}
+                    interval="preserveStartEnd"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke={card.chartColor}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 3, fill: card.chartColor }}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const value = payload[0].value as number;
+                        let formattedValue = '';
+                        
+                        if (card.title.includes('Sales') || card.title.includes('Price')) {
+                          formattedValue = formatCurrency(value);
+                        } else if (card.title.includes('Rate')) {
+                          formattedValue = formatPercentage(value);
+                        } else {
+                          formattedValue = formatNumber(value);
+                        }
+                        
+                        return (
+                          <div className="bg-white p-2 rounded shadow-lg border text-xs">
+                            <div className="font-medium">{label}</div>
+                            <div style={{ color: card.chartColor }}>
+                              {card.title}: {formattedValue}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

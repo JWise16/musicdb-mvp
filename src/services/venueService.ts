@@ -30,11 +30,11 @@ export type VenueAnalytics = {
   topGenre: { genre: string; count: number; avgPercentageSold: number };
   topArtist: { name: string; count: number; avgPercentageSold: number };
   trends: {
-    showsReported: { value: number }[];
-    ticketSales: { value: number }[];
-    barSales: { value: number }[];
-    avgSelloutRate: { value: number }[];
-    avgTicketPrice: { value: number }[];
+    showsReported: { value: number; date: string; formattedDate: string }[];
+    ticketSales: { value: number; date: string; formattedDate: string }[];
+    barSales: { value: number; date: string; formattedDate: string }[];
+    avgSelloutRate: { value: number; date: string; formattedDate: string }[];
+    avgTicketPrice: { value: number; date: string; formattedDate: string }[];
   };
   monthlyPercentageSold: Array<{
     month: string;
@@ -492,11 +492,11 @@ export class VenueService {
 
       if (error) {
         console.error('Error fetching venue events:', error);
-        return this.getDefaultAnalytics();
+        return this.getDefaultAnalytics(timeFrame);
       }
 
       if (!events || events.length === 0) {
-        return this.getDefaultAnalytics();
+        return this.getDefaultAnalytics(timeFrame);
       }
 
       // Calculate analytics
@@ -587,8 +587,8 @@ export class VenueService {
       const topGenre = topGenreEntry || { genre: 'N/A', count: 0, avgPercentageSold: 0 };
       const topArtist = topArtistEntry || { name: 'N/A', count: 0, avgPercentageSold: 0 };
 
-      // Calculate trends (last 6 months or periods)
-      const trends = this.calculateTrends(events);
+      // Calculate trends based on timeframe
+      const trends = this.calculateTrends(events, timeFrame);
       
       // Calculate percentage sold data for different time periods
       const monthlyPercentageSold = this.calculateMonthlyPercentageSold(events);
@@ -635,7 +635,7 @@ export class VenueService {
       };
     } catch (error) {
       console.error('Error in getVenueAnalytics:', error);
-      return this.getDefaultAnalytics();
+      return this.getDefaultAnalytics('YTD');
     }
   }
 
@@ -705,7 +705,7 @@ export class VenueService {
       const userVenues = await this.getUserVenues(userId);
       
       if (userVenues.length === 0) {
-        return this.getDefaultAnalytics();
+        return this.getDefaultAnalytics('YTD');
       }
 
       // Get analytics for all venues and combine them
@@ -770,7 +770,7 @@ export class VenueService {
         monthlyGenreRevenue: this.combineGenreRevenue(acc.monthlyGenreRevenue, analytics.monthlyGenreRevenue),
         quarterlyGenreRevenue: this.combineGenreRevenue(acc.quarterlyGenreRevenue, analytics.quarterlyGenreRevenue),
         yearlyGenreRevenue: this.combineGenreRevenue(acc.yearlyGenreRevenue, analytics.yearlyGenreRevenue)
-      }), this.getDefaultAnalytics());
+      }), this.getDefaultAnalytics('YTD'));
 
       // Calculate averages
       const venueCount = venueAnalytics.length;
@@ -833,7 +833,7 @@ export class VenueService {
       return combined;
     } catch (error) {
       console.error('Error in getUserVenuesAnalytics:', error);
-      return this.getDefaultAnalytics();
+      return this.getDefaultAnalytics('YTD');
     }
   }
 
@@ -1525,23 +1525,61 @@ export class VenueService {
   }
 
   // Calculate trends for analytics metrics
-  private static calculateTrends(events: any[]): VenueAnalytics['trends'] {
-    // Group events by month for the last 6 months
+  private static calculateTrends(events: any[], timeFrame: 'YTD' | 'MTD' | 'ALL' = 'YTD'): VenueAnalytics['trends'] {
     const now = new Date();
     const periods: Date[] = [];
     
-    // Generate 6 month periods
-    for (let i = 5; i >= 0; i--) {
-      const periodDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      periods.push(periodDate);
+    // Generate periods based on timeframe
+    if (timeFrame === 'MTD') {
+      // For MTD, show daily trends for current month
+      const today = now.getDate();
+      const maxDays = Math.min(today, 7); // Show max 7 days or current day
+      
+      for (let i = maxDays - 1; i >= 0; i--) {
+        const dayNumber = today - i;
+        if (dayNumber >= 1) { // Only include days within current month
+          const periodDate = new Date(now.getFullYear(), now.getMonth(), dayNumber);
+          periods.push(periodDate);
+        }
+      }
+    } else if (timeFrame === 'YTD') {
+      // For YTD, show monthly trends for current year
+      const currentMonth = now.getMonth();
+      const maxMonths = Math.min(currentMonth + 1, 6); // Show max 6 months or current month
+      
+      for (let i = maxMonths - 1; i >= 0; i--) {
+        const periodDate = new Date(now.getFullYear(), currentMonth - i, 1);
+        periods.push(periodDate);
+      }
+    } else {
+      // For ALL, show last 6 months
+      for (let i = 5; i >= 0; i--) {
+        const periodDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        periods.push(periodDate);
+      }
     }
 
     const periodData = periods.map(period => {
-      const periodEnd = new Date(period.getFullYear(), period.getMonth() + 1, 0);
-      const periodEvents = events.filter(event => {
-        const eventDate = parseEventDate(event.date);
-        return eventDate >= period && eventDate <= periodEnd;
-      });
+      let periodEnd: Date;
+      let periodEvents: any[];
+      
+      if (timeFrame === 'MTD') {
+        // For daily periods, use same day
+        periodEnd = new Date(period.getFullYear(), period.getMonth(), period.getDate(), 23, 59, 59);
+        periodEvents = events.filter(event => {
+          const eventDate = parseEventDate(event.date);
+          const eventDay = eventDate.toDateString();
+          const periodDay = period.toDateString();
+          return eventDay === periodDay;
+        });
+      } else {
+        // For monthly periods, use end of month
+        periodEnd = new Date(period.getFullYear(), period.getMonth() + 1, 0);
+        periodEvents = events.filter(event => {
+          const eventDate = parseEventDate(event.date);
+          return eventDate >= period && eventDate <= periodEnd;
+        });
+      }
 
       let totalTicketSales = 0;
       let totalBarSales = 0;
@@ -1565,7 +1603,25 @@ export class VenueService {
       const avgSelloutRate = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
       const avgTicketPrice = totalTicketsSold > 0 ? totalTicketRevenue / totalTicketsSold : 0;
 
+      // Format the period date for display based on timeframe
+      const date = period.toISOString();
+      let formattedDate: string;
+      
+      if (timeFrame === 'MTD') {
+        formattedDate = period.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        });
+      } else {
+        formattedDate = period.toLocaleDateString('en-US', { 
+          month: 'short', 
+          year: 'numeric' 
+        });
+      }
+
       return {
+        date,
+        formattedDate,
         showsReported: periodEvents.length,
         ticketSales: totalTicketSales,
         barSales: totalBarSales,
@@ -1575,24 +1631,49 @@ export class VenueService {
     });
 
     return {
-      showsReported: periodData.map(p => ({ value: p.showsReported })),
-      ticketSales: periodData.map(p => ({ value: p.ticketSales })),
-      barSales: periodData.map(p => ({ value: p.barSales })),
-      avgSelloutRate: periodData.map(p => ({ value: p.avgSelloutRate })),
-      avgTicketPrice: periodData.map(p => ({ value: p.avgTicketPrice }))
+      showsReported: periodData.map(p => ({ value: p.showsReported, date: p.date, formattedDate: p.formattedDate })),
+      ticketSales: periodData.map(p => ({ value: p.ticketSales, date: p.date, formattedDate: p.formattedDate })),
+      barSales: periodData.map(p => ({ value: p.barSales, date: p.date, formattedDate: p.formattedDate })),
+      avgSelloutRate: periodData.map(p => ({ value: p.avgSelloutRate, date: p.date, formattedDate: p.formattedDate })),
+      avgTicketPrice: periodData.map(p => ({ value: p.avgTicketPrice, date: p.date, formattedDate: p.formattedDate }))
     };
   }
 
   // Default analytics for empty state
-  public static getDefaultAnalytics(): VenueAnalytics {
-    const emptyTrend = [{ value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }, { value: 0 }];
+  public static getDefaultAnalytics(timeFrame: 'YTD' | 'MTD' | 'ALL' = 'YTD'): VenueAnalytics {
+    const now = new Date();
+    let emptyTrend: { value: number; date: string; formattedDate: string }[];
+
+    if (timeFrame === 'MTD') {
+      // For MTD, create daily trends
+      const today = now.getDate();
+      const maxDays = Math.min(today, 7);
+      emptyTrend = Array.from({ length: maxDays }, (_, i) => {
+        const dayNumber = today - (maxDays - 1 - i);
+        const date = new Date(now.getFullYear(), now.getMonth(), dayNumber);
+        return {
+          value: 0,
+          date: date.toISOString(),
+          formattedDate: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        };
+      });
+    } else {
+      // For YTD and ALL, create monthly trends
+      emptyTrend = Array.from({ length: 6 }, (_, i) => {
+        const date = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+        return {
+          value: 0,
+          date: date.toISOString(),
+          formattedDate: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        };
+      });
+    }
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const emptyMonthlyData = months.map(month => ({ month, percentage: 0 }));
     
     const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
     const emptyQuarterlyData = quarters.map(quarter => ({ quarter, percentage: 0 }));
     
-    const now = new Date();
     const years = [];
     for (let i = 4; i >= 0; i--) {
       years.push((now.getFullYear() - i).toString());
