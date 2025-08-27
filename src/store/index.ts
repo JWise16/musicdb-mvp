@@ -3,10 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { TypedUseSelectorHook } from 'react-redux';
 import authSlice from './slices/authSlice';
 import authMiddleware from './middleware/authMiddleware';
+import { eventsApi } from './api/eventsApi';
 
 export const store = configureStore({
   reducer: {
     auth: authSlice,
+    [eventsApi.reducerPath]: eventsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -18,7 +20,9 @@ export const store = configureStore({
         // Ignore these paths in the state
         ignoredPaths: ['auth.user'],
       },
-    }).concat(authMiddleware),
+    })
+    .concat(authMiddleware)
+    .concat(eventsApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

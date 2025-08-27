@@ -1,8 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import { useUserProfile } from '../../hooks/useUserProfile';
-import { useAdminAuth } from '../../hooks/useAdminAuth';
+import { useAuth, useUserProfile, useAdminAuth } from '../../hooks/useAuthTransition';
 import { supabase } from '../../supabaseClient';
 import { formatRole } from '../../utils/roleUtils';
 import Avatar from '../common/Avatar';
