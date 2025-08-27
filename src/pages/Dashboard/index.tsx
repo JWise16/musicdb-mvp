@@ -1,9 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import { useUserProfile } from '../../hooks/useUserProfile';
-import { useVenue } from '../../contexts/VenueContext';
-import { VenueService, type VenueAnalytics, type VenueEvent } from '../../services/venueService';
+import { useAuth, useUserProfile } from '../../hooks/useAuthTransition';
+import { 
+  useGetUserVenuesQuery, 
+  useCheckUserHasVenuesQuery,
+  useGetVenueAnalyticsQuery,
+  useGetVenueEventsQuery
+} from '../../store/api/venuesApi';
+import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import VenueSelector from '../../components/features/venues/VenueSelector';
 import TimeFrameSelector from '../../components/features/dashboard/TimeFrameSelector';
@@ -18,16 +22,50 @@ const Dashboard = () => {
   
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
-  const { currentVenue, hasUserVenues: contextHasVenues, isLoading: venueLoading } = useVenue();
+  
+  // Use RTK Query for venue data (cached!)
+  const {
+    data: userVenues = [],
+    isLoading: venuesLoading,
+  } = useGetUserVenuesQuery(user?.id || '', {
+    skip: !user?.id,
+  });
+  
+  const {
+    data: contextHasVenues = false,
+    isLoading: hasVenuesLoading,
+  } = useCheckUserHasVenuesQuery(user?.id || '', {
+    skip: !user?.id,
+  });
+  
+  // Use first venue as current venue (simplified for now)
+  const currentVenue = userVenues[0] || null;
+  const venueLoading = venuesLoading || hasVenuesLoading;
+  
   const navigate = useNavigate();
   const [hasVenues, setHasVenues] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [onboardingCheckComplete, setOnboardingCheckComplete] = useState(false);
   const [timeFrame, setTimeFrame] = useState<'YTD' | 'MTD' | 'ALL'>('YTD');
-  const [analytics, setAnalytics] = useState<VenueAnalytics>(() => VenueService.getDefaultAnalytics());
-  const [events, setEvents] = useState<{ upcoming: VenueEvent[]; past: VenueEvent[] }>({
-    upcoming: [],
-    past: []
-  });
+  
+  // Use RTK Query for dashboard data (cached!)
+  const {
+    data: analytics = VenueService.getDefaultAnalytics(),
+    isLoading: analyticsLoading,
+  } = useGetVenueAnalyticsQuery(
+    currentVenue ? { venueId: currentVenue.id, timeFrame } : { venueId: '', timeFrame },
+    { skip: !currentVenue }
+  );
+
+  const {
+    data: events = { upcoming: [], past: [] },
+    isLoading: eventsLoading,
+  } = useGetVenueEventsQuery(
+    currentVenue?.id || '',
+    { skip: !currentVenue }
+  );
+  
+  // Dashboard data loading state (combines onboarding + data loading)
+  const isDashboardLoading = analyticsLoading || eventsLoading;
 
   // Only log state changes when there's an actual change to avoid spam
   const stateRef = useRef<string>('');
@@ -69,9 +107,9 @@ const Dashboard = () => {
       navigate('/onboarding');
     }, 15000); // 15 second timeout
 
-    const checkOnboardingNeeded = async () => {
+        const checkOnboardingNeeded = async () => {
       console.log('Dashboard: Starting onboarding check', { 
-        user: user?.email,
+        user: user?.email, 
         authLoading,
         profile: profile ? { full_name: profile.full_name, role: profile.role } : 'null', 
         profileLoading,
@@ -91,9 +129,14 @@ const Dashboard = () => {
         return;
       }
 
-      // Wait for profile loading to complete
-      if (profileLoading) {
-        console.log('Dashboard: Profile still loading, waiting...');
+      // IMPORTANT: Wait for profile loading to complete AND profile to be fetched
+      // Redux profile loading might complete but profile might still be null during async fetch
+      if (profileLoading || (!profile && user)) {
+        console.log('Dashboard: Profile still loading or not yet fetched, waiting...', {
+          profileLoading,
+          hasProfile: !!profile,
+          userId: user.id
+        });
         return;
       }
 
@@ -107,6 +150,7 @@ const Dashboard = () => {
       if (!hasProfile) {
         console.log('Dashboard: Profile incomplete, redirecting to onboarding');
         clearTimeout(timeout);
+        setOnboardingCheckComplete(true);
         navigate('/onboarding');
         return;
       }
@@ -125,51 +169,33 @@ const Dashboard = () => {
         if (!hasVenues) {
           console.log('Dashboard: No venues found, redirecting to onboarding');
           clearTimeout(timeout);
+          setOnboardingCheckComplete(true);
           navigate('/onboarding');
           return;
         }
 
-        // Check if user has at least 3 events across all their venues
-        const userVenues = await VenueService.getUserVenues(user.id);
-        console.log('Dashboard: User venues', { userVenues: userVenues.map(v => ({ id: v.id, name: v.name })) });
-        
-        let totalEvents = 0;
-        
-        for (const venue of userVenues) {
-          try {
-            const venueEvents = await VenueService.getVenueEvents(venue.id);
-            const venueEventCount = venueEvents.upcoming.length + venueEvents.past.length;
-            totalEvents += venueEventCount;
-            console.log(`Dashboard: Venue ${venue.name} has ${venueEventCount} events`);
-          } catch (error) {
-            console.error(`Error fetching events for venue ${venue.id}:`, error);
-          }
-        }
-        
-        console.log('Dashboard: Total events found:', totalEvents);
-        
-        if (totalEvents < 3) {
-          console.log('Dashboard: Less than 3 events found, redirecting to onboarding');
-          clearTimeout(timeout);
-          navigate('/onboarding');
-          return;
-        }
+        // For existing users with venues and complete profiles, skip the event count check
+        // This eliminates the 3-second API delay for users who are clearly past onboarding
+        console.log('Dashboard: User venues (cached)', { userVenues: userVenues.map(v => ({ id: v.id, name: v.name })) });
+        console.log('Dashboard: Existing user with venues and profile - skipping event count check for faster loading');
 
         // If we get here, onboarding is complete
         console.log('Dashboard: Onboarding complete, setting hasVenues to true');
         clearTimeout(timeout);
         setHasVenues(hasVenues);
+        setOnboardingCheckComplete(true);
       } catch (error) {
         console.error('Dashboard: Error during onboarding check:', error);
         clearTimeout(timeout);
         // If there's an error, we might want to redirect to onboarding or show an error
         // For now, let's set hasVenues to false to prevent infinite loading
         setHasVenues(false);
+        setOnboardingCheckComplete(true);
       }
     };
 
-    // Only proceed if we have a user and all loading states are complete
-    if (!authLoading && user && !venueLoading && !profileLoading) {
+    // Only proceed if we have a user and all loading states are complete, and we haven't already checked
+    if (!authLoading && user && !venueLoading && !profileLoading && !onboardingCheckComplete) {
       checkOnboardingNeeded();
     }
 
@@ -179,31 +205,8 @@ const Dashboard = () => {
     };
   }, [user, profile, authLoading, profileLoading, venueLoading, navigate]);
 
-  // Load dashboard data
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!user || !hasVenues || !currentVenue) return;
-
-      setIsLoading(true);
-      try {
-        // Load analytics for current venue
-        const venueAnalytics = await VenueService.getVenueAnalytics(currentVenue.id, timeFrame);
-        setAnalytics(venueAnalytics);
-
-        // Load events for current venue
-        const venueEvents = await VenueService.getVenueEvents(currentVenue.id);
-        setEvents(venueEvents);
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (hasVenues && currentVenue) {
-      loadDashboardData();
-    }
-  }, [user, hasVenues, currentVenue, timeFrame]);
+  // Dashboard data is now loaded automatically by RTK Query hooks above
+  // No need for manual useEffect - data is cached and loads instantly on subsequent visits!
 
   const handleEventClick = (eventId: string) => {
     navigate(`/event/${eventId}`);
@@ -218,7 +221,7 @@ const Dashboard = () => {
   };
 
   // Show loading while checking onboarding or loading data
-  if (authLoading || venueLoading || profileLoading || isLoading || hasVenues === null) {
+  if (authLoading || venueLoading || profileLoading || isDashboardLoading || hasVenues === null) {
     return (
       <div className="min-h-screen bg-[#F6F6F3] flex items-center justify-center">
         <div className="text-center">

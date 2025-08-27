@@ -1,29 +1,15 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { VenueService } from '../../services/venueService';
-import { type Tables } from '../../database.types';
+import { useGetAllVenuesQuery } from '../../store/api/venuesApi';
 import Sidebar from '../../components/layout/Sidebar';
 
 const Venues = () => {
   const navigate = useNavigate();
-  const [venues, setVenues] = useState<Tables<'venues'>[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadVenues = async () => {
-      setIsLoading(true);
-      try {
-        const venuesData = await VenueService.getAllVenues();
-        setVenues(venuesData);
-      } catch (error) {
-        console.error('Error loading venues:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadVenues();
-  }, []);
+  
+  // Use RTK Query to get all venues (cached!)
+  const {
+    data: venues = [],
+    isLoading,
+  } = useGetAllVenuesQuery();
 
   const handleVenueClick = (venueId: string) => {
     navigate(`/venue/${venueId}`);
@@ -60,6 +46,7 @@ const Venues = () => {
               <span className="text-sm text-gray-500">
                 {venues.length} venue{venues.length !== 1 ? 's' : ''}
               </span>
+
             </div>
           </div>
 

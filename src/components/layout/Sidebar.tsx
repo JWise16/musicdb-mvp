@@ -1,17 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import { useAuth, useUserProfile, useAdminAuth } from '../../hooks/useAuthTransition';
-import { supabase } from '../../supabaseClient';
+import { useGetUserVenueRelationQuery } from '../../store/api/venuesApi';
 import { formatRole } from '../../utils/roleUtils';
 import Avatar from '../common/Avatar';
+import { supabase } from '../../supabaseClient';
 import logoImage from '../../assets/logo.png';
-
-type UserVenue = {
-  role: string;
-  venue: {
-    name: string;
-  };
-};
 
 const navLinks = [
   { name: 'Home', to: '/dashboard', icon: (
@@ -33,47 +26,14 @@ const Sidebar = () => {
   const { user } = useAuth();
   const { profile } = useUserProfile();
   const { canViewAdminDashboard, adminLevel } = useAdminAuth();
-  const [userVenue, setUserVenue] = useState<UserVenue | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUserVenue = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('user_venues')
-          .select(`
-            role,
-            venue:venues (
-              name
-            )
-          `)
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user venue:', error);
-        } else if (data) {
-          // Handle the nested venue data structure
-          const venueData = {
-            role: data.role,
-            venue: Array.isArray(data.venue) ? data.venue[0] : data.venue
-          };
-          setUserVenue(venueData as UserVenue);
-        }
-      } catch (error) {
-        console.error('Error fetching user venue:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserVenue();
-  }, [user]);
+  
+  // Use RTK Query to get user venue relation (cached!)
+  const {
+    data: userVenue,
+    isLoading: venueLoading,
+  } = useGetUserVenueRelationQuery(user?.id || '', {
+    skip: !user?.id, // Skip query if no user
+  });
 
   // Get display name from profile or fallback to email
   const getDisplayName = () => {
@@ -158,7 +118,7 @@ const Sidebar = () => {
               {getDisplayName()}
             </div>
             <div className="text-xs text-gray-500 truncate">
-              {loading ? 'Loading...' : getRoleDisplay()}
+                              {venueLoading ? 'Loading...' : getRoleDisplay()}
             </div>
           </div>
         </div>

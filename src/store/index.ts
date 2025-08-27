@@ -4,11 +4,13 @@ import type { TypedUseSelectorHook } from 'react-redux';
 import authSlice from './slices/authSlice';
 import authMiddleware from './middleware/authMiddleware';
 import { eventsApi } from './api/eventsApi';
+import { venuesApi } from './api/venuesApi';
 
 export const store = configureStore({
   reducer: {
     auth: authSlice,
     [eventsApi.reducerPath]: eventsApi.reducer,
+    [venuesApi.reducerPath]: venuesApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -22,7 +24,8 @@ export const store = configureStore({
       },
     })
     .concat(authMiddleware)
-    .concat(eventsApi.middleware),
+    .concat(eventsApi.middleware)
+    .concat(venuesApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

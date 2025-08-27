@@ -37,6 +37,7 @@ startAuthListener({
         try {
           switch (event) {
             case 'SIGNED_IN':
+            case 'INITIAL_SESSION':
               if (session?.user) {
                 dispatch(setUser(session.user));
                 
@@ -46,14 +47,17 @@ startAuthListener({
                   dispatch(fetchAdminStatus(session.user.id)).unwrap(),
                 ]);
 
-                // Record login activity (non-blocking)
-                dispatch(recordLoginActivity({
-                  userId: session.user.id,
-                  userAgent: navigator.userAgent,
-                }));
+                // Record login activity (non-blocking) - only for actual sign-ins, not initial sessions
+                if (event === 'SIGNED_IN') {
+                  dispatch(recordLoginActivity({
+                    userId: session.user.id,
+                    userAgent: navigator.userAgent,
+                  }));
+                }
 
                 console.log('Auth state updated:', {
                   user: session.user.email,
+                  event,
                   profile: profileResult.status === 'fulfilled' ? 'loaded' : 'failed',
                   admin: adminResult.status === 'fulfilled' ? 'loaded' : 'failed',
                 });
