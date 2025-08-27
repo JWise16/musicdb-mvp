@@ -334,14 +334,17 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
         </div>
         
         <div className="h-80 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <XAxis 
-                  dataKey="period" 
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#6B7280' }}
-                />
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+              <XAxis 
+                dataKey="period" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#6B7280' }}
+                angle={-45}
+                textAnchor="end"
+                height={60}
+              />
                 <YAxis 
                   domain={chartMetric === 'percentage' ? [0, 100] : [0, 'dataMax']}
                   axisLine={false}
@@ -450,12 +453,15 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
                 {/* Chart */}
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={genreData.data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <BarChart data={genreData.data} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
                       <XAxis 
                         dataKey="genre" 
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 12, fill: '#6B7280' }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
                       />
                       <YAxis 
                         domain={genreMetric === 'percentage' ? [0, 100] : [0, 'dataMax']}
