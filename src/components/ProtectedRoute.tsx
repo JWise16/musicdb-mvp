@@ -6,6 +6,12 @@ import { selectCanAccessRoute } from '../store/selectors/authSelectors';
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { canAccess, shouldRedirect, isLoading } = useAppSelector(selectCanAccessRoute);
   
+  // Render children immediately if access is granted, even during loading
+  // This prevents component unmounting during auth state changes
+  if (canAccess) {
+    return children;
+  }
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -21,7 +27,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
     return <Navigate to="/login" replace />;
   }
   
-  return canAccess ? children : null;
+  return null;
 };
 
 export default ProtectedRoute;

@@ -499,31 +499,39 @@ export class EventService {
 
 
 
-      // Now get the additional data for these events
+      // Now get the additional data for these events IN PARALLEL
       const eventIds = events?.map(e => e.id) || [];
       
       if (eventIds.length === 0) {
         return [];
       }
 
-      // Get event_artists data
-      const { data: eventArtists, error: artistsError } = await supabase
-        .from('event_artists')
-        .select(`
-          *,
-          artists (*)
-        `)
-        .in('event_id', eventIds);
+      console.log('EventService: Starting parallel data fetch for', eventIds.length, 'events');
+      const parallelStart = performance.now();
+
+      // Get event_artists and event_metrics data IN PARALLEL
+      const [
+        { data: eventArtists, error: artistsError },
+        { data: eventMetrics, error: metricsError }
+      ] = await Promise.all([
+        supabase
+          .from('event_artists')
+          .select(`
+            *,
+            artists (*)
+          `)
+          .in('event_id', eventIds),
+        supabase
+          .from('event_metrics')
+          .select('*')
+          .in('event_id', eventIds)
+      ]);
+
+      console.log('EventService: Parallel data fetch completed in', Math.round(performance.now() - parallelStart), 'ms');
 
       if (artistsError) {
         console.error('Error fetching event artists:', artistsError);
       }
-
-      // Get event_metrics data
-      const { data: eventMetrics, error: metricsError } = await supabase
-        .from('event_metrics')
-        .select('*')
-        .in('event_id', eventIds);
 
       if (metricsError) {
         console.error('Error fetching event metrics:', metricsError);

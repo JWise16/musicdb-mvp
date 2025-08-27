@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuthTransition';
 import { type EventFilters as EventFiltersType } from '../../services/eventService';
@@ -8,27 +8,74 @@ import EventTable from '../../components/features/events/EventTable';
 import EventFiltersComponent from '../../components/features/events/EventFilters';
 
 const Events = () => {
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+  console.log(`🚀 Events: Component render #${renderCount.current} started`);
+  const componentStartTime = useRef(performance.now());
+  
   const { user } = useAuth();
+  console.log('⚡ Events: Auth hook completed in', Math.round(performance.now() - componentStartTime.current), 'ms');
+  
   const [filters, setFilters] = useState<EventFiltersType>({});
 
   // Use our new RTK Query hook with client-side filtering
+  const dataFetchStartTime = useRef(performance.now());
   const hookResult = useEventsWithFiltering(filters);
+  console.log('📊 Events: Data fetching hook completed in', Math.round(performance.now() - dataFetchStartTime.current), 'ms');
+  
   const filteredEvents = hookResult.events;
   const filterOptions = hookResult.filterOptions;
   const isLoading = hookResult.isLoading;
   const isRefetching = hookResult.isRefetching;
   const error = hookResult.error;
   const hasFilteredResults = hookResult.hasFilteredResults;
-  const filteredCount = hookResult.filteredCount;
   const allEventsCount = hookResult.allEventsCount;
 
-  const handleFilterChange = (newFilters: Partial<EventFiltersType>) => {
-    console.log('Events page: Filter change (client-side):', newFilters);
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  };
+  // Track loading state changes
+  const prevLoadingRef = useRef(isLoading);
+  const prevDataRef = useRef({ eventsCount: 0, filterOptionsCount: 0 });
+  
+  useEffect(() => {
+    const currentData = {
+      eventsCount: filteredEvents.length,
+      filterOptionsCount: Object.keys(filterOptions).length
+    };
+    
+    if (prevLoadingRef.current && !isLoading) {
+      const totalTime = performance.now() - componentStartTime.current;
+      console.log('✅ Events: Loading completed! Total time:', Math.round(totalTime), 'ms');
+      console.log('📈 Events: Final data:', {
+        ...currentData,
+        hasError: !!error
+      });
+    }
+    
+    // Only log data changes when they actually change
+    if (currentData.eventsCount !== prevDataRef.current.eventsCount || 
+        currentData.filterOptionsCount !== prevDataRef.current.filterOptionsCount) {
+      console.log('📊 Events: Data changed:', {
+        from: prevDataRef.current,
+        to: currentData
+      });
+      prevDataRef.current = currentData;
+    }
+    
+    prevLoadingRef.current = isLoading;
+  }, [isLoading, filteredEvents.length, filterOptions, error]);
+
+  const handleFilterChange = useCallback((newFilters: Partial<EventFiltersType>) => {
+    const filterStartTime = performance.now();
+    console.log('🔍 Events: Filter change started:', newFilters);
+    setFilters(prev => {
+      const newFilterState = { ...prev, ...newFilters };
+      console.log('⚡ Events: Filter state updated in', Math.round(performance.now() - filterStartTime), 'ms');
+      return newFilterState;
+    });
+  }, []);
 
   // Show loading if not authenticated
   if (!user) {
+    console.log('❌ Events: No user, showing login prompt');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -38,6 +85,15 @@ const Events = () => {
       </div>
     );
   }
+
+  console.log(`🎨 Events: Render #${renderCount.current} with data:`, {
+    isLoading,
+    eventsCount: filteredEvents.length,
+    hasError: !!error,
+    renderTime: Math.round(performance.now() - componentStartTime.current),
+    user: !!user,
+    hasFilteredResults
+  });
 
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
@@ -50,11 +106,6 @@ const Events = () => {
               <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 break-words">Events</h2>
               <p className="text-gray-600 break-words">
                 Track and analyze your event performance
-                {(allEventsCount as number) > 0 && (
-                  <span className="ml-2 text-sm text-gray-500">
-                    ({filteredCount as number} of {allEventsCount as number} events)
-                  </span>
-                )}
               </p>
               {isRefetching === true && (
                 <p className="text-sm text-blue-600 mt-1">
@@ -89,14 +140,20 @@ const Events = () => {
 
           {/* Events List */}
           <div className="w-full overflow-x-auto overflow-y-hidden">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading events...</p>
-                </div>
-              </div>
-            ) : !hasFilteredResults ? (
+            {(() => {
+              if (isLoading) {
+                console.log('⏳ Events: Showing loading state');
+                return (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Loading events...</p>
+                    </div>
+                  </div>
+                );
+              } else if (!hasFilteredResults) {
+                console.log('📭 Events: Showing empty state');
+                return (
               <div className="text-center py-16">
                 <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,15 +185,15 @@ const Events = () => {
                   </>
                 )}
               </div>
-            ) : (
-              <>
-                {/* Performance indicator */}
-                <div className="mb-4 text-sm text-gray-500">
-                  ⚡ Instant filtering - {filteredCount} events loaded from cache
-                </div>
-                <EventTable events={filteredEvents} />
-              </>
-            )}
+                );
+              } else {
+                const tableRenderStart = performance.now();
+                console.log('📊 Events: Rendering EventTable with', filteredEvents.length, 'events');
+                const table = <EventTable events={filteredEvents} />;
+                console.log('⚡ Events: EventTable rendered in', Math.round(performance.now() - tableRenderStart), 'ms');
+                return table;
+              }
+            })()}
           </div>
         </div>
       </main>
