@@ -249,11 +249,11 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
           
           
           {filters.percentageSoldRange && (filters.percentageSoldRange[0] !== 0 || filters.percentageSoldRange[1] !== 100) && (
-            <span className="inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm bg-red-100 text-red-700">
+            <span className="inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm bg-blue-100 text-blue-700">
               % Sold: {filters.percentageSoldRange[0]}%-{filters.percentageSoldRange[1]}%
               <button
                 onClick={() => clearFilter('percentageSoldRange')}
-                className="ml-1 lg:ml-2 text-red-500 hover:text-red-700 flex-shrink-0"
+                className="ml-1 lg:ml-2 text-blue-500 hover:text-blue-700 flex-shrink-0"
               >
                 <svg className="w-3 h-3 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -263,14 +263,14 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
           )}
           
           {filters.percentageSold && (
-            <span className="inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm bg-red-100 text-red-700">
+            <span className="inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm bg-blue-100 text-blue-700">
               Sales: {filters.percentageSold === 'low' ? '0-33%' : 
                       filters.percentageSold === 'medium' ? '34-66%' : 
                       filters.percentageSold === 'high' ? '67-100%' : 
                       filters.percentageSold}
               <button
                 onClick={() => clearFilter('percentageSold')}
-                className="ml-1 lg:ml-2 text-red-500 hover:text-red-700 flex-shrink-0"
+                className="ml-1 lg:ml-2 text-blue-500 hover:text-blue-700 flex-shrink-0"
               >
                 <svg className="w-3 h-3 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
