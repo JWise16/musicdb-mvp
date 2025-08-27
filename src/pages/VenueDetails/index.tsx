@@ -88,7 +88,7 @@ const VenueDetails = () => {
     return (
       <div className="min-h-screen bg-[#F6F6F3] flex">
         <Sidebar />
-        <main className="flex-1 ml-64 p-8">
+        <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">
           <div className="rounded-3xl bg-white shadow-soft p-8 min-h-[90vh]">
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
@@ -106,7 +106,7 @@ const VenueDetails = () => {
     return (
       <div className="min-h-screen bg-[#F6F6F3] flex">
         <Sidebar />
-        <main className="flex-1 ml-64 p-8">
+        <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">
           <div className="rounded-3xl bg-white shadow-soft p-8 min-h-[90vh]">
             <div className="text-center py-16">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Venue Not Found</h3>
@@ -124,7 +124,7 @@ const VenueDetails = () => {
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
       <Sidebar />
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">
         <div className="rounded-3xl bg-white shadow-soft p-8 min-h-[90vh]">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">

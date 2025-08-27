@@ -55,7 +55,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="flex flex-col justify-between h-screen w-64 bg-[#F6F6F3] border-r border-gray-200 py-6 px-4 fixed left-0 top-0 z-20">
+    <aside className="flex flex-col justify-between h-screen w-64 bg-[#F6F6F3] border-r border-gray-200 py-6 px-4 sticky top-0 z-20 shrink-0">
       <div>
         {/* Logo */}
         <div className="flex items-center mb-10 px-2">

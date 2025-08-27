@@ -240,8 +240,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
       <Sidebar />
-      <main className="flex-1 ml-64 p-4 lg:p-8 overflow-hidden">
-        <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 min-h-[90vh] overflow-hidden">
+      <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">
+        <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 min-h-[90vh] max-w-full overflow-hidden">
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 lg:mb-8">
             <div className="min-w-0">

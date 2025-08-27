@@ -42,13 +42,13 @@ const Events = () => {
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
       <Sidebar />
-      <main className="flex-1 ml-64 p-8">
-        <div className="rounded-3xl bg-white shadow-soft p-8 min-h-[90vh]">
+      <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">
+        <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 min-h-[90vh] max-w-full">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-1">Events</h2>
-              <p className="text-gray-600">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 lg:mb-8">
+            <div className="min-w-0">
+              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 break-words">Events</h2>
+              <p className="text-gray-600 break-words">
                 Track and analyze your event performance
                 {(allEventsCount as number) > 0 && (
                   <span className="ml-2 text-sm text-gray-500">
@@ -62,8 +62,8 @@ const Events = () => {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-4">
-              <Link to="/add-event" className="btn-primary">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:gap-4 min-w-0">
+              <Link to="/add-event" className="btn-primary text-center whitespace-nowrap">
                 Add Event
               </Link>
             </div>
@@ -88,7 +88,7 @@ const Events = () => {
           </div>
 
           {/* Events List */}
-          <div className="w-full overflow-hidden">
+          <div className="w-full overflow-x-auto overflow-y-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">

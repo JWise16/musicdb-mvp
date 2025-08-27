@@ -179,8 +179,8 @@ const ArtistSearch = () => {
   return (
     <div className="min-h-screen bg-[#F6F6F3] flex">
       <Sidebar />
-      <main className="flex-1 ml-64 p-4 lg:p-8">
-        <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 min-h-[90vh]">
+      <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">
+        <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 min-h-[90vh] max-w-full">
           {/* Header */}
           <div className="mb-6 lg:mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">Artist Search</h2>
