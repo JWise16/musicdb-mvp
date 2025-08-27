@@ -1,14 +1,12 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAppSelector } from '../store';
+import { selectCanAccessRoute } from '../store/selectors/authSelectors';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
-  const { user, loading } = useAuth();
+  const { canAccess, shouldRedirect, isLoading } = useAppSelector(selectCanAccessRoute);
   
-  //console.log('ProtectedRoute: State:', { user: user?.email, loading });
-  
-  if (loading) {
-    //console.log('ProtectedRoute: Loading, showing loading component');
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -19,13 +17,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
     );
   }
   
-  if (!user) {
-    //console.log('ProtectedRoute: No user, redirecting to login');
+  if (shouldRedirect) {
     return <Navigate to="/login" replace />;
   }
   
-  //console.log('ProtectedRoute: User authenticated, rendering children');
-  return children;
+  return canAccess ? children : null;
 };
 
 export default ProtectedRoute;

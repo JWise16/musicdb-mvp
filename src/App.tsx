@@ -1,7 +1,7 @@
 // src/App.tsx or src/main.tsx
 import { useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
+import { useAuth } from './hooks/useAuthTransition';
 import Login from './pages/Auth/login';
 import Signup from './pages/Auth/signup';
 import Landing from './pages/Landing';

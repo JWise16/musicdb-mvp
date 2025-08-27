@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAdminAuth } from '../hooks/useAdminAuth';
+import { useAppSelector } from '../store';
+import { selectCanAccessAdminRoute, selectCanAccessSuperAdminRoute } from '../store/selectors/authSelectors';
 
 interface AdminRouteProps {
   children: React.ReactElement;
@@ -8,9 +9,13 @@ interface AdminRouteProps {
 }
 
 const AdminRoute = ({ children, requireSuperAdmin = false }: AdminRouteProps) => {
-  const { canViewAdminDashboard, isSuperAdmin, loading } = useAdminAuth();
+  const adminAccess = useAppSelector(selectCanAccessAdminRoute);
+  const superAdminAccess = useAppSelector(selectCanAccessSuperAdminRoute);
   
-  if (loading) {
+  // Choose the appropriate access check based on requirements
+  const { canAccess, shouldRedirect, isLoading } = requireSuperAdmin ? superAdminAccess : adminAccess;
+  
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -21,17 +26,12 @@ const AdminRoute = ({ children, requireSuperAdmin = false }: AdminRouteProps) =>
     );
   }
   
-  // Check if user has admin access
-  if (!canViewAdminDashboard) {
-    return <Navigate to="/dashboard" replace />;
+  if (shouldRedirect) {
+    const redirectTo = requireSuperAdmin ? '/admin' : '/dashboard';
+    return <Navigate to={redirectTo} replace />;
   }
   
-  // Check if super admin is required
-  if (requireSuperAdmin && !isSuperAdmin) {
-    return <Navigate to="/admin" replace />;
-  }
-  
-  return children;
+  return canAccess ? children : null;
 };
 
 export default AdminRoute;
