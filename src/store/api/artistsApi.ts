@@ -17,7 +17,10 @@ import type {
   VibrateSpotifyFanbaseData, 
   VibrateEnhancedSpotifyListenersData, 
   VibrateYouTubeViewsData, 
-  VibrateYouTubeFanbaseData 
+  VibrateYouTubeFanbaseData,
+  VibrateInstagramFanbaseData,
+  VibrateFacebookFanbaseData,
+  VibrateTikTokFanbaseData
 } from '../../services/vibrateService';
 
 // Artist with events type
@@ -48,6 +51,9 @@ export type ArtistDetailsData = {
   enhancedSpotifyListeners: VibrateEnhancedSpotifyListenersData;
   youtubeViews: VibrateYouTubeViewsData;
   youtubeFanbase: VibrateYouTubeFanbaseData;
+  instagramFanbase: VibrateInstagramFanbaseData;
+  facebookFanbase: VibrateFacebookFanbaseData;
+  tiktokFanbase: VibrateTikTokFanbaseData;
 };
 
 // Define our artists API
@@ -107,6 +113,9 @@ export const artistsApi = createApi({
                 enhancedSpotifyListeners: { total: {} },
                 youtubeViews: { views: {} },
                 youtubeFanbase: { total: {} },
+                instagramFanbase: { total: {} },
+                facebookFanbase: { facebookFanbase: { uuid: '', name: '', slug: '', data: {} } },
+                tiktokFanbase: { tiktokFanbase: { uuid: '', name: '', slug: '', data: {} } },
               }
             };
           }
@@ -134,7 +143,10 @@ export const artistsApi = createApi({
             spotifyFanbaseResponse,
             enhancedSpotifyListenersResponse,
             youtubeViewsResponse,
-            youtubeFanbaseResponse
+            youtubeFanbaseResponse,
+            instagramFanbaseResponse,
+            facebookFanbaseResponse,
+            tiktokFanbaseResponse
           ] = await Promise.all([
             localArtistPromise,
             VibrateService.getArtistLinks(vibrateUuid),
@@ -150,7 +162,10 @@ export const artistsApi = createApi({
             VibrateService.getArtistSpotifyFanbase(vibrateUuid),
             VibrateService.getArtistEnhancedSpotifyListeners(vibrateUuid),
             VibrateService.getArtistYouTubeViews(vibrateUuid),
-            VibrateService.getArtistYouTubeFanbase(vibrateUuid)
+            VibrateService.getArtistYouTubeFanbase(vibrateUuid),
+            VibrateService.getArtistInstagramFanbase(vibrateUuid),
+            VibrateService.getArtistFacebookFanbase(vibrateUuid),
+            VibrateService.getArtistTikTokFanbase(vibrateUuid)
           ]);
 
           console.log('RTK Query: Parallel Vibrate API calls completed in', Math.round(performance.now() - vibrateStart), 'ms');
@@ -198,6 +213,9 @@ export const artistsApi = createApi({
               enhancedSpotifyListeners: enhancedSpotifyListenersResponse ? { total: enhancedSpotifyListenersResponse.total } : { total: {} },
               youtubeViews: youtubeViewsResponse ? { views: youtubeViewsResponse.views } : { views: {} },
               youtubeFanbase: youtubeFanbaseResponse ? { total: youtubeFanbaseResponse.total } : { total: {} },
+              instagramFanbase: instagramFanbaseResponse ? { total: instagramFanbaseResponse.total } : { total: {} },
+              facebookFanbase: facebookFanbaseResponse || { facebookFanbase: { uuid: '', name: '', slug: '', data: {} } },
+              tiktokFanbase: tiktokFanbaseResponse || { tiktokFanbase: { uuid: '', name: '', slug: '', data: {} } },
             }
           };
         } catch (error: any) {

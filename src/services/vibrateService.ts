@@ -419,6 +419,65 @@ export type VibrateYouTubeFanbaseResponse = {
   total: VibrateTimeSeriesData;
 };
 
+// Instagram Fanbase (daily data)
+export type VibrateInstagramFanbaseData = {
+  total: VibrateTimeSeriesData;
+};
+
+export type VibrateInstagramFanbaseResponse = {
+  success: boolean;
+  artistUuid: string;
+  dateFrom: string;
+  dateTo: string;
+  total: VibrateTimeSeriesData;
+};
+
+// Facebook Fanbase (weekly data)
+export type VibrateFacebookFanbaseData = {
+  facebookFanbase: {
+    uuid: string;
+    name: string;
+    slug: string;
+    data: VibrateTimeSeriesData;
+  };
+};
+
+export type VibrateFacebookFanbaseResponse = {
+  success: boolean;
+  artistUuid: string;
+  dateFrom: string;
+  dateTo: string;
+  facebookFanbase: {
+    uuid: string;
+    name: string;
+    slug: string;
+    data: VibrateTimeSeriesData;
+  };
+};
+
+// TikTok Fanbase (weekly data)
+export type VibrateTikTokFanbaseData = {
+  tiktokFanbase: {
+    uuid: string;
+    name: string;
+    slug: string;
+    data: VibrateTimeSeriesData;
+  };
+};
+
+export type VibrateTikTokFanbaseResponse = {
+  success: boolean;
+  artistUuid: string;
+  dateFrom: string;
+  dateTo: string;
+  tiktokFanbase: {
+    uuid: string;
+    name: string;
+    slug: string;
+    data: VibrateTimeSeriesData;
+  };
+};
+
 export class VibrateService {
   // Helper function to generate date range for API calls (6 months back from now)
   private static getDateRange(): { dateFrom: string; dateTo: string } {
@@ -885,6 +944,90 @@ export class VibrateService {
     }
   }
 
+  // Get artist Instagram fanbase data by UUID
+  static async getArtistInstagramFanbase(artistUuid: string): Promise<VibrateInstagramFanbaseResponse | null> {
+    try {
+      console.log(`Fetching Instagram fanbase data for artist UUID: ${artistUuid}`);
+      
+      const { dateFrom, dateTo } = this.getDateRange();
+      const { data, error } = await supabase.functions.invoke('instagram-fanbase', {
+        body: { artistUuid, dateFrom, dateTo }
+      });
+
+      if (error) {
+        console.error('Error calling Instagram fanbase edge function:', error);
+        return null;
+      }
+
+      if (!data?.success) {
+        console.error('Instagram fanbase edge function returned error:', data);
+        return null;
+      }
+
+      console.log(`Found Instagram fanbase data for artist (${Object.keys(data.total || {}).length} data points)`);
+      return data;
+    } catch (error) {
+      console.error('Error in VibrateService.getArtistInstagramFanbase:', error);
+      return null;
+    }
+  }
+
+  // Get artist Facebook fanbase data by UUID
+  static async getArtistFacebookFanbase(artistUuid: string): Promise<VibrateFacebookFanbaseResponse | null> {
+    try {
+      console.log(`Fetching Facebook fanbase data for artist UUID: ${artistUuid}`);
+      
+      const { dateFrom, dateTo } = this.getDateRange();
+      const { data, error } = await supabase.functions.invoke('facebook-fanbase', {
+        body: { artistUuid, dateFrom, dateTo }
+      });
+
+      if (error) {
+        console.error('Error calling Facebook fanbase edge function:', error);
+        return null;
+      }
+
+      if (!data?.success) {
+        console.error('Facebook fanbase edge function returned error:', data);
+        return null;
+      }
+
+      console.log(`Found Facebook fanbase data for artist (${Object.keys(data.facebookFanbase?.data || {}).length} data points)`);
+      return data;
+    } catch (error) {
+      console.error('Error in VibrateService.getArtistFacebookFanbase:', error);
+      return null;
+    }
+  }
+
+  // Get artist TikTok fanbase data by UUID
+  static async getArtistTikTokFanbase(artistUuid: string): Promise<VibrateTikTokFanbaseResponse | null> {
+    try {
+      console.log(`Fetching TikTok fanbase data for artist UUID: ${artistUuid}`);
+      
+      const { dateFrom, dateTo } = this.getDateRange();
+      const { data, error } = await supabase.functions.invoke('tiktok-fanbase', {
+        body: { artistUuid, dateFrom, dateTo }
+      });
+
+      if (error) {
+        console.error('Error calling TikTok fanbase edge function:', error);
+        return null;
+      }
+
+      if (!data?.success) {
+        console.error('TikTok fanbase edge function returned error:', data);
+        return null;
+      }
+
+      console.log(`Found TikTok fanbase data for artist (${Object.keys(data.tiktokFanbase?.data || {}).length} data points)`);
+      return data;
+    } catch (error) {
+      console.error('Error in VibrateService.getArtistTikTokFanbase:', error);
+      return null;
+    }
+  }
+
   // Get artist data with links (combines search + links calls)
   static async getArtistWithLinks(artistName: string): Promise<{
     artist: VibrateArtist | null;
@@ -962,6 +1105,9 @@ export class VibrateService {
     enhancedSpotifyListeners: VibrateEnhancedSpotifyListenersData;
     youtubeViews: VibrateYouTubeViewsData;
     youtubeFanbase: VibrateYouTubeFanbaseData;
+    instagramFanbase: VibrateInstagramFanbaseData;
+    facebookFanbase: VibrateFacebookFanbaseData;
+    tiktokFanbase: VibrateTikTokFanbaseData;
   }> {
     try {
       // First get the artist data
@@ -984,12 +1130,15 @@ export class VibrateService {
           spotifyFanbase: { total: {} },
           enhancedSpotifyListeners: { total: {} },
           youtubeViews: { views: {} },
-          youtubeFanbase: { total: {} }
+          youtubeFanbase: { total: {} },
+          instagramFanbase: { total: {} },
+          facebookFanbase: { facebookFanbase: { uuid: '', name: '', slug: '', data: {} } },
+          tiktokFanbase: { tiktokFanbase: { uuid: '', name: '', slug: '', data: {} } }
         };
       }
 
       // Then get their links, events, audience, bio, Spotify listeners, Instagram audience, TikTok audience, YouTube audience, and new chart data in parallel
-      const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse, instagramAudienceResponse, tiktokAudienceResponse, youtubeAudienceResponse, soundcloudFanbaseResponse, soundcloudPlaysResponse, spotifyFanbaseResponse, enhancedSpotifyListenersResponse, youtubeViewsResponse, youtubeFanbaseResponse] = await Promise.all([
+      const [linksResponse, eventsResponse, audienceResponse, bioResponse, spotifyListenersResponse, instagramAudienceResponse, tiktokAudienceResponse, youtubeAudienceResponse, soundcloudFanbaseResponse, soundcloudPlaysResponse, spotifyFanbaseResponse, enhancedSpotifyListenersResponse, youtubeViewsResponse, youtubeFanbaseResponse, instagramFanbaseResponse, facebookFanbaseResponse, tiktokFanbaseResponse] = await Promise.all([
         this.getArtistLinks(artist.uuid),
         this.getArtistEvents(artist.uuid),
         this.getArtistAudience(artist.uuid),
@@ -1003,7 +1152,10 @@ export class VibrateService {
         this.getArtistSpotifyFanbase(artist.uuid),
         this.getArtistEnhancedSpotifyListeners(artist.uuid),
         this.getArtistYouTubeViews(artist.uuid),
-        this.getArtistYouTubeFanbase(artist.uuid)
+        this.getArtistYouTubeFanbase(artist.uuid),
+        this.getArtistInstagramFanbase(artist.uuid),
+        this.getArtistFacebookFanbase(artist.uuid),
+        this.getArtistTikTokFanbase(artist.uuid)
       ]);
       
       return {
@@ -1022,7 +1174,10 @@ export class VibrateService {
         spotifyFanbase: { total: spotifyFanbaseResponse?.total || {} },
         enhancedSpotifyListeners: { total: enhancedSpotifyListenersResponse?.total || {} },
         youtubeViews: { views: youtubeViewsResponse?.views || {} },
-        youtubeFanbase: { total: youtubeFanbaseResponse?.total || {} }
+        youtubeFanbase: { total: youtubeFanbaseResponse?.total || {} },
+        instagramFanbase: { total: instagramFanbaseResponse?.total || {} },
+        facebookFanbase: facebookFanbaseResponse || { facebookFanbase: { uuid: '', name: '', slug: '', data: {} } },
+        tiktokFanbase: tiktokFanbaseResponse || { tiktokFanbase: { uuid: '', name: '', slug: '', data: {} } }
       };
     } catch (error) {
       console.error('Error in VibrateService.getArtistWithAllData:', error);
@@ -1042,7 +1197,10 @@ export class VibrateService {
         spotifyFanbase: { total: {} },
         enhancedSpotifyListeners: { total: {} },
         youtubeViews: { views: {} },
-        youtubeFanbase: { total: {} }
+        youtubeFanbase: { total: {} },
+        instagramFanbase: { total: {} },
+        facebookFanbase: { facebookFanbase: { uuid: '', name: '', slug: '', data: {} } },
+        tiktokFanbase: { tiktokFanbase: { uuid: '', name: '', slug: '', data: {} } }
       };
     }
   }

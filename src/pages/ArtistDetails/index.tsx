@@ -13,7 +13,10 @@ import {
   SpotifyFanbaseChart,
   SpotifyListenersChart,
   YouTubeViewsChart,
-  YouTubeFanbaseChart
+  YouTubeFanbaseChart,
+  InstagramFanbaseChart,
+  FacebookFanbaseChart,
+  TikTokFanbaseChart
 } from '../../components/features/artists';
 
 // Helper functions (same as original)
@@ -198,14 +201,12 @@ const ArtistDetails = () => {
     enhancedSpotifyListeners,
     youtubeViews,
     youtubeFanbase,
+    instagramFanbase,
+    facebookFanbase,
+    tiktokFanbase,
   } = artistData;
 
   // Note: vibrateArtist now contains full VibrateArtist data (image, verified, genre, country, subgenres)
-
-  // Event click handler
-  const handleEventClick = (eventId: string) => {
-    navigate(`/event/${eventId}`);
-  };
 
   // Calculate dynamic YAxis width for city chart
   const getCityYAxisWidth = () => {
@@ -449,6 +450,24 @@ const ArtistDetails = () => {
                     <div className="flex flex-col gap-4">
                       <YouTubeFanbaseChart data={youtubeFanbase} />
                       <YouTubeViewsChart data={youtubeViews} />
+                    </div>
+                  </div>
+
+                  {/* Social Media Analytics Charts (Second Row) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Column 1: Instagram */}
+                    <div className="flex flex-col gap-4">
+                      <InstagramFanbaseChart data={instagramFanbase} />
+                    </div>
+                    
+                    {/* Column 2: Facebook */}
+                    <div className="flex flex-col gap-4">
+                      <FacebookFanbaseChart data={facebookFanbase} />
+                    </div>
+                    
+                    {/* Column 3: TikTok */}
+                    <div className="flex flex-col gap-4">
+                      <TikTokFanbaseChart data={tiktokFanbase} />
                     </div>
                   </div>
                 </div>

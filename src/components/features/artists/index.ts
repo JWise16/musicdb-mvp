@@ -4,4 +4,7 @@ export { default as SpotifyFanbaseChart } from './SpotifyFanbaseChart';
 export { default as SpotifyListenersChart } from './SpotifyListenersChart';
 export { default as YouTubeViewsChart } from './YouTubeViewsChart';
 export { default as YouTubeFanbaseChart } from './YouTubeFanbaseChart';
+export { default as InstagramFanbaseChart } from './InstagramFanbaseChart';
+export { default as FacebookFanbaseChart } from './FacebookFanbaseChart';
+export { default as TikTokFanbaseChart } from './TikTokFanbaseChart';
 export * from './chartUtils';
