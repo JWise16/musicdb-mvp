@@ -22,7 +22,7 @@ const startAuthListener = authListenerMiddleware.startListening.withTypes<
 let authSubscription: any = null;
 
 startAuthListener({
-  predicate: (_action, currentState, _previousState) => {
+  predicate: (_action, currentState) => {
     // Only set up the listener once when the store is initialized
     return !authSubscription && currentState.auth.initialized;
   },
@@ -101,7 +101,7 @@ startAuthListener({
 // Listen for logout action to clean up
 startAuthListener({
   actionCreator: logout,
-  effect: async (_action, _listenerApi) => {
+  effect: async () => {
     try {
       // Sign out from Supabase
       await supabase.auth.signOut();

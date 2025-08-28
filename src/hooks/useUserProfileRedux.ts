@@ -58,10 +58,11 @@ export const useUserProfile = () => {
   // Update profile with avatar (placeholder for now - can implement later)
   const updateProfileWithAvatar = useCallback(async (
     updates: Partial<UserProfile>, 
-    _avatarFile?: File
+    avatarFile?: File
   ) => {
     // For now, just update without avatar handling
     // This can be enhanced later with file upload logic
+    console.log('Avatar file would be processed here:', avatarFile?.name);
     return updateProfile(updates);
   }, [updateProfile]);
 
