@@ -67,6 +67,7 @@ export type Database = {
           name: string
           social_media: Json | null
           updated_at: string | null
+          viberate_uuid: string | null
         }
         Insert: {
           contact_info?: string | null
@@ -78,6 +79,7 @@ export type Database = {
           name: string
           social_media?: Json | null
           updated_at?: string | null
+          viberate_uuid?: string | null
         }
         Update: {
           contact_info?: string | null
@@ -89,6 +91,7 @@ export type Database = {
           name?: string
           social_media?: Json | null
           updated_at?: string | null
+          viberate_uuid?: string | null
         }
         Relationships: []
       }

@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import type { Tables } from '../database.types';
+import { VibrateService } from './vibrateService';
 import { isEventPast } from '../utils/dateUtils';
 import { AdminService } from './adminService';
 
@@ -175,15 +176,46 @@ export class EventService {
       // First, try to find existing artist by name
       const { data: existingArtist } = await supabase
         .from('artists')
-        .select('id')
+        .select('id, viberate_uuid')
         .eq('name', artistData.name)
         .single();
 
       if (existingArtist) {
+        // If artist exists but doesn't have a Vibrate UUID, try to resolve it
+        if (!existingArtist.viberate_uuid) {
+          console.log(`Attempting to resolve Vibrate UUID for existing artist: ${artistData.name}`);
+          try {
+            const searchResponse = await VibrateService.searchArtists(artistData.name);
+            if (searchResponse?.artists?.length) {
+              const vibrateUuid = searchResponse.artists[0].uuid;
+              await supabase
+                .from('artists')
+                .update({ viberate_uuid: vibrateUuid })
+                .eq('id', existingArtist.id);
+              console.log(`Successfully linked existing artist ${artistData.name} to Vibrate UUID: ${vibrateUuid}`);
+            }
+          } catch (vibrateError) {
+            console.log(`Could not resolve Vibrate UUID for ${artistData.name}:`, vibrateError);
+          }
+        }
         return existingArtist.id;
       }
 
       // Create new artist if not found
+      console.log(`Creating new artist: ${artistData.name}`);
+      
+      // Try to get Vibrate UUID for new artist
+      let vibrateUuid: string | null = null;
+      try {
+        const searchResponse = await VibrateService.searchArtists(artistData.name);
+        if (searchResponse?.artists?.length) {
+          vibrateUuid = searchResponse.artists[0].uuid;
+          console.log(`Found Vibrate UUID for new artist ${artistData.name}: ${vibrateUuid}`);
+        }
+      } catch (vibrateError) {
+        console.log(`Could not find Vibrate UUID for new artist ${artistData.name}:`, vibrateError);
+      }
+
       const { data: newArtist, error } = await supabase
         .from('artists')
         .insert({
@@ -191,6 +223,7 @@ export class EventService {
           genre: artistData.genre || null,
           contact_info: artistData.contact_info || null,
           social_media: artistData.social_media || null,
+          viberate_uuid: vibrateUuid,
         })
         .select()
         .single();

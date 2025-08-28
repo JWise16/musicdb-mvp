@@ -5,12 +5,14 @@ import authSlice from './slices/authSlice';
 import authMiddleware from './middleware/authMiddleware';
 import { eventsApi } from './api/eventsApi';
 import { venuesApi } from './api/venuesApi';
+import { artistsApi } from './api/artistsApi';
 
 export const store = configureStore({
   reducer: {
     auth: authSlice,
     [eventsApi.reducerPath]: eventsApi.reducer,
     [venuesApi.reducerPath]: venuesApi.reducer,
+    [artistsApi.reducerPath]: artistsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -25,7 +27,8 @@ export const store = configureStore({
     })
     .concat(authMiddleware)
     .concat(eventsApi.middleware)
-    .concat(venuesApi.middleware),
+    .concat(venuesApi.middleware)
+    .concat(artistsApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 
