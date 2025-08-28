@@ -47,7 +47,12 @@ const SoundCloudPlaysChart = ({ data, loading = false }: SoundCloudPlaysChartPro
     <div className="card p-4 h-64">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-medium text-gray-900">SoundCloud Plays</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <svg className="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.5 10.5a3.5 3.5 0 0 1 3.5 3.5c0 1.933-1.567 3.5-3.5 3.5H6.75A3.25 3.25 0 0 1 6.7 11.5a.75.75 0 0 1 .8.75v4.25h.75v-5.5a.75.75 0 0 1 1.5 0v5.5h.75v-6.25a.75.75 0 0 1 1.5 0v6.25h.75v-7a.75.75 0 0 1 1.5 0v7h.75v-5.5a.75.75 0 0 1 1.5 0v5.5h.75v-3.5a.75.75 0 0 1 1.5 0v3.5H17.5a2 2 0 1 0 0-4z"/>
+            </svg>
+            <h3 className="text-sm font-medium text-gray-900">SoundCloud Plays</h3>
+          </div>
           <p className="text-lg font-semibold text-gray-900">{formatNumber(currentValue)}</p>
         </div>
         <div className={`text-xs px-2 py-1 rounded ${
@@ -72,7 +77,7 @@ const SoundCloudPlaysChart = ({ data, loading = false }: SoundCloudPlaysChartPro
               tickLine={false}
               tick={{ fontSize: 10, fill: '#6B7280' }}
               tickFormatter={formatNumber}
-              width={35}
+              width={40}
             />
             <Tooltip
               content={({ active, payload, label }) => {

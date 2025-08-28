@@ -236,9 +236,6 @@ const ArtistDetails = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-1">Artist Details</h2>
               <p className="text-gray-600">
                 View artist information and performance history
-                <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                  ⚡ Cached ({Math.round(performance.now() - componentStartTime.current)}ms)
-                </span>
               </p>
             </div>
           </div>
@@ -355,7 +352,8 @@ const ArtistDetails = () => {
                           'bandcamp',
                           'napster',
                           'bandsintown',
-                          'beatport'
+                          'beatport',
+                          'youtube_vevo'
                         ].includes(link.channel.toLowerCase()))
                         .map((link, index) => (
                           <a
@@ -472,9 +470,6 @@ const ArtistDetails = () => {
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Event
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Date
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -492,14 +487,8 @@ const ArtistDetails = () => {
                           {artist.events.map((event: any) => (
                             <tr
                               key={event.id}
-                              className="hover:bg-gray-50 cursor-pointer transition-colors"
-                              onClick={() => handleEventClick(event.id)}
+                              className="hover:bg-gray-50 transition-colors"
                             >
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {event.name}
-                                </div>
-                              </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm text-gray-900">
                                   {formatEventDate(event.date)}
@@ -622,11 +611,6 @@ const ArtistDetails = () => {
                                     <div className="text-sm font-medium text-gray-900">
                                       {event.name}
                                     </div>
-                                    {event.image && (
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        Has image
-                                      </div>
-                                    )}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-900">
@@ -774,11 +758,6 @@ const ArtistDetails = () => {
                                     <div className="text-sm font-medium text-gray-900">
                                       {event.name}
                                     </div>
-                                    {event.image && (
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        Has image
-                                      </div>
-                                    )}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-900">
@@ -1445,10 +1424,7 @@ const ArtistDetails = () => {
             </div>
           </div>
 
-          {/* Performance indicator */}
-          <div className="mt-8 text-sm text-gray-500 text-center">
-            ⚡ Data loaded from RTK Query cache • Total render time: {Math.round(performance.now() - componentStartTime.current)}ms
-          </div>
+
         </div>
       </main>
     </div>
