@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -22,12 +22,33 @@ const AddEvent = () => {
   const [currentEventNumber, setCurrentEventNumber] = useState(1);
   const navigate = useNavigate();
 
-  // RTK Query hooks for venue events (we'll use these to replace direct service calls)
-  const venueEventQueries = userVenues.map(venue => 
-    useGetVenueEventsQuery(venue.id, {
-      skip: !venue.id || !hasUserVenues,
-    })
+  // Pre-define hooks for up to 5 venues to prevent hook order violations
+  const venue1EventsQuery = useGetVenueEventsQuery(
+    userVenues[0]?.id || '', 
+    { skip: !userVenues[0]?.id || !hasUserVenues }
   );
+  const venue2EventsQuery = useGetVenueEventsQuery(
+    userVenues[1]?.id || '', 
+    { skip: !userVenues[1]?.id || !hasUserVenues }
+  );
+  const venue3EventsQuery = useGetVenueEventsQuery(
+    userVenues[2]?.id || '', 
+    { skip: !userVenues[2]?.id || !hasUserVenues }
+  );
+  const venue4EventsQuery = useGetVenueEventsQuery(
+    userVenues[3]?.id || '', 
+    { skip: !userVenues[3]?.id || !hasUserVenues }
+  );
+  const venue5EventsQuery = useGetVenueEventsQuery(
+    userVenues[4]?.id || '', 
+    { skip: !userVenues[4]?.id || !hasUserVenues }
+  );
+
+  // Create array of active venue event queries
+  const venueEventQueries = useMemo(() => {
+    const queries = [venue1EventsQuery, venue2EventsQuery, venue3EventsQuery, venue4EventsQuery, venue5EventsQuery];
+    return queries.slice(0, userVenues.length); // Only return queries for actual venues
+  }, [venue1EventsQuery, venue2EventsQuery, venue3EventsQuery, venue4EventsQuery, venue5EventsQuery, userVenues.length]);
 
   // Stable calculation of total events count
   const totalEventsCount = useMemo(() => {

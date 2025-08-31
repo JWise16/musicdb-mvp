@@ -5,7 +5,7 @@ import { EventService, type EventFilters, type EventWithDetails, type EventFormD
 export const eventsApi = createApi({
   reducerPath: 'eventsApi',
   baseQuery: fakeBaseQuery(),
-  tagTypes: ['Event', 'FilterOptions'],
+  tagTypes: ['Event', 'FilterOptions', 'VenueEvents', 'VenueAnalytics'],
   endpoints: (builder) => ({
     // Get all events with filters
     getEvents: builder.query<EventWithDetails[], EventFilters>({
@@ -63,7 +63,7 @@ export const eventsApi = createApi({
           return { error: { status: 'FETCH_ERROR', error: error.message } };
         }
       },
-      invalidatesTags: (result, error, arg) => [
+      invalidatesTags: (_result, _error, arg) => [
         'Event', 
         'FilterOptions',
         // Invalidate venue events for the venue this event was created for
@@ -101,7 +101,7 @@ export const eventsApi = createApi({
           return { error: { status: 'FETCH_ERROR', error: error.message } };
         }
       },
-      invalidatesTags: (result, error, { eventId }) => [
+      invalidatesTags: (_result, _error, { eventId }) => [
         'Event',
         'FilterOptions',
         { type: 'Event', id: eventId },

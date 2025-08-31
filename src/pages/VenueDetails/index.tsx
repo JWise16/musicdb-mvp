@@ -6,14 +6,14 @@ import {
   useGetVenueAnalyticsQuery,
   useGetVenueEventsQuery
 } from '../../store/api/venuesApi';
-import { VenueService, type VenueAnalytics, type VenueEvent } from '../../services/venueService';
+import { VenueService } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import VenueSelector from '../../components/features/venues/VenueSelector';
 import TimeFrameSelector from '../../components/features/dashboard/TimeFrameSelector';
 import AnalyticsCards from '../../components/features/dashboard/AnalyticsCards';
 import EventAnalytics from '../../components/features/dashboard/EventAnalytics';
 import YourShows from '../../components/features/dashboard/YourShows';
-import type { Tables } from '../../database.types';
+
 
 const VenueDetails = () => {
   const { id } = useParams<{ id: string }>();

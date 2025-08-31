@@ -28,7 +28,7 @@ export const userProfileApi = createApi({
           return { error: { status: 'FETCH_ERROR', error: error.message } };
         }
       },
-      providesTags: (result, error, userId) => [
+      providesTags: (_result, _error, userId) => [
         { type: 'UserProfile', id: userId },
         'UserProfile'
       ],
@@ -59,7 +59,7 @@ export const userProfileApi = createApi({
           return { error: { status: 'FETCH_ERROR', error: error.message } };
         }
       },
-      invalidatesTags: (result, error, { userId }) => [
+      invalidatesTags: (_result, _error, { userId }) => [
         { type: 'UserProfile', id: userId },
         'UserProfile'
       ],
@@ -86,7 +86,7 @@ export const userProfileApi = createApi({
           return { error: { status: 'FETCH_ERROR', error: error.message } };
         }
       },
-      invalidatesTags: (result, error, { userId }) => [
+      invalidatesTags: (_result, _error, { userId }) => [
         { type: 'UserProfile', id: userId },
         'UserProfile'
       ],

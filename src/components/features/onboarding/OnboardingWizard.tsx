@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { 
   useUpdateUserProfileWithAvatarMutation 
@@ -86,12 +86,33 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     skip: !user?.id || step !== 'events', // Only fetch when needed for events step
   });
 
-  // Get venue events queries for cache invalidation
-  const venueEventQueries = userVenues.map(venue => 
-    useGetVenueEventsQuery(venue.id, {
-      skip: !venue.id || step !== 'events',
-    })
+  // Pre-define hooks for up to 5 venues to prevent hook order violations
+  const venue1EventsQuery = useGetVenueEventsQuery(
+    userVenues[0]?.id || '', 
+    { skip: !userVenues[0]?.id || step !== 'events' }
   );
+  const venue2EventsQuery = useGetVenueEventsQuery(
+    userVenues[1]?.id || '', 
+    { skip: !userVenues[1]?.id || step !== 'events' }
+  );
+  const venue3EventsQuery = useGetVenueEventsQuery(
+    userVenues[2]?.id || '', 
+    { skip: !userVenues[2]?.id || step !== 'events' }
+  );
+  const venue4EventsQuery = useGetVenueEventsQuery(
+    userVenues[3]?.id || '', 
+    { skip: !userVenues[3]?.id || step !== 'events' }
+  );
+  const venue5EventsQuery = useGetVenueEventsQuery(
+    userVenues[4]?.id || '', 
+    { skip: !userVenues[4]?.id || step !== 'events' }
+  );
+
+  // Create array of active venue event queries
+  const venueEventQueries = useMemo(() => {
+    const queries = [venue1EventsQuery, venue2EventsQuery, venue3EventsQuery, venue4EventsQuery, venue5EventsQuery];
+    return queries.slice(0, userVenues.length); // Only return queries for actual venues
+  }, [venue1EventsQuery, venue2EventsQuery, venue3EventsQuery, venue4EventsQuery, venue5EventsQuery, userVenues.length]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -624,13 +645,13 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             // Force refetch venue events to ensure cache is updated
             // Only refetch queries that are actually active (not skipped)
             console.log('OnboardingWizard: Manually refetching venue events after event creation');
-            const activeQueries = venueEventQueries.filter(query => 
+            const activeQueries = venueEventQueries.filter((query: any) => 
               !query.isUninitialized && !query.isError && query.data !== undefined
             );
             
             if (activeQueries.length > 0) {
               await Promise.all(
-                activeQueries.map(query => query.refetch())
+                activeQueries.map((query: any) => query.refetch())
               );
             } else {
               console.log('OnboardingWizard: No active venue event queries to refetch');

@@ -224,7 +224,7 @@ export const venuesApi = createApi({
           return { error: { status: 'FETCH_ERROR', error: error.message } };
         }
       },
-      invalidatesTags: (result, error, { user_id }) => [
+      invalidatesTags: (_result, _error, { user_id }) => [
         'UserVenues',
         { type: 'UserVenues', id: user_id },
         { type: 'UserVenues', id: `${user_id}-relation` },
@@ -258,7 +258,7 @@ export const venuesApi = createApi({
           return { error: { status: 'FETCH_ERROR', error: error.message } };
         }
       },
-      invalidatesTags: (result, error, { venueId }) => [
+      invalidatesTags: (_result, _error, { venueId }) => [
         'AllVenues',
         'UserVenues', 
         { type: 'Venue', id: venueId },
