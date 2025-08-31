@@ -1,8 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { UserProfileService } from '../../../services/userProfileService';
-import { VenueService } from '../../../services/venueService';
-import { EventService } from '../../../services/eventService';
+import { 
+  useUpdateUserProfileWithAvatarMutation 
+} from '../../../store/api/userProfileApi';
+import { 
+  useCreateVenueWithImageMutation,
+  useAssociateUserWithVenueMutation,
+  useGetUserVenuesQuery,
+  useGetVenueEventsQuery 
+} from '../../../store/api/venuesApi';
+import { 
+  useCreateEventMutation 
+} from '../../../store/api/eventsApi';
 
 import Avatar from '../../common/Avatar';
 import OnboardingEarlyAccess from './OnboardingEarlyAccess';
@@ -65,6 +74,24 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+
+  // RTK Mutation hooks
+  const [updateProfileWithAvatar] = useUpdateUserProfileWithAvatarMutation();
+  const [createVenueWithImage] = useCreateVenueWithImageMutation();
+  const [associateUserWithVenue] = useAssociateUserWithVenueMutation();
+  const [createEvent] = useCreateEventMutation();
+  
+  // RTK Query for getting user venues (used in events step)
+  const { data: userVenues = [] } = useGetUserVenuesQuery(user?.id || '', {
+    skip: !user?.id || step !== 'events', // Only fetch when needed for events step
+  });
+
+  // Get venue events queries for cache invalidation
+  const venueEventQueries = userVenues.map(venue => 
+    useGetVenueEventsQuery(venue.id, {
+      skip: !venue.id || step !== 'events',
+    })
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -487,57 +514,71 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       
       switch (step) {
         case 'profile': {
-          // Update user profile
-          const profileResult = await UserProfileService.updateProfileWithAvatar(
-            user.id,
-            {
-              full_name: profile.full_name,
-              role: profile.role === 'other' ? profile.custom_role : profile.role
-            },
-            avatarFile || undefined
-          );
-
-          if (profileResult.error) {
-            console.error('OnboardingWizard: Profile save error:', profileResult.error);
+          // Update user profile using RTK mutation
+          try {
+            console.log('OnboardingWizard: Updating profile with RTK mutation');
+            await updateProfileWithAvatar({
+              userId: user.id,
+              updates: {
+                full_name: profile.full_name,
+                role: profile.role === 'other' ? profile.custom_role : profile.role
+              },
+              avatarFile: avatarFile || undefined
+            }).unwrap();
+            
+            console.log('OnboardingWizard: Profile update successful');
+          } catch (error: any) {
+            console.error('OnboardingWizard: Profile update error:', error);
             
             // If avatar upload failed, try saving profile without avatar
-            if (avatarFile && profileResult.error.includes('avatar')) {
-              //console.log('OnboardingWizard: Retrying without avatar upload');
-              const retryResult = await UserProfileService.updateProfileWithAvatar(
-                user.id,
-                {
-                  full_name: profile.full_name,
-                  role: profile.role === 'other' ? profile.custom_role : profile.role
-                }
-              );
-              
-              if (retryResult.error) {
+            if (avatarFile && error.message?.includes('avatar')) {
+              try {
+                console.log('OnboardingWizard: Retrying without avatar upload');
+                await updateProfileWithAvatar({
+                  userId: user.id,
+                  updates: {
+                    full_name: profile.full_name,
+                    role: profile.role === 'other' ? profile.custom_role : profile.role
+                  }
+                }).unwrap();
+                
+                console.log('OnboardingWizard: Profile update successful without avatar');
+              } catch (retryError) {
+                console.error('OnboardingWizard: Profile retry failed:', retryError);
                 return;
               }
+            } else {
+              return;
             }
           }
           break;
         }
 
         case 'venue': {
-          // Create venue and associate with user
-          const venueResult = await VenueService.createVenueWithImage(venue, venueImageFile || undefined);
-          if (venueResult.error) {
-            console.error('OnboardingWizard: Venue creation error:', venueResult.error);
-            return;
-          }
+          // Create venue and associate with user using RTK mutations
+          try {
+            console.log('OnboardingWizard: Creating venue with RTK mutation');
+            const venueResult = await createVenueWithImage({
+              venueData: venue,
+              imageFile: venueImageFile || undefined
+            }).unwrap();
 
-          if (venueResult.venueId) {
-            const associateResult = await VenueService.associateUserWithVenue({
+            if (!venueResult.success || !venueResult.venueId) {
+              console.error('OnboardingWizard: Venue creation failed:', venueResult.error);
+              return;
+            }
+
+            console.log('OnboardingWizard: Venue created, associating with user');
+            await associateUserWithVenue({
               user_id: user.id,
               venue_id: venueResult.venueId,
               role: 'owner'
-            });
+            }).unwrap();
 
-            if (associateResult.error) {
-              console.error('OnboardingWizard: Venue association error:', associateResult.error);
-              return;
-            }
+            console.log('OnboardingWizard: Venue association successful');
+          } catch (error: any) {
+            console.error('OnboardingWizard: Venue creation/association error:', error);
+            return;
           }
           break;
         }
@@ -548,20 +589,18 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           break;
 
         case 'events': {
-          // Get user's venue
-          const userVenues = await VenueService.getUserVenues(user.id);
-          //console.log('OnboardingWizard: User venues found:', userVenues.length);
+          // Use RTK Query data for user venues (already loaded by hook above)
+          console.log('OnboardingWizard: User venues from RTK Query:', userVenues.length);
           
           if (userVenues.length === 0) {
+            console.error('OnboardingWizard: No venues found for user');
             return;
           }
 
           const venueId = userVenues[0].id;
-          //console.log(`OnboardingWizard: Creating event ${eventNumber} for venue:`, venueId);
-          //console.log('OnboardingWizard: Event data:', event);
-          //console.log('OnboardingWizard: Price type:', priceType);
+          console.log(`OnboardingWizard: Creating event ${eventNumber} for venue:`, venueId);
           
-          // Create single event
+          // Create single event using RTK mutation
           const eventData = {
             ...event,
             venue_id: venueId,
@@ -571,18 +610,35 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
             ticket_price_max: priceType === 'range' ? event.ticket_price_max : undefined,
           };
 
-          //console.log(`OnboardingWizard: Final event data for creation:`, eventData);
-          
-          const eventResult = await EventService.createEvent(eventData);
+          try {
+            console.log(`OnboardingWizard: Creating event with RTK mutation:`, eventData);
+            const eventResult = await createEvent(eventData).unwrap();
 
-          //console.log(`OnboardingWizard: Event creation result:`, eventResult);
+            if (!eventResult.success || !eventResult.eventId) {
+              console.error(`OnboardingWizard: Event ${eventNumber} creation failed:`, eventResult.error);
+              return;
+            }
 
-          if (eventResult.error) {
-            console.error(`OnboardingWizard: Event ${eventNumber} creation error:`, eventResult.error);
+            console.log(`OnboardingWizard: Event ${eventNumber} created successfully:`, eventResult.eventId);
+            
+            // Force refetch venue events to ensure cache is updated
+            // Only refetch queries that are actually active (not skipped)
+            console.log('OnboardingWizard: Manually refetching venue events after event creation');
+            const activeQueries = venueEventQueries.filter(query => 
+              !query.isUninitialized && !query.isError && query.data !== undefined
+            );
+            
+            if (activeQueries.length > 0) {
+              await Promise.all(
+                activeQueries.map(query => query.refetch())
+              );
+            } else {
+              console.log('OnboardingWizard: No active venue event queries to refetch');
+            }
+          } catch (error: any) {
+            console.error(`OnboardingWizard: Event ${eventNumber} creation error:`, error);
             return;
           }
-
-          //console.log(`OnboardingWizard: Event ${eventNumber} created successfully:`, eventResult.eventId);
           break;
         }
       }

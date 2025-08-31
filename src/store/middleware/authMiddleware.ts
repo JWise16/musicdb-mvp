@@ -20,6 +20,7 @@ const startAuthListener = authListenerMiddleware.startListening.withTypes<
 
 // Listen for auth state changes from Supabase
 let authSubscription: any = null;
+let lastAuthEvent: { event: string; userId: string | null; timestamp: number } | null = null;
 
 startAuthListener({
   predicate: (_action, currentState) => {
@@ -27,25 +28,77 @@ startAuthListener({
     return !authSubscription && currentState.auth.initialized;
   },
   effect: async (_action, listenerApi) => {
-    const { dispatch } = listenerApi;
+    const { dispatch, getState } = listenerApi;
 
     // Set up Supabase auth state listener
     authSubscription = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
+        const currentUser = getState().auth.user;
+        const currentUserId = currentUser?.id || null;
+        const newUserId = session?.user?.id || null;
+        const now = Date.now();
+
+        // More aggressive deduplication for tab switching
+        if (lastAuthEvent && 
+            lastAuthEvent.event === event && 
+            lastAuthEvent.userId === newUserId &&
+            (now - lastAuthEvent.timestamp) < 5000) { // 5 second debounce for tab switching
+          console.log('Auth middleware: Skipping duplicate event (likely tab switch)', {
+            event,
+            userId: newUserId,
+            timeSinceLastEvent: now - lastAuthEvent.timestamp
+          });
+          return;
+        }
+
+        // Additional check: if user is already authenticated and this is a SIGNED_IN event,
+        // it's likely a tab switch, so skip processing
+        if (event === 'SIGNED_IN' && currentUserId && currentUserId === newUserId) {
+          console.log('Auth middleware: Skipping SIGNED_IN event for already authenticated user (tab switch)', {
+            userId: newUserId,
+            timeSinceLastEvent: lastAuthEvent ? now - lastAuthEvent.timestamp : 0
+          });
+          return;
+        }
+
+        lastAuthEvent = { event, userId: newUserId, timestamp: now };
+
+        console.log('Auth state change:', event, session?.user?.email, {
+          currentUserId,
+          newUserId,
+          timestamp: new Date().toISOString()
+        });
 
         try {
           switch (event) {
             case 'SIGNED_IN':
             case 'INITIAL_SESSION':
               if (session?.user) {
-                dispatch(setUser(session.user));
+                // Only update user if it actually changed
+                if (currentUserId !== session.user.id) {
+                  dispatch(setUser(session.user));
+                }
                 
-                // Fetch user profile and admin status in parallel
-                const [profileResult, adminResult] = await Promise.allSettled([
-                  dispatch(fetchUserProfile(session.user.id)).unwrap(),
-                  dispatch(fetchAdminStatus(session.user.id)).unwrap(),
-                ]);
+                // Only fetch profile and admin status if not already loaded
+                const currentState = getState();
+                if (!currentState.auth.profileLoaded) {
+                  const [profileResult, adminResult] = await Promise.allSettled([
+                    dispatch(fetchUserProfile(session.user.id)).unwrap(),
+                    dispatch(fetchAdminStatus(session.user.id)).unwrap(),
+                  ]);
+
+                  console.log('Auth state updated:', {
+                    user: session.user.email,
+                    event,
+                    profile: profileResult.status === 'fulfilled' ? 'loaded' : 'failed',
+                    admin: adminResult.status === 'fulfilled' ? 'loaded' : 'failed',
+                  });
+                } else {
+                  console.log('Auth middleware: Profile already loaded, skipping fetch', {
+                    user: session.user.email,
+                    event
+                  });
+                }
 
                 // Record login activity (non-blocking) - only for actual sign-ins, not initial sessions
                 if (event === 'SIGNED_IN') {
@@ -54,24 +107,19 @@ startAuthListener({
                     userAgent: navigator.userAgent,
                   }));
                 }
-
-                console.log('Auth state updated:', {
-                  user: session.user.email,
-                  event,
-                  profile: profileResult.status === 'fulfilled' ? 'loaded' : 'failed',
-                  admin: adminResult.status === 'fulfilled' ? 'loaded' : 'failed',
-                });
               }
               break;
 
             case 'SIGNED_OUT':
-              dispatch(logout());
-              console.log('User signed out');
+              if (currentUserId) { // Only logout if we were actually logged in
+                dispatch(logout());
+                console.log('User signed out');
+              }
               break;
 
             case 'TOKEN_REFRESHED':
               // User is still authenticated, just refresh token
-              if (session?.user) {
+              if (session?.user && currentUserId === session.user.id) {
                 dispatch(setUser(session.user));
                 console.log('Token refreshed for:', session.user.email);
               }
@@ -79,7 +127,7 @@ startAuthListener({
 
             case 'USER_UPDATED':
               // User profile might have changed
-              if (session?.user) {
+              if (session?.user && currentUserId === session.user.id) {
                 dispatch(setUser(session.user));
                 console.log('User updated:', session.user.email);
               }
@@ -118,8 +166,9 @@ startAuthListener({
   effect: async (action, listenerApi) => {
     const { dispatch, getState } = listenerApi;
     const user = action.payload;
+    const currentState = getState();
 
-    if (user && !getState().auth.profileLoaded) {
+    if (user && !currentState.auth.profileLoaded) {
       // Fetch profile and admin status when user is set (but not already loaded)
       try {
         await Promise.all([

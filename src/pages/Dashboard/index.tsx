@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { useAuth, useUserProfile } from '../../hooks/useAuthTransition';
+import { useAuth } from '../../hooks/useAuth';
+import { useUserProfile } from '../../hooks/useUserProfile';
 import { 
   useGetUserVenuesQuery, 
   useCheckUserHasVenuesQuery,
@@ -102,12 +103,24 @@ const Dashboard = () => {
         console.error('Dashboard: Profile still loading after timeout, this indicates a bug in useUserProfile');
       }
       
-      // Force navigation to onboarding to prevent infinite loading
-      setHasVenues(false);
-      navigate('/onboarding');
+      // Check if user actually has valid data before forcing navigation
+      const onboardingCompleted = localStorage.getItem('musicdb-onboarding-completed') === 'true';
+      const hasValidData = profile?.full_name && profile?.role && contextHasVenues;
+      
+      if (onboardingCompleted && hasValidData) {
+        // User has valid data but got stuck - force Dashboard to show
+        console.warn('Dashboard: Timeout but user has valid data - forcing Dashboard to display');
+        setHasVenues(true);
+        setOnboardingCheckComplete(true);
+      } else {
+        // User genuinely needs onboarding
+        console.warn('Dashboard: Timeout and user needs onboarding - redirecting');
+        setHasVenues(false);
+        navigate('/onboarding');
+      }
     }, 15000); // 15 second timeout
 
-        const checkOnboardingNeeded = async () => {
+    const checkOnboardingNeeded = async () => {
       console.log('Dashboard: Starting onboarding check', { 
         user: user?.email, 
         authLoading,
@@ -115,6 +128,26 @@ const Dashboard = () => {
         profileLoading,
         venueLoading
       });
+      
+      // For users who have completed the full onboarding flow and navigated from completion page,
+      // we can skip the detailed checks to prevent redirect loops
+      const onboardingCompleted = localStorage.getItem('musicdb-onboarding-completed') === 'true';
+      const hasValidData = profile?.full_name && profile?.role && contextHasVenues;
+      
+      if (onboardingCompleted && hasValidData) {
+        console.log('Dashboard: User completed onboarding flow and has valid data, skipping detailed checks');
+        console.log('Dashboard: Setting hasVenues=true and onboardingCheckComplete=true');
+        clearTimeout(timeout);
+        setHasVenues(true);
+        setOnboardingCheckComplete(true);
+        return;
+      }
+      
+      // If onboarding flag is set but user doesn't have valid data, clear the flag
+      if (onboardingCompleted && !hasValidData) {
+        console.log('Dashboard: Onboarding flag set but user missing data, clearing flag');
+        localStorage.removeItem('musicdb-onboarding-completed');
+      }
       
       // Wait for auth to complete first
       if (authLoading) {
@@ -129,10 +162,9 @@ const Dashboard = () => {
         return;
       }
 
-      // IMPORTANT: Wait for profile loading to complete AND profile to be fetched
-      // Redux profile loading might complete but profile might still be null during async fetch
-      if (profileLoading || (!profile && user)) {
-        console.log('Dashboard: Profile still loading or not yet fetched, waiting...', {
+      // Wait for profile loading to complete from useUserProfile hook
+      if (profileLoading) {
+        console.log('Dashboard: Profile still loading from useUserProfile, waiting...', {
           profileLoading,
           hasProfile: !!profile,
           userId: user.id
@@ -144,7 +176,14 @@ const Dashboard = () => {
       const hasProfile = !!(profile?.full_name && profile?.role);
       console.log('Dashboard: Profile check', { 
         hasProfile, 
-        profile: profile ? { full_name: profile?.full_name, role: profile?.role } : null 
+        profile: profile ? { 
+          full_name: profile?.full_name, 
+          role: profile?.role,
+          id: profile?.id,
+          email: profile?.email,
+          allKeys: Object.keys(profile),
+          rawProfile: profile
+        } : null 
       });
       
       if (!hasProfile) {
@@ -195,15 +234,46 @@ const Dashboard = () => {
     };
 
     // Only proceed if we have a user and all loading states are complete, and we haven't already checked
-    if (!authLoading && user && !venueLoading && !profileLoading && !onboardingCheckComplete) {
+    const canCheckOnboarding = !authLoading && user && !venueLoading && !profileLoading && !onboardingCheckComplete;
+    
+    if (user && !onboardingCheckComplete) {
+      console.log('Dashboard: Onboarding check conditions:', {
+        authLoading,
+        hasUser: !!user,
+        venueLoading,
+        profileLoading,
+        onboardingCheckComplete,
+        canCheckOnboarding
+      });
+    }
+    
+    if (canCheckOnboarding) {
       checkOnboardingNeeded();
+    } else if (user && !onboardingCheckComplete) {
+      // Safety mechanism: if user is logged in but we can't check onboarding for 3 seconds,
+      // force a check anyway to prevent infinite loading
+      const safetyTimeout = setTimeout(() => {
+        console.warn('Dashboard: Safety timeout - forcing onboarding check despite loading states');
+        console.warn('Dashboard: Loading states at safety timeout:', {
+          authLoading,
+          venueLoading,
+          profileLoading,
+          profile: profile ? 'exists' : 'null'
+        });
+        checkOnboardingNeeded();
+      }, 3000);
+      
+      return () => {
+        clearTimeout(timeout);
+        clearTimeout(safetyTimeout);
+      };
     }
 
     // Cleanup timeout on unmount
     return () => {
       clearTimeout(timeout);
     };
-  }, [user, profile, authLoading, profileLoading, venueLoading, navigate]);
+  }, [user?.id, profile?.full_name, profile?.role, authLoading, profileLoading, venueLoading, onboardingCheckComplete, navigate]);
 
   // Dashboard data is now loaded automatically by RTK Query hooks above
   // No need for manual useEffect - data is cached and loads instantly on subsequent visits!
@@ -222,6 +292,18 @@ const Dashboard = () => {
 
   // Show loading while checking onboarding or loading data
   if (authLoading || venueLoading || profileLoading || isDashboardLoading || hasVenues === null) {
+    // Debug what's actually still loading
+    console.log('Dashboard: Still loading:', {
+      authLoading,
+      venueLoading,
+      profileLoading,
+      isDashboardLoading,
+      analyticsLoading,
+      eventsLoading,
+      hasVenues,
+      currentVenue: currentVenue?.name
+    });
+    
     return (
       <div className="min-h-screen bg-[#F6F6F3] flex items-center justify-center">
         <div className="text-center">

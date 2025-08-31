@@ -1,10 +1,15 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useVenue } from '../../contexts/VenueContext';
-import { VenueService } from '../../services/venueService';
-import { UserProfileService } from '../../services/userProfileService';
+import { 
+  useGetUserVenuesQuery,
+  useCheckUserHasVenuesQuery,
+  useGetVenueEventsQuery 
+} from '../../store/api/venuesApi';
+
 import OnboardingWizard from '../../components/features/onboarding/OnboardingWizard';
 import Confetti from 'react-confetti';
 import logo from '../../assets/logo.png';
@@ -21,8 +26,59 @@ interface OnboardingProgress {
 export default function Onboarding() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile } = useUserProfile();
-  const { currentVenue, refreshVenues } = useVenue();
+  const { profile, refetch: refetchProfile } = useUserProfile();
+  const { refreshVenues } = useVenue();
+
+  // Only fetch venue-related data if user has completed profile
+  const hasProfile = !!(profile?.full_name && profile?.role);
+  
+  // RTK Query hooks for onboarding checks - only when needed
+  const { data: hasVenuesData } = useCheckUserHasVenuesQuery(user?.id || '', {
+    skip: !user?.id || !hasProfile, // Skip if no profile yet
+  });
+  const { data: userVenues = [] } = useGetUserVenuesQuery(user?.id || '', {
+    skip: !user?.id || !hasProfile || !hasVenuesData, // Skip if no profile yet
+  });
+  
+  // Pre-define hooks for up to 5 venues (should be more than enough for most users)
+  // This prevents hook order violations while still supporting multiple venues
+  const venue1EventsQuery = useGetVenueEventsQuery(
+    userVenues[0]?.id || '', 
+    { skip: !userVenues[0]?.id || !hasProfile }
+  );
+  const venue2EventsQuery = useGetVenueEventsQuery(
+    userVenues[1]?.id || '', 
+    { skip: !userVenues[1]?.id || !hasProfile }
+  );
+  const venue3EventsQuery = useGetVenueEventsQuery(
+    userVenues[2]?.id || '', 
+    { skip: !userVenues[2]?.id || !hasProfile }
+  );
+  const venue4EventsQuery = useGetVenueEventsQuery(
+    userVenues[3]?.id || '', 
+    { skip: !userVenues[3]?.id || !hasProfile }
+  );
+  const venue5EventsQuery = useGetVenueEventsQuery(
+    userVenues[4]?.id || '', 
+    { skip: !userVenues[4]?.id || !hasProfile }
+  );
+
+  // Create array of active venue event queries
+  const venueEventQueries = useMemo(() => {
+    const queries = [venue1EventsQuery, venue2EventsQuery, venue3EventsQuery, venue4EventsQuery, venue5EventsQuery];
+    return queries.slice(0, userVenues.length); // Only return queries for actual venues
+  }, [venue1EventsQuery, venue2EventsQuery, venue3EventsQuery, venue4EventsQuery, venue5EventsQuery, userVenues.length]);
+
+  // Stable calculation of total events count
+  const totalEventsCount = useMemo(() => {
+    let count = 0;
+    venueEventQueries.forEach((query) => {
+      if (query.data) {
+        count += query.data.upcoming.length + query.data.past.length;
+      }
+    });
+    return count;
+  }, [venueEventQueries.map(q => q.data ? `${q.data.upcoming.length}-${q.data.past.length}` : 'loading').join(',')]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -32,6 +88,7 @@ export default function Onboarding() {
     eventsCount: 0,
     currentStep: 'welcome'
   });
+  const previousProgressRef = useRef<OnboardingProgress>(progress);
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState<'profile' | 'venue' | 'early-access' | 'events'>('profile');
   const [currentEventNumber, setCurrentEventNumber] = useState(1);
@@ -68,105 +125,138 @@ export default function Onboarding() {
 
   // Check onboarding progress
   useEffect(() => {
-    const checkProgress = async () => {
-      if (!user) return;
-
-      setIsLoading(true);
-      try {
-        // Check profile completion
-        const hasProfile = !!(profile?.full_name && profile?.role);
-        console.log('Onboarding: Profile check:', { hasProfile, profile });
-
-        // Check venue
-        const hasVenue = await VenueService.hasUserVenues(user.id);
-        console.log('Onboarding: Venue check:', { hasVenue });
-
-        // Get all user venues and count all events
-        let eventsCount = 0;
-        if (hasVenue) {
-          const userVenues = await VenueService.getUserVenues(user.id);
-          console.log('Onboarding: Found user venues:', userVenues.length);
-          
-          for (const venue of userVenues) {
-            const events = await VenueService.getVenueEvents(venue.id);
-            const venueEventCount = events.upcoming.length + events.past.length;
-            eventsCount += venueEventCount;
-            console.log(`Onboarding: Venue ${venue.name} (${venue.id}) has ${venueEventCount} events`);
-          }
-        }
-
-        console.log('Onboarding: Total events count for user venues:', eventsCount);
-
-        // Determine current step - always start with welcome for new users
-        let currentStep: OnboardingStep = 'welcome';
-        if (!hasProfile) {
-          currentStep = 'welcome'; // Changed from 'profile' to 'welcome'
-        } else if (!hasVenue) {
-          currentStep = 'venue';
-        } else if (!localStorage.getItem('musicdb-early-access-validated')) {
-          currentStep = 'early-access';
-        } else if (eventsCount < 3) {
-          currentStep = 'events';
-          setCurrentEventNumber(eventsCount + 1);
-        } else {
-          currentStep = 'complete';
-        }
-
-        console.log('Onboarding: Determined step:', currentStep, { hasProfile, hasVenue, eventsCount });
-
-        setProgress({
-          hasProfile,
-          hasVenue,
-          eventsCount,
-          currentStep
-        });
-
-        // Only auto-show wizard if user has already completed welcome and needs to continue
-        // For new users (no profile), they should see the welcome page first
-        if (hasProfile && (currentStep === 'venue' || currentStep === 'early-access' || currentStep === 'events')) {
-          setWizardStep(currentStep);
-          setShowWizard(true);
-        }
-
-      } catch (error) {
-        console.error('Error checking onboarding progress:', error);
-      } finally {
+    const checkProgress = () => {
+      if (!user) {
         setIsLoading(false);
+        return;
       }
+
+      // Check venue using RTK Query data
+      const hasVenue = hasVenuesData || false;
+      
+      // Use stable events count from useMemo
+      const eventsCount = totalEventsCount;
+      
+      // Only log when there's meaningful data to avoid spam
+      if (hasProfile || hasVenue || eventsCount > 0) {
+        console.log('Onboarding: Progress check:', { hasProfile, hasVenue, eventsCount });
+      }
+
+      // Determine current step - always start with welcome for new users
+      let currentStep: OnboardingStep = 'welcome';
+      if (!hasProfile) {
+        currentStep = 'welcome'; // Changed from 'profile' to 'welcome'
+      } else if (!hasVenue) {
+        currentStep = 'venue';
+      } else if (!localStorage.getItem('musicdb-early-access-validated')) {
+        currentStep = 'early-access';
+      } else if (eventsCount < 3) {
+        currentStep = 'events';
+        setCurrentEventNumber(eventsCount + 1);
+      } else {
+        currentStep = 'complete';
+      }
+
+      // Only update progress if it actually changed
+      const newProgress = {
+        hasProfile,
+        hasVenue,
+        eventsCount,
+        currentStep
+      };
+
+      const previousProgress = previousProgressRef.current;
+      const progressChanged = 
+        previousProgress.hasProfile !== newProgress.hasProfile ||
+        previousProgress.hasVenue !== newProgress.hasVenue ||
+        previousProgress.eventsCount !== newProgress.eventsCount ||
+        previousProgress.currentStep !== newProgress.currentStep;
+
+      if (progressChanged) {
+        console.log('Onboarding: Progress updated:', currentStep, newProgress);
+        setProgress(newProgress);
+        previousProgressRef.current = newProgress;
+      }
+
+      // Only auto-show wizard if user has already completed welcome and needs to continue
+      // For new users (no profile), they should see the welcome page first
+      if (hasProfile && (currentStep === 'venue' || currentStep === 'early-access' || currentStep === 'events')) {
+        setWizardStep(currentStep);
+        setShowWizard(true);
+      }
+
+      setIsLoading(false);
     };
 
     checkProgress();
-  }, [user, profile, currentVenue]);
+  }, [user, hasProfile, hasVenuesData, userVenues, totalEventsCount]);
 
   const handleStepComplete = async () => {
     setShowWizard(false);
     setIsTransitioning(true);
     
-    // Add a small delay to ensure database updates are reflected
+    // Add a small delay to ensure database updates are reflected and RTK Query cache is updated
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Refresh progress
+    // Refresh progress using RTK Query data (cache should be invalidated by mutations)
     if (user) {
-      // Force refresh profile data from database
-      const { data: refreshedProfile } = await UserProfileService.getUserProfile(user.id);
-      
-      const hasProfile = !!(refreshedProfile?.full_name && refreshedProfile?.role);
-      const hasVenue = await VenueService.hasUserVenues(user.id);
-      
-      // Get all user venues and count all events
-      let eventsCount = 0;
-      if (hasVenue) {
-        const userVenues = await VenueService.getUserVenues(user.id);
-        console.log('Onboarding: Found user venues:', userVenues.length);
-        
-        for (const venue of userVenues) {
-          const events = await VenueService.getVenueEvents(venue.id);
-          const venueEventCount = events.upcoming.length + events.past.length;
-          eventsCount += venueEventCount;
-          console.log(`Onboarding: Venue ${venue.name} (${venue.id}) has ${venueEventCount} events`);
-        }
+      // Force refresh profile data
+      if (refetchProfile) {
+        await refetchProfile();
       }
-
+      
+      // Force refresh venue data
+      await refreshVenues();
+      
+      // Force refetch venue events to ensure fresh event counts
+      // Only refetch queries that are actually active (not skipped)
+      console.log('Onboarding: Manually refetching venue events after step completion');
+      const activeQueries = venueEventQueries.filter(query => 
+        query && 
+        query.refetch && 
+        typeof query.refetch === 'function' &&
+        !query.isUninitialized && 
+        !query.isError && 
+        query.data !== undefined &&
+        !query.isLoading
+      );
+      
+      console.log('Onboarding: Active queries found:', activeQueries.length, 'of', venueEventQueries.length);
+      
+      if (activeQueries.length > 0) {
+        try {
+          await Promise.all(
+            activeQueries.map(async (query) => {
+              try {
+                console.log('Onboarding: Refetching query for venue events');
+                return await query.refetch();
+              } catch (error) {
+                console.warn('Onboarding: Failed to refetch individual query:', error);
+                return Promise.resolve(); // Continue with other queries
+              }
+            })
+          );
+          console.log('Onboarding: All active queries refetched successfully');
+        } catch (error) {
+          console.warn('Onboarding: Error during venue events refetch:', error);
+        }
+      } else {
+        console.log('Onboarding: No active venue event queries to refetch');
+      }
+      
+      // Small delay to ensure cache updates are reflected
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // The RTK Query hooks will automatically have fresh data due to cache invalidation
+      // Use the same logic as checkProgress but with fresh data
+      const hasProfile = !!(profile?.full_name && profile?.role);
+      const hasVenue = hasVenuesData || false;
+      
+      // Use stable events count from useMemo
+      const eventsCount = totalEventsCount;
+      if (hasVenue && userVenues.length > 0) {
+        console.log('Onboarding: Found user venues:', userVenues.length);
+      }
       console.log('Onboarding: Total events count for user venues:', eventsCount);
 
       // Determine next step
@@ -190,7 +280,6 @@ export default function Onboarding() {
         hasProfile,
         hasVenue,
         eventsCount,
-        refreshedProfile,
         nextEventNumber
       });
 
@@ -215,17 +304,27 @@ export default function Onboarding() {
   const handleComplete = async () => {
     setIsCompleting(true);
     
-    // Refresh venue context to ensure new venue data is loaded
+    // Force refresh both profile and venue data to ensure Redux state is current
     try {
+      // Refresh profile data in Redux
+      if (user && refetchProfile) {
+        await refetchProfile();
+      }
+      
+      // Refresh venue context to ensure new venue data is loaded
       await refreshVenues();
     } catch (error) {
-      console.log('Error refreshing venues:', error);
+      console.log('Error refreshing data:', error);
     }
     
-    // Small delay to ensure context updates
+    // Mark onboarding as completed in localStorage to prevent future checks
+    localStorage.setItem('musicdb-onboarding-completed', 'true');
+    localStorage.setItem('musicdb-onboarding-complete-seen', 'true');
+    
+    // Longer delay to ensure all data is properly cached and context updates
     setTimeout(() => {
       navigate('/dashboard');
-    }, 100);
+    }, 500);
   };
 
   const renderWelcomeStep = () => (

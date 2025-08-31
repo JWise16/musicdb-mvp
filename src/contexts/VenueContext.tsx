@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { VenueService } from '../services/venueService';
+import { useGetUserVenuesQuery } from '../store/api/venuesApi';
 import type { Tables } from '../database.types';
 
 interface VenueContextType {
@@ -31,60 +31,57 @@ interface VenueProviderProps {
 export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
   const [currentVenue, setCurrentVenue] = useState<Tables<'venues'> | null>(null);
-  const [userVenues, setUserVenues] = useState<Tables<'venues'>[]>([]);
-  const [hasUserVenues, setHasUserVenues] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // Use RTK Query for venue data
+  const {
+    data: userVenues = [],
+    isLoading: venuesLoading,
+    refetch: refetchVenues
+  } = useGetUserVenuesQuery(user?.id || '', {
+    skip: !user?.id,
+  });
 
-  // Load user venues and set current venue
-  const loadVenues = useCallback(async () => {
-    // Don't load venues if auth is still loading or if there's no user
-    if (authLoading || !user) {
-      setUserVenues([]);
-      setCurrentVenue(null);
-      setHasUserVenues(false);
-      setIsLoading(false);
-      return;
-    }
+  const hasUserVenues = userVenues.length > 0;
+  const isLoading = authLoading || venuesLoading;
 
-    setIsLoading(true);
-    
-    // Set a timeout to prevent infinite loading
-    const venueLoadingTimeout = setTimeout(() => {
-      console.warn('VenueContext: Venue loading taking longer than expected, completing with empty state');
-      setUserVenues([]);
-      setCurrentVenue(null);
-      setHasUserVenues(false);
-      setIsLoading(false);
-    }, 8000); // 8 second timeout
+  // Debug logging for auth state changes
+  useEffect(() => {
+    console.log('VenueContext: Auth state changed', {
+      user: user?.email,
+      authLoading,
+      venuesLoading,
+      venueCount: userVenues.length,
+      timestamp: new Date().toISOString()
+    });
+  }, [user, authLoading, venuesLoading, userVenues.length]);
 
-    try {
-      const venues = await VenueService.getUserVenues(user.id);
-      clearTimeout(venueLoadingTimeout);
-      setUserVenues(venues);
-      setHasUserVenues(venues.length > 0);
+  // Set current venue when venues are loaded
+  useEffect(() => {
+    if (userVenues.length > 0 && !currentVenue) {
+      console.log('VenueContext: Setting current venue from loaded venues', {
+        venueCount: userVenues.length,
+        user: user?.email
+      });
 
       // Get current venue from localStorage or default to first venue
       const savedVenueId = localStorage.getItem('musicdb-current-venue-id');
       let venueToSet: Tables<'venues'> | null = null;
 
-      if (savedVenueId && venues.find(v => v.id === savedVenueId)) {
-        venueToSet = venues.find(v => v.id === savedVenueId) || null;
-      } else if (venues.length > 0) {
-        venueToSet = venues[0];
-        localStorage.setItem('musicdb-current-venue-id', venues[0].id);
+      if (savedVenueId && userVenues.find(v => v.id === savedVenueId)) {
+        venueToSet = userVenues.find(v => v.id === savedVenueId) || null;
+        console.log('VenueContext: Using saved venue', savedVenueId);
+      } else if (userVenues.length > 0) {
+        venueToSet = userVenues[0];
+        localStorage.setItem('musicdb-current-venue-id', userVenues[0].id);
+        console.log('VenueContext: Using first venue as default', userVenues[0].id);
       }
 
       setCurrentVenue(venueToSet);
-    } catch (error) {
-      clearTimeout(venueLoadingTimeout);
-      console.error('Error loading venues:', error);
-      setUserVenues([]);
+    } else if (userVenues.length === 0) {
+      // Clear current venue if no venues
       setCurrentVenue(null);
-      setHasUserVenues(false);
-    } finally {
-      setIsLoading(false);
     }
-  }, [authLoading, user]);
+  }, [userVenues, currentVenue, user?.email]);
 
   // Switch to a different venue
   const switchVenue = async (venueId: string) => {
@@ -95,21 +92,17 @@ export const VenueProvider: React.FC<VenueProviderProps> = ({ children }) => {
     }
   };
 
-  // Refresh venues list
+  // Refresh venues list using RTK Query
   const refreshVenues = async () => {
-    await loadVenues();
+    console.log('VenueContext: Refreshing venues via RTK Query');
+    await refetchVenues();
   };
-
-  // Load venues when user changes or auth loading completes
-  useEffect(() => {
-    loadVenues();
-  }, [loadVenues]);
 
   const value: VenueContextType = {
     currentVenue,
     userVenues,
     hasUserVenues,
-    isLoading: authLoading || isLoading,
+    isLoading,
     switchVenue,
     refreshVenues,
     setCurrentVenue

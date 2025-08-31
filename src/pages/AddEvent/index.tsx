@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useOnboarding } from '../../hooks/useOnboarding';
 import { useVenue } from '../../contexts/VenueContext';
-import { VenueService } from '../../services/venueService';
+import { useGetVenueEventsQuery } from '../../store/api/venuesApi';
 import Sidebar from '../../components/layout/Sidebar';
 import ReportTypeSelection from './ReportTypeSelection';
 import ManualEventForm from './ManualEventForm';
@@ -21,35 +22,42 @@ const AddEvent = () => {
   const [currentEventNumber, setCurrentEventNumber] = useState(1);
   const navigate = useNavigate();
 
-  // Check if user should see onboarding flow using venue context
-  useEffect(() => {
-    const checkOnboardingMode = async () => {
-      if (!user || venueLoading) return;
+  // RTK Query hooks for venue events (we'll use these to replace direct service calls)
+  const venueEventQueries = userVenues.map(venue => 
+    useGetVenueEventsQuery(venue.id, {
+      skip: !venue.id || !hasUserVenues,
+    })
+  );
 
-      try {
-        if (hasUserVenues) {
-          // Use userVenues from context instead of making API call
-          const venueEvents = await Promise.all(
-            userVenues.map(venue => VenueService.getVenueEvents(venue.id))
-          );
-          const eventsReported = venueEvents.reduce((total, events) => 
-            total + events.upcoming.length + events.past.length, 0
-          );
-
-          // Show onboarding if user has venues but less than 3 events
-          if (eventsReported < 3) {
-            setIsOnboardingMode(true);
-            setCurrentStep('onboarding');
-            setCurrentEventNumber(eventsReported + 1);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking onboarding mode:', error);
+  // Stable calculation of total events count
+  const totalEventsCount = useMemo(() => {
+    let count = 0;
+    venueEventQueries.forEach((query) => {
+      if (query.data) {
+        count += query.data.upcoming.length + query.data.past.length;
       }
-    };
+    });
+    return count;
+  }, [venueEventQueries.map(q => q.data ? `${q.data.upcoming.length}-${q.data.past.length}` : 'loading').join(',')]);
 
-    checkOnboardingMode();
-  }, [user, hasUserVenues, userVenues, venueLoading]);
+  // Check if user should see onboarding flow using RTK Query data
+  useEffect(() => {
+    if (!user || venueLoading) return;
+
+    if (hasUserVenues && userVenues.length > 0) {
+      // Use stable events count
+      const eventsReported = totalEventsCount;
+
+      console.log('AddEvent: Total events reported across venues:', eventsReported);
+
+      // Show onboarding if user has venues but less than 3 events
+      if (eventsReported < 3) {
+        setIsOnboardingMode(true);
+        setCurrentStep('onboarding');
+        setCurrentEventNumber(eventsReported + 1);
+      }
+    }
+  }, [user, hasUserVenues, userVenues, venueLoading, totalEventsCount]);
 
   const handleReportTypeSelect = (type: 'manual' | 'upload') => {
     setCurrentStep(type);

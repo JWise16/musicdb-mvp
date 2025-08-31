@@ -6,6 +6,7 @@ import authMiddleware from './middleware/authMiddleware';
 import { eventsApi } from './api/eventsApi';
 import { venuesApi } from './api/venuesApi';
 import { artistsApi } from './api/artistsApi';
+import { userProfileApi } from './api/userProfileApi';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     [eventsApi.reducerPath]: eventsApi.reducer,
     [venuesApi.reducerPath]: venuesApi.reducer,
     [artistsApi.reducerPath]: artistsApi.reducer,
+    [userProfileApi.reducerPath]: userProfileApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -28,7 +30,8 @@ export const store = configureStore({
     .concat(authMiddleware)
     .concat(eventsApi.middleware)
     .concat(venuesApi.middleware)
-    .concat(artistsApi.middleware),
+    .concat(artistsApi.middleware)
+    .concat(userProfileApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

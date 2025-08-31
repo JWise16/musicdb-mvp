@@ -1,8 +1,12 @@
+import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useVenue } from '../../contexts/VenueContext';
-import { VenueService } from '../../services/venueService';
+import { 
+  useCreateVenueMutation,
+  useAssociateUserWithVenueMutation 
+} from '../../store/api/venuesApi';
 import Sidebar from '../../components/layout/Sidebar';
 import { isValidRole, ROLE_OPTIONS } from '../../utils/roleUtils';
 
@@ -22,6 +26,10 @@ const AddVenue = () => {
   const { refreshVenues } = useVenue();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // RTK mutation hooks
+  const [createVenue] = useCreateVenueMutation();
+  const [associateUserWithVenue] = useAssociateUserWithVenueMutation();
   const [formData, setFormData] = useState<VenueFormData>({
     name: '',
     location: '',
@@ -55,30 +63,32 @@ const AddVenue = () => {
       // Destructure role from formData and create venue data
       const { role, ...venueData } = formData;
       
-      const result = await VenueService.createVenue({
+      console.log('AddVenue: Creating venue with RTK mutation');
+      const venueResult = await createVenue({
         ...venueData,
         capacity: venueData.capacity ? parseInt(venueData.capacity.toString()) : undefined
-      });
+      }).unwrap();
 
-      if (result.success && result.venueId) {
-        // Associate user with venue
-        await VenueService.associateUserWithVenue({
+      if (venueResult.success && venueResult.venueId) {
+        console.log('AddVenue: Venue created, associating with user');
+        await associateUserWithVenue({
           user_id: user.id,
-          venue_id: result.venueId,
+          venue_id: venueResult.venueId,
           role: role
-        });
+        }).unwrap();
 
-        // Refresh venue context
+        // Refresh venue context (RTK mutations should have invalidated cache)
         await refreshVenues();
 
+        console.log('AddVenue: Venue creation and association successful');
         // Navigate back to dashboard
         navigate('/dashboard');
       } else {
-        alert(`Error creating venue: ${result.error}`);
+        alert(`Error creating venue: ${venueResult.error}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating venue:', error);
-      alert('Failed to create venue. Please try again.');
+      alert(error.message || 'Failed to create venue. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

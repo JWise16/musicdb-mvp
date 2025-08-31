@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuthTransition';
+import { useAuth } from '../../hooks/useAuth';
 import { type EventFilters as EventFiltersType } from '../../services/eventService';
 import { useEventsWithFiltering } from '../../hooks/useEventsWithFiltering';
 import Sidebar from '../../components/layout/Sidebar';

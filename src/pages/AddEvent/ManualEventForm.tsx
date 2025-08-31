@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useVenue } from '../../contexts/VenueContext';
-import { EventService, type EventFormData } from '../../services/eventService';
+import { type EventFormData } from '../../services/eventService';
+import { useCreateEventMutation } from '../../store/api/eventsApi';
 
 interface ManualEventFormProps {
   onEventCreated: (eventId: string) => void;
@@ -31,6 +32,9 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
   const { user } = useAuth();
   const { currentVenue, userVenues } = useVenue();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // RTK mutation hook
+  const [createEvent] = useCreateEventMutation();
   const [priceType, setPriceType] = useState<'single' | 'range' | null>(null);
   
   // Display states for formatted currency inputs
@@ -88,7 +92,8 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
 
   // Prevent wheel events on number inputs to avoid accidental value changes when scrolling
   const handleNumberInputWheel = (e: React.WheelEvent<HTMLInputElement>) => {
-    e.preventDefault(); // Completely disable wheel functionality
+    // Blur the input to lose focus instead of trying to preventDefault on passive wheel events
+    (e.target as HTMLInputElement).blur();
   };
 
   // Special handlers for currency fields
@@ -181,16 +186,18 @@ const ManualEventForm = ({ onEventCreated, onCancel }: ManualEventFormProps) => 
 
     setIsLoading(true);
     try {
-      const result = await EventService.createEvent(formData);
+      console.log('ManualEventForm: Creating event with RTK mutation');
+      const result = await createEvent(formData).unwrap();
       
       if (result.success && result.eventId) {
+        console.log('ManualEventForm: Event created successfully:', result.eventId);
         onEventCreated(result.eventId);
       } else {
         alert(`Error creating event: ${result.error}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating event:', error);
-      alert('Failed to create event. Please try again.');
+      alert(error.message || 'Failed to create event. Please try again.');
     } finally {
       setIsLoading(false);
     }

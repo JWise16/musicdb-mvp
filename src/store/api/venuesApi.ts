@@ -1,5 +1,5 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
-import { VenueService } from '../../services/venueService';
+import { VenueService, type VenueData, type UserVenueData } from '../../services/venueService';
 import type { Tables } from '../../database.types';
 
 // User venue relationship type
@@ -170,11 +170,108 @@ export const venuesApi = createApi({
       // Cache events for 3 minutes (they change moderately)
       keepUnusedDataFor: 3 * 60, // 3 minutes
     }),
+
+    // MUTATIONS - Create, Update, Delete operations
+    
+    // Create a new venue
+    createVenue: builder.mutation<
+      { success: boolean; venueId?: string; error?: string },
+      VenueData
+    >({
+      queryFn: async (venueData) => {
+        try {
+          console.log('RTK Mutation: Creating venue:', venueData);
+          const result = await VenueService.createVenue(venueData);
+          console.log('RTK Mutation: Venue creation result:', result);
+          return { data: result };
+        } catch (error: any) {
+          return { error: { status: 'FETCH_ERROR', error: error.message } };
+        }
+      },
+      invalidatesTags: ['AllVenues', 'UserVenues'],
+    }),
+
+    // Create venue with image
+    createVenueWithImage: builder.mutation<
+      { success: boolean; venueId?: string; error?: string },
+      { venueData: VenueData; imageFile?: File }
+    >({
+      queryFn: async ({ venueData, imageFile }) => {
+        try {
+          console.log('RTK Mutation: Creating venue with image:', venueData);
+          const result = await VenueService.createVenueWithImage(venueData, imageFile);
+          console.log('RTK Mutation: Venue with image creation result:', result);
+          return { data: result };
+        } catch (error: any) {
+          return { error: { status: 'FETCH_ERROR', error: error.message } };
+        }
+      },
+      invalidatesTags: ['AllVenues', 'UserVenues'],
+    }),
+
+    // Associate user with venue
+    associateUserWithVenue: builder.mutation<
+      { success: boolean; error?: string },
+      UserVenueData
+    >({
+      queryFn: async (userVenueData) => {
+        try {
+          console.log('RTK Mutation: Associating user with venue:', userVenueData);
+          const result = await VenueService.associateUserWithVenue(userVenueData);
+          console.log('RTK Mutation: User venue association result:', result);
+          return { data: result };
+        } catch (error: any) {
+          return { error: { status: 'FETCH_ERROR', error: error.message } };
+        }
+      },
+      invalidatesTags: (result, error, { user_id }) => [
+        'UserVenues',
+        { type: 'UserVenues', id: user_id },
+        { type: 'UserVenues', id: `${user_id}-relation` },
+        { type: 'UserVenues', id: `${user_id}-check` },
+      ],
+    }),
+
+    // Update venue
+    updateVenue: builder.mutation<
+      { success: boolean; error?: string },
+      { venueId: string; updates: Partial<VenueData> }
+    >({
+      queryFn: async ({ venueId, updates }) => {
+        try {
+          console.log('RTK Mutation: Updating venue:', venueId, updates);
+          // Note: VenueService doesn't have updateVenue method, we'll implement it
+          const { supabase } = await import('../../supabaseClient');
+          const { error } = await supabase
+            .from('venues')
+            .update(updates)
+            .eq('id', venueId);
+
+          if (error) {
+            throw error;
+          }
+
+          console.log('RTK Mutation: Venue update successful');
+          return { data: { success: true } };
+        } catch (error: any) {
+          console.error('RTK Mutation: Venue update error:', error);
+          return { error: { status: 'FETCH_ERROR', error: error.message } };
+        }
+      },
+      invalidatesTags: (result, error, { venueId }) => [
+        'AllVenues',
+        'UserVenues', 
+        { type: 'Venue', id: venueId },
+        'VenueAnalytics',
+        'VenueEvents',
+      ],
+    }),
   }),
 });
 
 // Export hooks for use in components
 export const {
+  // Queries
   useGetAllVenuesQuery,
   useGetUserVenuesQuery,
   useGetUserVenueRelationQuery,
@@ -184,4 +281,10 @@ export const {
   useGetVenueEventsQuery,
   useLazyGetAllVenuesQuery,
   useLazyGetUserVenuesQuery,
+  
+  // Mutations
+  useCreateVenueMutation,
+  useCreateVenueWithImageMutation,
+  useAssociateUserWithVenueMutation,
+  useUpdateVenueMutation,
 } = venuesApi;

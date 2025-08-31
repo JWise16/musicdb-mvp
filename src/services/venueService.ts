@@ -124,7 +124,14 @@ export class VenueService {
 
   // Get venues associated with a user
   static async getUserVenues(userId: string): Promise<Tables<'venues'>[]> {
+    console.log('VenueService: getUserVenues called with userId:', userId, {
+      timestamp: new Date().toISOString()
+    });
+    
+    const startTime = Date.now();
+    
     try {
+      console.log('VenueService: Making Supabase query for user venues');
       const { data: userVenues, error } = await supabase
         .from('user_venues')
         .select(`
@@ -133,16 +140,35 @@ export class VenueService {
         `)
         .eq('user_id', userId);
 
+      const endTime = Date.now();
+      console.log('VenueService: Supabase query completed', {
+        duration: `${endTime - startTime}ms`,
+        dataCount: userVenues?.length || 0,
+        error: error?.message || null,
+        timestamp: new Date().toISOString()
+      });
+
       if (error) {
-        console.error('Error fetching user venues:', error);
+        console.error('VenueService: Error fetching user venues:', error);
         return [];
       }
 
       // Extract venues from the response
       const venues = userVenues?.map(uv => uv.venues).filter(Boolean) || [];
+      console.log('VenueService: getUserVenues returning venues', {
+        venueCount: venues.length,
+        venueIds: venues.map((v: any) => v.id),
+        timestamp: new Date().toISOString()
+      });
+      
       return venues as unknown as Tables<'venues'>[];
     } catch (error) {
-      console.error('Error in getUserVenues:', error);
+      const endTime = Date.now();
+      console.error('VenueService: Error in getUserVenues:', error, {
+        duration: `${endTime - startTime}ms`,
+        userId,
+        timestamp: new Date().toISOString()
+      });
       return [];
     }
   }

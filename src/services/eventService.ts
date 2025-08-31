@@ -106,7 +106,11 @@ export class EventService {
           if (relationError) {
             console.error('Error creating event_artist relation:', relationError);
             // Continue with other artists even if one fails
+          } else {
+            console.log(`Successfully linked artist ${artistData.name} to event ${event.id}`);
           }
+        } else {
+          console.error(`Failed to create or find artist: ${artistData.name} - event will be created without this artist`);
         }
       }
 
@@ -174,11 +178,17 @@ export class EventService {
   static async getOrCreateArtist(artistData: ArtistData): Promise<string | null> {
     try {
       // First, try to find existing artist by name
-      const { data: existingArtist } = await supabase
+      const { data: existingArtist, error: findError } = await supabase
         .from('artists')
         .select('id, viberate_uuid')
         .eq('name', artistData.name)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to avoid 406 errors
+
+      // Handle any error from the find query
+      if (findError && findError.code !== 'PGRST116') { // PGRST116 is "not found" which is expected
+        console.error('Error finding artist:', findError);
+        // Don't return null immediately - try to create the artist anyway
+      }
 
       if (existingArtist) {
         // If artist exists but doesn't have a Vibrate UUID, try to resolve it

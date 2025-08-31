@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useVenue } from '../../contexts/VenueContext';
+import { 
+  useGetVenueByIdQuery,
+  useGetVenueAnalyticsQuery,
+  useGetVenueEventsQuery
+} from '../../store/api/venuesApi';
 import { VenueService, type VenueAnalytics, type VenueEvent } from '../../services/venueService';
 import Sidebar from '../../components/layout/Sidebar';
 import VenueSelector from '../../components/features/venues/VenueSelector';
@@ -14,53 +19,56 @@ const VenueDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { userVenues } = useVenue();
   const navigate = useNavigate();
-  const [venue, setVenue] = useState<Tables<'venues'> | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [timeFrame, setTimeFrame] = useState<'YTD' | 'MTD' | 'ALL'>('YTD');
-  const [analytics, setAnalytics] = useState<VenueAnalytics>(() => VenueService.getDefaultAnalytics());
-  const [events, setEvents] = useState<{ upcoming: VenueEvent[]; past: VenueEvent[] }>({
-    upcoming: [],
-    past: []
+
+  // Use RTK Query for venue data
+  const {
+    data: venue,
+    isLoading: venueLoading,
+    error: venueError
+  } = useGetVenueByIdQuery(id || '', {
+    skip: !id
   });
+
+  const {
+    data: analytics = VenueService.getDefaultAnalytics(),
+    isLoading: analyticsLoading
+  } = useGetVenueAnalyticsQuery(
+    { venueId: id || '', timeFrame },
+    { skip: !id }
+  );
+
+  const {
+    data: events = { upcoming: [], past: [] },
+    isLoading: eventsLoading
+  } = useGetVenueEventsQuery(id || '', {
+    skip: !id
+  });
+
+  const isLoading = venueLoading || analyticsLoading || eventsLoading;
 
   // Check if user has access to this venue
   const hasAccess = venue && userVenues.some(uv => uv.id === venue.id);
 
+  // Handle navigation if venue not found or user doesn't have access
   useEffect(() => {
-    const loadVenueData = async () => {
-      if (!id) {
-        navigate('/venues');
-        return;
-      }
+    if (!id) {
+      navigate('/venues');
+      return;
+    }
 
-      setIsLoading(true);
-      try {
-        const venueData = await VenueService.getVenueById(id);
-        if (!venueData) {
-          navigate('/venues');
-          return;
-        }
+    if (venueError) {
+      console.error('Error loading venue:', venueError);
+      navigate('/venues');
+      return;
+    }
 
-        setVenue(venueData);
-
-        // Load analytics and events for this venue
-        const [venueAnalytics, venueEvents] = await Promise.all([
-          VenueService.getVenueAnalytics(id, timeFrame),
-          VenueService.getVenueEvents(id)
-        ]);
-
-        setAnalytics(venueAnalytics);
-        setEvents(venueEvents);
-      } catch (error) {
-        console.error('Error loading venue data:', error);
-        navigate('/venues');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadVenueData();
-  }, [id, timeFrame, navigate]);
+    if (venue && !hasAccess) {
+      console.log('User does not have access to this venue');
+      navigate('/venues');
+      return;
+    }
+  }, [id, venue, venueError, hasAccess, navigate]);
 
   const handleEventClick = (eventId: string) => {
     navigate(`/event/${eventId}`);

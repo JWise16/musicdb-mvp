@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth, useUserProfile, useAdminAuth } from '../../hooks/useAuthTransition';
+import { useAuth } from '../../hooks/useAuth';
+import { useUserProfile } from '../../hooks/useUserProfile';
+import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useGetUserVenueRelationQuery } from '../../store/api/venuesApi';
 import { formatRole } from '../../utils/roleUtils';
 import Avatar from '../common/Avatar';

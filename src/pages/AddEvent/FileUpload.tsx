@@ -16,7 +16,7 @@ const FileUpload = ({ onBack, onComplete }: FileUploadProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<FileUploadProgress | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
+
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -65,7 +65,6 @@ const FileUpload = ({ onBack, onComplete }: FileUploadProps) => {
       );
 
       if (result.success) {
-        setUploadedFileId(result.fileId || null);
         setIsUploaded(true);
         console.log('File uploaded successfully:', result);
       } else {
@@ -97,13 +96,10 @@ const FileUpload = ({ onBack, onComplete }: FileUploadProps) => {
           Thank you for uploading your event file! Your file has been successfully stored and our team will process it manually. You'll be notified once the processing is complete.
         </p>
         
-        {uploadedFileId && (
+        {selectedFile && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600">
-              <strong>File ID:</strong> {uploadedFileId}
-            </p>
-            <p className="text-sm text-gray-600">
-              <strong>File:</strong> {selectedFile?.name}
+              <strong>File:</strong> {selectedFile.name}
             </p>
           </div>
         )}

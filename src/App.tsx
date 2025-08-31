@@ -1,7 +1,7 @@
 // src/App.tsx or src/main.tsx
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useAuth } from './hooks/useAuthTransition';
+import { useAuth } from './hooks/useAuth';
 import Login from './pages/Auth/login';
 import Signup from './pages/Auth/signup';
 import Landing from './pages/Landing';
@@ -24,7 +24,45 @@ import AdminDashboard from './pages/Admin';
 import { VenueProvider } from './contexts/VenueContext';
 
 function App() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  // Debug logging for page visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      console.log('App: Page visibility changed', {
+        hidden: document.hidden,
+        user: user?.email,
+        loading,
+        timestamp: new Date().toISOString()
+      });
+    };
+
+    const handleFocus = () => {
+      console.log('App: Window focused', {
+        user: user?.email,
+        loading,
+        timestamp: new Date().toISOString()
+      });
+    };
+
+    const handleBlur = () => {
+      console.log('App: Window blurred', {
+        user: user?.email,
+        loading,
+        timestamp: new Date().toISOString()
+      });
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [user, loading]);
 
   // Test Supabase configuration
   //console.log('App: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);

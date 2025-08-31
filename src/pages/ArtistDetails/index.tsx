@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuthTransition';
+import { useAuth } from '../../hooks/useAuth';
 import { useGetArtistDetailsQuery } from '../../store/api/artistsApi';
 import Sidebar from '../../components/layout/Sidebar';
 import { formatEventDate } from '../../utils/dateUtils';

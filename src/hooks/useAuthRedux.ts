@@ -23,9 +23,27 @@ export const useAuth = () => {
   const error = useAppSelector(selectAuthError);
   const initialized = useAppSelector(selectIsInitialized);
 
+  // Debug logging for auth state changes
+  useEffect(() => {
+    console.log('useAuthRedux: Auth state changed', {
+      user: user?.email,
+      isAuthenticated,
+      loading,
+      initialized,
+      error,
+      timestamp: new Date().toISOString()
+    });
+  }, [user, isAuthenticated, loading, initialized, error]);
+
   // Initialize auth on first mount
   useEffect(() => {
+    console.log('useAuthRedux: useEffect for initialization', {
+      initialized,
+      timestamp: new Date().toISOString()
+    });
+    
     if (!initialized) {
+      console.log('useAuthRedux: Dispatching initializeAuth');
       dispatch(initializeAuth());
     }
   }, [dispatch, initialized]);
