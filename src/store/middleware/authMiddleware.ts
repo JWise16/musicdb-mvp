@@ -8,6 +8,7 @@ import {
   recordLoginActivity,
   logout,
 } from '../slices/authSlice';
+import { clarityService } from '../../services/clarityService';
 
 // Create the listener middleware
 export const authListenerMiddleware = createListenerMiddleware();
@@ -107,6 +108,21 @@ startAuthListener({
                     userAgent: navigator.userAgent,
                   }));
                 }
+
+                // Identify user in Clarity when they sign in or have initial session
+                const state = getState();
+                const profile = state.auth.profile;
+                const adminLevel = state.auth.adminLevel;
+                
+                clarityService.identifyUser({
+                  userId: session.user.id,
+                  userRole: profile?.role || undefined,
+                  adminLevel: adminLevel || undefined,
+                  hasCompleteProfile: !!(profile?.full_name && profile?.role),
+                });
+
+                // Track auth event
+                clarityService.trackEvent(event === 'SIGNED_IN' ? 'user_login' : 'user_session_initialized');
               }
               break;
 
@@ -114,6 +130,10 @@ startAuthListener({
               if (currentUserId) { // Only logout if we were actually logged in
                 dispatch(logout());
                 console.log('User signed out');
+                
+                // Clear user from Clarity
+                clarityService.clearUser();
+                clarityService.trackEvent('user_logout');
               }
               break;
 

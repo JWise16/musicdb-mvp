@@ -1,14 +1,23 @@
+import { useClarity } from '../../../hooks/useClarity';
+
 interface TimeFrameSelectorProps {
   timeFrame: 'YTD' | 'MTD' | 'ALL';
   onTimeFrameChange: (timeFrame: 'YTD' | 'MTD' | 'ALL') => void;
 }
 
 const TimeFrameSelector = ({ timeFrame, onTimeFrameChange }: TimeFrameSelectorProps) => {
+  const { trackDashboard } = useClarity();
+  
   const timeFrameOptions = [
     { value: 'YTD' as const, label: 'Year to Date' },
     { value: 'MTD' as const, label: 'Month to Date' },
     { value: 'ALL' as const, label: 'All Time' }
   ];
+
+  const handleTimeFrameChange = (newTimeFrame: 'YTD' | 'MTD' | 'ALL') => {
+    trackDashboard('timeframe_changed', { timeframe: newTimeFrame });
+    onTimeFrameChange(newTimeFrame);
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -17,7 +26,7 @@ const TimeFrameSelector = ({ timeFrame, onTimeFrameChange }: TimeFrameSelectorPr
         {timeFrameOptions.map(option => (
           <button
             key={option.value}
-            onClick={() => onTimeFrameChange(option.value)}
+            onClick={() => handleTimeFrameChange(option.value)}
             className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
               timeFrame === option.value
                 ? 'bg-white font-bold text-black shadow-sm'

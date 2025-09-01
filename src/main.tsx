@@ -4,6 +4,10 @@ import { Provider } from 'react-redux'
 import { store } from './store'
 import './index.css'
 import App from './App.tsx'
+import { clarityService } from './services/clarityService'
+
+// Initialize Clarity analytics
+clarityService.initialize();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

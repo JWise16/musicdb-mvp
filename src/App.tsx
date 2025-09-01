@@ -22,6 +22,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import AdminDashboard from './pages/Admin';
 import { VenueProvider } from './contexts/VenueContext';
+import PrivacyBanner from './components/common/PrivacyBanner';
 
 function App() {
   const { user, loading } = useAuth();
@@ -91,6 +92,7 @@ function App() {
   return (
     <BrowserRouter>
       <VenueProvider>
+        <PrivacyBanner />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
