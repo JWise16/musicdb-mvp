@@ -70,8 +70,8 @@ const VenueDetails = () => {
     }
   }, [id, venue, venueError, hasAccess, navigate]);
 
-  const handleEventClick = (eventId: string) => {
-    navigate(`/event/${eventId}`);
+  const handleArtistClick = (artistId: string) => {
+    navigate(`/artist/${artistId}`);
   };
 
   const handleTimeFrameChange = (newTimeFrame: 'YTD' | 'MTD' | 'ALL') => {
@@ -239,7 +239,7 @@ const VenueDetails = () => {
               <YourShows 
                 upcoming={events.upcoming}
                 past={events.past}
-                onEventClick={handleEventClick}
+                onArtistClick={handleArtistClick}
               />
             </>
           ) : (

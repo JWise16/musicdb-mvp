@@ -86,6 +86,11 @@ const Dashboard = () => {
 
   // Check if user needs onboarding
   useEffect(() => {
+    // Don't run onboarding checks if already completed
+    if (onboardingCheckComplete) {
+      return;
+    }
+
     // Set a timeout to prevent infinite loading
     const timeout = setTimeout(() => {
       console.error('Dashboard: Loading timeout reached after 15 seconds');
@@ -105,18 +110,27 @@ const Dashboard = () => {
       
       // Check if user actually has valid data before forcing navigation
       const onboardingCompleted = localStorage.getItem('musicdb-onboarding-completed') === 'true';
-      const hasValidData = profile?.full_name && profile?.role && contextHasVenues;
       
-      if (onboardingCompleted && hasValidData) {
-        // User has valid data but got stuck - force Dashboard to show
-        console.warn('Dashboard: Timeout but user has valid data - forcing Dashboard to display');
+      // If user has completed onboarding, trust that flag and force dashboard to show
+      // This prevents unnecessary re-validation that can fail due to edge cases
+      if (onboardingCompleted) {
+        console.warn('Dashboard: Timeout but user has completed onboarding - forcing Dashboard to display');
         setHasVenues(true);
         setOnboardingCheckComplete(true);
       } else {
-        // User genuinely needs onboarding
-        console.warn('Dashboard: Timeout and user needs onboarding - redirecting');
-        setHasVenues(false);
-        navigate('/onboarding');
+        // Only redirect users who haven't completed onboarding
+        const hasBasicProfile = profile?.full_name;
+        if (!hasBasicProfile) {
+          console.warn('Dashboard: Timeout and user needs onboarding - redirecting');
+          setHasVenues(false);
+          navigate('/onboarding');
+        } else {
+          // User has basic data but no completion flag - assume they completed but flag got lost
+          console.warn('Dashboard: User has profile but no completion flag - setting completion flag and forcing Dashboard to display');
+          localStorage.setItem('musicdb-onboarding-completed', 'true');
+          setHasVenues(contextHasVenues);
+          setOnboardingCheckComplete(true);
+        }
       }
     }, 15000); // 15 second timeout
 
@@ -132,21 +146,14 @@ const Dashboard = () => {
       // For users who have completed the full onboarding flow and navigated from completion page,
       // we can skip the detailed checks to prevent redirect loops
       const onboardingCompleted = localStorage.getItem('musicdb-onboarding-completed') === 'true';
-      const hasValidData = profile?.full_name && profile?.role && contextHasVenues;
       
-      if (onboardingCompleted && hasValidData) {
-        console.log('Dashboard: User completed onboarding flow and has valid data, skipping detailed checks');
+      if (onboardingCompleted) {
+        console.log('Dashboard: User completed onboarding flow, skipping detailed checks');
         console.log('Dashboard: Setting hasVenues=true and onboardingCheckComplete=true');
         clearTimeout(timeout);
         setHasVenues(true);
         setOnboardingCheckComplete(true);
         return;
-      }
-      
-      // If onboarding flag is set but user doesn't have valid data, clear the flag
-      if (onboardingCompleted && !hasValidData) {
-        console.log('Dashboard: Onboarding flag set but user missing data, clearing flag');
-        localStorage.removeItem('musicdb-onboarding-completed');
       }
       
       // Wait for auth to complete first
@@ -219,7 +226,8 @@ const Dashboard = () => {
         console.log('Dashboard: Existing user with venues and profile - skipping event count check for faster loading');
 
         // If we get here, onboarding is complete
-        console.log('Dashboard: Onboarding complete, setting hasVenues to true');
+        console.log('Dashboard: Onboarding complete, setting completion flag and hasVenues to true');
+        localStorage.setItem('musicdb-onboarding-completed', 'true');
         clearTimeout(timeout);
         setHasVenues(hasVenues);
         setOnboardingCheckComplete(true);
@@ -273,7 +281,7 @@ const Dashboard = () => {
     return () => {
       clearTimeout(timeout);
     };
-  }, [user?.id, profile?.full_name, profile?.role, authLoading, profileLoading, venueLoading, onboardingCheckComplete, navigate]);
+  }, [user?.id, authLoading, profileLoading, venueLoading, onboardingCheckComplete, navigate]);
 
   // Dashboard data is now loaded automatically by RTK Query hooks above
   // No need for manual useEffect - data is cached and loads instantly on subsequent visits!

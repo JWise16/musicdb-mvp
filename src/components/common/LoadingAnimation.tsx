@@ -26,7 +26,6 @@ const LoadingAnimation = ({
 }: LoadingAnimationProps) => {
   const [progress, setProgress] = useState(0);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
     const startTime = Date.now();
@@ -46,7 +45,6 @@ const LoadingAnimation = ({
       setCurrentMessageIndex(newMessageIndex);
       
       if (newProgress >= 100) {
-        setIsComplete(true);
         clearInterval(progressTimer);
       }
     }, 50); // Update every 50ms for smooth animation

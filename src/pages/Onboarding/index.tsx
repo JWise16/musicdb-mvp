@@ -29,6 +29,16 @@ export default function Onboarding() {
   const { profile, refetch: refetchProfile } = useUserProfile();
   const { refreshVenues } = useVenue();
 
+  // Immediate redirect for users who have already completed onboarding
+  useEffect(() => {
+    const onboardingCompleted = localStorage.getItem('musicdb-onboarding-completed') === 'true';
+    if (onboardingCompleted) {
+      console.log('Onboarding: User has already completed onboarding, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+  }, [navigate]);
+
   // Only fetch venue-related data if user has completed profile
   const hasProfile = !!(profile?.full_name && profile?.role);
   
