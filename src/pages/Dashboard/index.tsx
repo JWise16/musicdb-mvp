@@ -278,9 +278,7 @@ const Dashboard = () => {
   // Dashboard data is now loaded automatically by RTK Query hooks above
   // No need for manual useEffect - data is cached and loads instantly on subsequent visits!
 
-  const handleEventClick = (eventId: string) => {
-    navigate(`/event/${eventId}`);
-  };
+
 
   const handleArtistClick = async (artistId: string) => {
     navigate(`/artist/${artistId}`);
@@ -364,7 +362,6 @@ const Dashboard = () => {
               <YourShows 
                 upcoming={events.upcoming}
                 past={events.past}
-                onEventClick={handleEventClick}
                 onArtistClick={handleArtistClick}
               />
             </div>

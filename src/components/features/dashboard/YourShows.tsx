@@ -5,14 +5,12 @@ import { useArtistImage } from '../../../hooks/useArtistImage';
 interface YourShowsProps {
   upcoming: VenueEvent[];
   past: VenueEvent[];
-  onEventClick: (eventId: string) => void;
   onArtistClick?: (artistId: string) => void;
 }
 
 // Individual Event Card Component
-const EventCard = ({ event, onEventClick, onArtistClick }: { 
+const EventCard = ({ event, onArtistClick }: { 
   event: VenueEvent; 
-  onEventClick: (eventId: string) => void;
   onArtistClick?: (artistId: string) => void;
 }) => {
   // Use the first headliner name for the image
@@ -47,13 +45,11 @@ const EventCard = ({ event, onEventClick, onArtistClick }: {
   };
 
   const handleCardClick = () => {
-    // If we have a headliner artist and artist click handler, navigate to artist page
+    // Navigate to artist page if we have a headliner with an ID
     if (headliners.length > 0 && headliners[0].id && onArtistClick) {
       onArtistClick(headliners[0].id);
-    } else {
-      // Otherwise, navigate to event page
-      onEventClick(event.id);
     }
+    // No fallback - events page is not implemented
   };
 
   return (
@@ -152,7 +148,7 @@ const EventCard = ({ event, onEventClick, onArtistClick }: {
   );
 };
 
-const YourShows = ({ upcoming, past, onEventClick, onArtistClick }: YourShowsProps) => {
+const YourShows = ({ upcoming, past, onArtistClick }: YourShowsProps) => {
   return (
     <div className="mb-6 lg:mb-8 overflow-hidden">
       <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-4 lg:mb-6 break-words">Your Shows</h3>
@@ -163,7 +159,7 @@ const YourShows = ({ upcoming, past, onEventClick, onArtistClick }: YourShowsPro
           <h4 className="text-md font-semibold text-gray-800 mb-3">Upcoming</h4>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 lg:gap-6 auto-rows-fr">
             {upcoming.slice(0, 3).map(event => (
-              <EventCard key={event.id} event={event} onEventClick={onEventClick} onArtistClick={onArtistClick} />
+              <EventCard key={event.id} event={event} onArtistClick={onArtistClick} />
             ))}
           </div>
         </div>
@@ -181,7 +177,7 @@ const YourShows = ({ upcoming, past, onEventClick, onArtistClick }: YourShowsPro
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 lg:gap-6 auto-rows-fr">
             {past.slice(0, 6).map(event => (
-              <EventCard key={event.id} event={event} onEventClick={onEventClick} onArtistClick={onArtistClick} />
+              <EventCard key={event.id} event={event} onArtistClick={onArtistClick} />
             ))}
           </div>
         )}

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useGetArtistDetailsQuery } from '../../store/api/artistsApi';
 import Sidebar from '../../components/layout/Sidebar';
+import LoadingAnimation from '../../components/common/LoadingAnimation';
 import { formatEventDate } from '../../utils/dateUtils';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
 
@@ -142,19 +143,21 @@ const ArtistDetails = () => {
   if (isLoading) {
     console.log('⏳ ArtistDetails: Showing loading state');
     return (
-      <div className="min-h-screen bg-[#F6F6F3] flex">
-        <Sidebar />
-        <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">
-          <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 min-h-[90vh] max-w-full">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading artist details...</p>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
+      <LoadingAnimation
+        title="Loading Artist Details"
+        subtitle="Gathering comprehensive artist insights and analytics"
+        messages={[
+          "Fetching artist profile information...",
+          "Loading streaming platform analytics...",
+          "Retrieving audience demographics...",
+          "Gathering social media insights...",
+          "Compiling event history...",
+          "Processing fanbase data across platforms...",
+          "Analyzing listening patterns and trends...",
+          "Finalizing comprehensive artist report..."
+        ]}
+        duration={6000}
+      />
     );
   }
 

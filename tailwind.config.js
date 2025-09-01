@@ -67,6 +67,10 @@ export default {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'medium': '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
       },
+      animation: {
+        'shimmer': 'shimmer 2s infinite',
+        'fade-in-up': 'fade-in-up 0.5s ease-out',
+      },
     },
   },
   plugins: [],
