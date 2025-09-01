@@ -9,12 +9,6 @@ import { clarityService, trackEvent, setTag } from '../services/clarityService';
 export const useClarity = () => {
   const location = useLocation();
 
-  // Track page views automatically
-  useEffect(() => {
-    const pageName = getPageName(location.pathname);
-    trackPageView(pageName);
-  }, [location.pathname, trackPageView]);
-
   /**
    * Track page views with readable page names
    */
@@ -22,6 +16,12 @@ export const useClarity = () => {
     trackEvent('page_view', { page: pageName });
     setTag('current_page', pageName);
   }, []);
+
+  // Track page views automatically
+  useEffect(() => {
+    const pageName = getPageName(location.pathname);
+    trackPageView(pageName);
+  }, [location.pathname, trackPageView]);
 
   /**
    * Track user authentication events
