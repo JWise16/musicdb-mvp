@@ -437,10 +437,10 @@ const ArtistDetails = () => {
                 <div className="mb-8">
                   <h2 className="text-xl font-semibold mb-6 text-gray-900">Platform Analytics</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Column 1: SoundCloud */}
+                    {/* Column 1: YouTube */}
                     <div className="flex flex-col gap-4">
-                      <SoundCloudFanbaseChart data={soundcloudFanbase} />
-                      <SoundCloudPlaysChart data={soundcloudPlays} />
+                      <YouTubeFanbaseChart data={youtubeFanbase} />
+                      <YouTubeViewsChart data={youtubeViews} />
                     </div>
                     
                     {/* Column 2: Spotify */}
@@ -449,10 +449,10 @@ const ArtistDetails = () => {
                       <SpotifyListenersChart data={enhancedSpotifyListeners} />
                     </div>
                     
-                    {/* Column 3: YouTube */}
+                    {/* Column 3: SoundCloud */}
                     <div className="flex flex-col gap-4">
-                      <YouTubeFanbaseChart data={youtubeFanbase} />
-                      <YouTubeViewsChart data={youtubeViews} />
+                      <SoundCloudFanbaseChart data={soundcloudFanbase} />
+                      <SoundCloudPlaysChart data={soundcloudPlays} />
                     </div>
                   </div>
 
