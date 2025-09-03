@@ -401,7 +401,7 @@ export class EventService {
           : 0;
         
         const totalRevenue = event.event_metrics?.total_revenue || 
-          (event.tickets_sold ? event.tickets_sold * event.ticket_price : 0) + 
+          (event.total_ticket_revenue || 0) + 
           (event.bar_sales || 0);
 
         return {
@@ -590,7 +590,7 @@ export class EventService {
           : 0;
         
         const totalRevenue = eventMetricsForEvent?.total_revenue || 
-          (event.tickets_sold ? event.tickets_sold * event.ticket_price : 0) + 
+          (event.total_ticket_revenue || 0) + 
           (event.bar_sales || 0);
 
         return {

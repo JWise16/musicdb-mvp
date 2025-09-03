@@ -540,13 +540,13 @@ export class VenueService {
       events.forEach(event => {
         // Financial calculations
         const ticketsSold = event.tickets_sold || 0;
-        const ticketPrice = event.ticket_price || 0;
+        const ticketRevenue = event.total_ticket_revenue || 0;
         const barSales = event.bar_sales || 0;
         const totalTickets = event.total_tickets || 0;
 
         totalTicketsSold += ticketsSold;
         totalTicketsAvailable += totalTickets;
-        totalTicketRevenue += ticketsSold * ticketPrice;
+        totalTicketRevenue += ticketRevenue;
         totalBarSales += barSales;
 
         // Calculate percentage sold for this event
@@ -582,7 +582,7 @@ export class VenueService {
 
       // Calculate averages
       const avgSelloutRate = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
-      const avgTicketPrice = showsReported > 0 ? totalTicketRevenue / totalTicketsSold : 0;
+      const avgTicketPrice = totalTicketsSold > 0 ? totalTicketRevenue / totalTicketsSold : 0;
 
       // Find top performers based on average percentage sold
       const topMonthEntry = Object.entries(monthData)
@@ -705,7 +705,7 @@ export class VenueService {
           : 0;
         
         const totalRevenue = event.event_metrics?.total_revenue || 
-          (event.tickets_sold ? event.tickets_sold * event.ticket_price : 0) + 
+          (event.total_ticket_revenue || 0) + 
           (event.bar_sales || 0);
 
         return {
@@ -1629,15 +1629,15 @@ export class VenueService {
 
       periodEvents.forEach(event => {
         const ticketsSold = event.tickets_sold || 0;
-        const ticketPrice = event.ticket_price || 0;
+        const ticketRevenue = event.total_ticket_revenue || 0;
         const barSales = event.bar_sales || 0;
         const totalTickets = event.total_tickets || 0;
 
         totalTicketsSold += ticketsSold;
         totalTicketsAvailable += totalTickets;
-        totalTicketRevenue += ticketsSold * ticketPrice;
+        totalTicketRevenue += ticketRevenue;
         totalBarSales += barSales;
-        totalTicketSales += ticketsSold * ticketPrice;
+        totalTicketSales += ticketRevenue;
       });
 
       const avgSelloutRate = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
