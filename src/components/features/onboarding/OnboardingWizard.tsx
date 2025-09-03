@@ -419,6 +419,10 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     if (field === 'name' && value.trim()) {
       setValidationErrors(prev => ({ ...prev, event_artists: false }));
     }
+    // Clear validation errors for artist genres when user starts typing
+    if (field === 'genre' && value.trim()) {
+      setValidationErrors(prev => ({ ...prev, event_genres: false }));
+    }
   };
 
   const addArtist = () => {
@@ -504,6 +508,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
         if (!event.date) errors.event_date = true;
         if (!event.total_tickets || event.total_tickets <= 0) errors.event_total_tickets = true;
         if (!event.artists.some(artist => artist.name.trim())) errors.event_artists = true;
+        if (!event.artists.every(artist => artist.name.trim() === '' || (artist.genre && artist.genre.trim()))) errors.event_genres = true;
         break;
     }
     
@@ -1067,14 +1072,17 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Genre
+                    Genre <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={artist.genre || ''}
                     onChange={e => handleArtistChange(index, 'genre', e.target.value)}
-                    className="form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2"
+                    className={`form-input w-full text-xs lg:text-sm px-2 lg:px-3 py-1.5 lg:py-2 ${
+                      validationErrors.event_genres && hasAttemptedValidation ? 'border-red-500' : ''
+                    }`}
                     placeholder="e.g., Rock"
+                    required
                   />
                 </div>
               </div>
@@ -1341,6 +1349,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                     {validationErrors.event_date && <span className="text-xs text-red-600">• Date</span>}
                     {validationErrors.event_total_tickets && <span className="text-xs text-red-600">• Total Tickets Available</span>}
                     {validationErrors.event_artists && <span className="text-xs text-red-600">• At least one Artist Name</span>}
+                    {validationErrors.event_genres && <span className="text-xs text-red-600">• Genre for all artists</span>}
                   </div>
                 </div>
               )}
