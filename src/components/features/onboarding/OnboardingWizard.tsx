@@ -235,7 +235,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
   // Auto-save venue data (save any changes, not just when name exists)
   useEffect(() => {
     if (isOpen) {
-      const hasVenueData = venue.name || venue.location || venue.address;
+      const hasVenueData = venue.name || venue.location;
       if (hasVenueData) {
         console.log('Auto-saving venue data:', venue);
         localStorage.setItem(STORAGE_KEYS.venue, JSON.stringify(venue));
@@ -382,9 +382,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     if (field === 'location' && value.trim()) {
       setValidationErrors(prev => ({ ...prev, venue_location: false }));
     }
-    if (field === 'address' && value.trim()) {
-      setValidationErrors(prev => ({ ...prev, venue_address: false }));
-    }
+
     if (field === 'capacity' && value && value > 0) {
       setValidationErrors(prev => ({ ...prev, venue_capacity: false }));
     }
@@ -495,7 +493,6 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
       case 'venue':
         if (!venue.name.trim()) errors.venue_name = true;
         if (!venue.location.trim()) errors.venue_location = true;
-        if (!venue.address.trim()) errors.venue_address = true;
         if (!venue.capacity || venue.capacity <= 0) errors.venue_capacity = true;
         break;
         
@@ -579,8 +576,12 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           // Create venue and associate with user using RTK mutations
           try {
             console.log('OnboardingWizard: Creating venue with RTK mutation');
+            const venueDataWithAddress = {
+              ...venue,
+              address: 'Address not provided' // Add filler address
+            };
             const venueResult = await createVenueWithImage({
-              venueData: venue,
+              venueData: venueDataWithAddress,
               imageFile: venueImageFile || undefined
             }).unwrap();
 
@@ -889,21 +890,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
-            Address <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={venue.address}
-            onChange={(e) => handleVenueChange('address', e.target.value)}
-            className={`w-full px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm border-2 rounded-md lg:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.venue_address ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="Enter full address"
-            required
-          />
-        </div>
+
 
         <div>
           <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -1349,7 +1336,7 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
                     {validationErrors.profile_custom_role && <span className="text-xs text-red-600">• Custom Role</span>}
                     {validationErrors.venue_name && <span className="text-xs text-red-600">• Venue Name</span>}
                     {validationErrors.venue_location && <span className="text-xs text-red-600">• Location/City</span>}
-                    {validationErrors.venue_address && <span className="text-xs text-red-600">• Address</span>}
+
                     {validationErrors.venue_capacity && <span className="text-xs text-red-600">• Capacity</span>}
                     {validationErrors.event_date && <span className="text-xs text-red-600">• Date</span>}
                     {validationErrors.event_total_tickets && <span className="text-xs text-red-600">• Total Tickets Available</span>}
