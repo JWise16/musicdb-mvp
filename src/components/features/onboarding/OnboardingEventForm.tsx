@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useVenue } from '../../../contexts/VenueContext';
-import { EventService, type EventFormData } from '../../../services/eventService';
+import { useCreateEventMutation } from '../../../store/api/eventsApi';
+import { venuesApi } from '../../../store/api/venuesApi';
+import { useDispatch } from 'react-redux';
+import type { EventFormData } from '../../../services/eventService';
 
 interface OnboardingEventFormProps {
   onEventAdded: () => void;
@@ -18,6 +21,7 @@ export default function OnboardingEventForm({
 }: OnboardingEventFormProps) {
   const { user } = useAuth();
   const { currentVenue, userVenues } = useVenue();
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [priceType, setPriceType] = useState<'single' | 'range' | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
@@ -47,6 +51,9 @@ export default function OnboardingEventForm({
 
   // Track if data was restored from localStorage
   const [hasRestoredData, setHasRestoredData] = useState(false);
+
+  // RTK Query mutation hook
+  const [createEvent] = useCreateEventMutation();
 
   // Load saved data on mount
   useEffect(() => {
@@ -201,9 +208,13 @@ export default function OnboardingEventForm({
 
     setIsLoading(true);
     try {
-      const result = await EventService.createEvent(formData);
+      console.log('OnboardingEventForm: Creating event with RTK mutation');
+      const result = await createEvent(formData).unwrap();
       
       if (result.success) {
+        // Invalidate venue events cache to ensure fresh data
+        dispatch(venuesApi.util.invalidateTags([{ type: 'VenueEvents', id: formData.venue_id }]));
+        
         onEventAdded();
         // Reset form for next event
         setFormData({
@@ -233,7 +244,7 @@ export default function OnboardingEventForm({
       } else {
         alert(`Error creating event: ${result.error}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating event:', error);
       alert('Failed to create event. Please try again.');
     } finally {

@@ -5,6 +5,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { useOnboarding } from '../../hooks/useOnboarding';
 import { useVenue } from '../../contexts/VenueContext';
 import { useGetVenueEventsQuery } from '../../store/api/venuesApi';
+
+import { venuesApi } from '../../store/api/venuesApi';
+import { useDispatch } from 'react-redux';
 import Sidebar from '../../components/layout/Sidebar';
 import ReportTypeSelection from './ReportTypeSelection';
 import ManualEventForm from './ManualEventForm';
@@ -21,6 +24,9 @@ const AddEvent = () => {
   const [isOnboardingMode, setIsOnboardingMode] = useState(false);
   const [currentEventNumber, setCurrentEventNumber] = useState(1);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // RTK Query hooks for cache invalidation
 
   // Pre-define hooks for up to 5 venues to prevent hook order violations
   const venue1EventsQuery = useGetVenueEventsQuery(
@@ -95,6 +101,13 @@ const AddEvent = () => {
   };
 
   const handleComplete = () => {
+    // Force refresh venue events cache before navigating
+    if (userVenues.length > 0) {
+      // Invalidate all venue events caches to ensure fresh data
+      userVenues.forEach(venue => {
+        dispatch(venuesApi.util.invalidateTags([{ type: 'VenueEvents', id: venue.id }]));
+      });
+    }
     navigate('/dashboard');
   };
 
@@ -104,6 +117,13 @@ const AddEvent = () => {
     
     // If we've added all required events, go to dashboard
     if (currentEventNumber >= 3) {
+      // Force refresh venue events cache before navigating
+      if (userVenues.length > 0) {
+        // Invalidate all venue events caches to ensure fresh data
+        userVenues.forEach(venue => {
+          dispatch(venuesApi.util.invalidateTags([{ type: 'VenueEvents', id: venue.id }]));
+        });
+      }
       navigate('/dashboard');
     }
   };

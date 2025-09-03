@@ -60,6 +60,7 @@ const Dashboard = () => {
   const {
     data: events = { upcoming: [], past: [] },
     isLoading: eventsLoading,
+    refetch: refetchEvents,
   } = useGetVenueEventsQuery(
     currentVenue?.id || '',
     { skip: !currentVenue }
@@ -282,6 +283,30 @@ const Dashboard = () => {
       clearTimeout(timeout);
     };
   }, [user?.id, authLoading, profileLoading, venueLoading, onboardingCheckComplete, navigate]);
+
+  // Refetch events when dashboard becomes visible (e.g., after navigating back from add-event)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && currentVenue && !eventsLoading) {
+        console.log('Dashboard: Page became visible, refetching events data');
+        refetchEvents();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [currentVenue, eventsLoading, refetchEvents]);
+
+  // Refetch events when component mounts or venue changes
+  useEffect(() => {
+    if (currentVenue && !eventsLoading) {
+      console.log('Dashboard: Venue changed or component mounted, refetching events data');
+      refetchEvents();
+    }
+  }, [currentVenue?.id, refetchEvents]);
 
   // Dashboard data is now loaded automatically by RTK Query hooks above
   // No need for manual useEffect - data is cached and loads instantly on subsequent visits!
