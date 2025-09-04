@@ -95,4 +95,38 @@
   .container-custom {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+  
+  /* Events table scrollbar styling - Hide native, use custom */
+  .events-table-scroll {
+    /* Firefox - hide horizontal scrollbar */
+    scrollbar-width: none;
+    /* Keep vertical scrollbar for content */
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+  
+  /* Chrome/Safari - Hide horizontal scrollbar completely */
+  .events-table-scroll::-webkit-scrollbar:horizontal {
+    height: 0px;
+    background: transparent;
+  }
+  
+  /* Keep vertical scrollbar visible and styled */
+  .events-table-scroll::-webkit-scrollbar:vertical {
+    width: 8px;
+  }
+  
+  .events-table-scroll::-webkit-scrollbar-track:vertical {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  .events-table-scroll::-webkit-scrollbar-thumb:vertical {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+  
+  .events-table-scroll::-webkit-scrollbar-thumb:vertical:hover {
+    background: #a8a8a8;
+  }
 }

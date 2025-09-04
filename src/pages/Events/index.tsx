@@ -96,10 +96,10 @@ const Events = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#F6F6F3] flex">
+    <div className="h-screen bg-[#F6F6F3] flex overflow-hidden">
       <Sidebar />
-      <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">
-        <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 min-h-[90vh] max-w-full">
+      <main className="flex-1 p-4 lg:p-8 overflow-hidden flex flex-col">
+        <div className="rounded-3xl bg-white shadow-soft p-4 lg:p-8 max-w-full flex-1 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 lg:mb-8">
             <div className="min-w-0">
@@ -130,7 +130,7 @@ const Events = () => {
           )}
 
           {/* Filters */}
-          <div className="mb-6">
+          <div className="mb-4 flex-shrink-0">
             <EventFiltersComponent
               filters={filters}
               filterOptions={filterOptions}
@@ -138,8 +138,8 @@ const Events = () => {
             />
           </div>
 
-          {/* Events List */}
-          <div className="w-full overflow-x-auto overflow-y-hidden">
+          {/* Events List - takes remaining space */}
+          <div className="flex-1 min-h-0 overflow-hidden">
             {(() => {
               if (isLoading) {
                 console.log('⏳ Events: Showing loading state');
