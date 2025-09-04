@@ -212,19 +212,13 @@ export function AboutPage() {
               </h3>
               <div className="prose prose-lg text-gray-600 space-y-4">
                 <p>
-                  MusicDB is designed to bring clarity and confidence to the booking process.
+                  MusicDB gives venues a single place to access all the data they need to make confident booking decisions.
                 </p>
                 <p>
-                  On our platform, venues self-report ticket sales from their shows, contributing to a growing dataset that shows which artists are actually drawing crowds and where.
+                  On our platform, you can see which artists are actually drawing crowds in comparable rooms, view their full online presence and momentum, and track how shows at your own venue are performing over time.
                 </p>
-                <p>
-                  In return, they get an analytics dashboard showing what's worked at their venue and data-driven recommendations on new artists who are a strong fit for future bookings.
-                </p>
-                <p>
-                  Our model works as an ecosystem. One that venues help build and in turn, benefit from.
-                </p>
-                <p className="font-medium text-gray-800 text-xl">
-                  Because data doesn't replace instinct—it makes it unstoppable.
+                <p className="font-medium text-gray-800">
+                  Our goal is simple: to save you time and ensure every show has the best shot at success.
                 </p>
               </div>
             </div>
