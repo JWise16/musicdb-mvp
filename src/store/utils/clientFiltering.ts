@@ -12,6 +12,12 @@ export const filterEventsLocally = (
 ): EventWithDetails[] => {
   let filteredEvents = [...events];
 
+  // Filter out events from venues that are marked as not public (is_public = false)
+  // Keep events where venue is_public is null or true
+  filteredEvents = filteredEvents.filter(event => {
+    return event.venues?.is_public !== false;
+  });
+
   // Search query filter
   if (filters.searchQuery) {
     const query = filters.searchQuery.toLowerCase();

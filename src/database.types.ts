@@ -453,6 +453,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_admin_added: boolean | null
+          is_public: boolean | null
           location: string
           name: string
           updated_at: string | null
@@ -467,6 +468,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_admin_added?: boolean | null
+          is_public?: boolean | null
           location: string
           name: string
           updated_at?: string | null
@@ -481,6 +483,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_admin_added?: boolean | null
+          is_public?: boolean | null
           location?: string
           name?: string
           updated_at?: string | null

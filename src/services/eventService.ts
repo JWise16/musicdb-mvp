@@ -605,6 +605,12 @@ export class EventService {
       // Apply JavaScript-level filters
       let filteredEvents = eventsWithDetails;
 
+      // Filter out events from venues that are marked as not public (is_public = false)
+      // Keep events where venue is_public is null or true
+      filteredEvents = filteredEvents.filter((event: any) => {
+        return event.venues?.is_public !== false;
+      });
+
       // Apply city filter
       if (filters.city) {
         filteredEvents = filteredEvents.filter((event: any) => 
