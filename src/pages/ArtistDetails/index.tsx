@@ -586,58 +586,115 @@ const ArtistDetails = () => {
                 // Only render the section if there are charts with data
                 if (allChartsWithData.length === 0) return null;
 
+                // Smart column distribution: balance multi-chart and single-chart platforms
+                const multiChartPlatforms = [];
+                const singleChartPlatforms = [];
+                
+                // Identify multi-chart platforms (Spotify, YouTube, SoundCloud)
+                if (spotifyChartsWithData.length > 0) {
+                  multiChartPlatforms.push({
+                    name: 'Spotify',
+                    charts: spotifyChartsWithData,
+                    color: 'text-green-600',
+                    priority: 1
+                  });
+                }
+                
+                if (youtubeChartsWithData.length > 0) {
+                  multiChartPlatforms.push({
+                    name: 'YouTube',
+                    charts: youtubeChartsWithData,
+                    color: 'text-red-600',
+                    priority: 2
+                  });
+                }
+                
+                if (soundcloudChartsWithData.length > 0) {
+                  multiChartPlatforms.push({
+                    name: 'SoundCloud',
+                    charts: soundcloudChartsWithData,
+                    color: 'text-orange-600',
+                    priority: 3
+                  });
+                }
+                
+                // Collect single-chart platforms (social media)
+                socialChartsWithData.forEach((chart) => {
+                  const platformName = chart.component.name.replace('Chart', '').replace('Fanbase', '');
+                  const colorMap = {
+                    'Instagram': 'text-pink-600',
+                    'Facebook': 'text-blue-600',
+                    'TikTok': 'text-black'
+                  };
+                  
+                  singleChartPlatforms.push({
+                    name: platformName,
+                    charts: [chart],
+                    color: colorMap[platformName] || 'text-gray-600'
+                  });
+                });
+
+                // Smart column distribution algorithm
+                const columns = [[], [], []]; // 3 columns max
+                let currentColumn = 0;
+                
+                // First, place multi-chart platforms (they get their own columns)
+                multiChartPlatforms.forEach((platform) => {
+                  if (currentColumn < 3) {
+                    columns[currentColumn] = [platform];
+                    currentColumn++;
+                  }
+                });
+                
+                // Then, fill remaining space with single-chart platforms
+                // Group single-chart platforms into pairs for unused columns
+                for (let i = 0; i < singleChartPlatforms.length; i++) {
+                  if (currentColumn < 3) {
+                    // Start a new column with this single-chart platform
+                    columns[currentColumn] = [singleChartPlatforms[i]];
+                    
+                    // Try to add another single-chart platform to this column
+                    if (i + 1 < singleChartPlatforms.length) {
+                      columns[currentColumn].push(singleChartPlatforms[i + 1]);
+                      i++; // Skip the next platform since we just added it
+                    }
+                    currentColumn++;
+                  } else {
+                    // If we're out of columns, add to existing columns
+                    const targetColumn = i % 3;
+                    columns[targetColumn].push(singleChartPlatforms[i]);
+                  }
+                }
+                
+                // Flatten columns into final platform groups, removing empty columns
+                const platformGroups = columns.filter(column => column.length > 0);
+
                 return (
                   <div className="mb-8">
                     <h2 className="text-xl font-semibold mb-6 text-gray-900">Platform Analytics</h2>
                     
-                    {/* Streaming Platform Analytics */}
-                    {(youtubeChartsWithData.length > 0 || spotifyChartsWithData.length > 0 || soundcloudChartsWithData.length > 0) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                        {/* YouTube Column */}
-                        {youtubeChartsWithData.length > 0 && (
-                          <div className="flex flex-col gap-4">
-                            {youtubeChartsWithData.map((chart, index) => {
-                              const ChartComponent = chart.component;
-                              return <ChartComponent key={index} data={chart.data} />;
-                            })}
-                          </div>
-                        )}
-                        
-                        {/* Spotify Column */}
-                        {spotifyChartsWithData.length > 0 && (
-                          <div className="flex flex-col gap-4">
-                            {spotifyChartsWithData.map((chart, index) => {
-                              const ChartComponent = chart.component;
-                              return <ChartComponent key={index} data={chart.data} />;
-                            })}
-                          </div>
-                        )}
-                        
-                        {/* SoundCloud Column */}
-                        {soundcloudChartsWithData.length > 0 && (
-                          <div className="flex flex-col gap-4">
-                            {soundcloudChartsWithData.map((chart, index) => {
-                              const ChartComponent = chart.component;
-                              return <ChartComponent key={index} data={chart.data} />;
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Social Media Analytics */}
-                    {socialChartsWithData.length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {socialChartsWithData.map((chart, index) => {
-                          const ChartComponent = chart.component;
-                          return (
-                            <div key={index} className="flex flex-col gap-4">
-                              <ChartComponent data={chart.data} />
+                    {/* Smart Column Layout - Optimized distribution */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {platformGroups.map((column, columnIndex) => (
+                        <div key={`column-${columnIndex}`} className="flex flex-col gap-4">
+                          {/* Each column can contain multiple platforms */}
+                          {column.map((platform, platformIndex) => (
+                            <div key={`${platform.name}-${platformIndex}`} className="flex flex-col gap-4">
+                              {/* All charts from this platform */}
+                              {platform.charts.map((chart, chartIndex) => {
+                                const ChartComponent = chart.component;
+                                return (
+                                  <ChartComponent
+                                    key={`${platform.name}-chart-${chartIndex}`}
+                                    data={chart.data}
+                                  />
+                                );
+                              })}
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 );
               })()}
