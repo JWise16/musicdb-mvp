@@ -194,7 +194,17 @@ const ArtistDetails = () => {
 
   // Memoize chart data validation - MUST be before any conditional returns
   const chartDataValidation = useMemo(() => {
-    if (!artistData) return {};
+    if (!artistData) return {
+      youtubeFanbase: false,
+      youtubeViews: false,
+      spotifyFanbase: false,
+      enhancedSpotifyListeners: false,
+      instagramFanbase: false,
+      facebookFanbase: false,
+      tiktokFanbase: false,
+      soundcloudFanbase: false,
+      soundcloudPlays: false
+    };
     
     // Helper function to get the latest value from time series data
     const getLatestValue = (timeSeriesData: any): number => {
@@ -202,7 +212,7 @@ const ArtistDetails = () => {
       const keys = Object.keys(timeSeriesData);
       if (keys.length === 0) return 0;
       const latestKey = keys.sort().pop(); // Get the most recent date
-      return timeSeriesData[latestKey] || 0;
+      return latestKey ? (timeSeriesData[latestKey] || 0) : 0;
     };
 
     // Get current Spotify metrics for comparison
@@ -501,7 +511,7 @@ const ArtistDetails = () => {
                 )}
 
                 {/* Audience % By-Country (Top 5) - moved to left column */}
-                {Object.keys(vibrateAudience || {}).length > 0 && Array.isArray(vibrateAudience['by-country']) && vibrateAudience['by-country'].length > 0 && (
+                {vibrateAudience && Object.keys(vibrateAudience).length > 0 && Array.isArray(vibrateAudience['by-country']) && vibrateAudience['by-country'].length > 0 && (
                   <div className="w-full mt-6">
                     <div className="text-xs font-medium text-gray-500 mb-2">Audience % By-Country (Top 5)</div>
                     <div className="space-y-1">
@@ -587,8 +597,15 @@ const ArtistDetails = () => {
                 if (allChartsWithData.length === 0) return null;
 
                 // Smart column distribution: balance multi-chart and single-chart platforms
-                const multiChartPlatforms = [];
-                const singleChartPlatforms = [];
+                interface Platform {
+                  name: string;
+                  charts: any[];
+                  color: string;
+                  priority?: number;
+                }
+                
+                const multiChartPlatforms: Platform[] = [];
+                const singleChartPlatforms: Platform[] = [];
                 
                 // Identify multi-chart platforms (Spotify, YouTube, SoundCloud)
                 if (spotifyChartsWithData.length > 0) {
@@ -621,7 +638,7 @@ const ArtistDetails = () => {
                 // Collect single-chart platforms (social media)
                 socialChartsWithData.forEach((chart) => {
                   const platformName = chart.component.name.replace('Chart', '').replace('Fanbase', '');
-                  const colorMap = {
+                  const colorMap: Record<string, string> = {
                     'Instagram': 'text-pink-600',
                     'Facebook': 'text-blue-600',
                     'TikTok': 'text-black'
@@ -635,7 +652,7 @@ const ArtistDetails = () => {
                 });
 
                 // Smart column distribution algorithm
-                const columns = [[], [], []]; // 3 columns max
+                const columns: Platform[][] = [[], [], []]; // 3 columns max
                 let currentColumn = 0;
                 
                 // First, place multi-chart platforms (they get their own columns)
@@ -779,14 +796,14 @@ const ArtistDetails = () => {
                 )}
 
                 {/* Vibrate Upcoming Events Section */}
-                {vibrateUpcomingEvents.length > 0 && (
+                {vibrateUpcomingEvents && vibrateUpcomingEvents.length > 0 && (
                   <div className="mb-8">
                     <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
                       <span className="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
                       Upcoming Events Tracked via External Partners 
-                      {upcomingEventsToShow >= vibrateUpcomingEvents.length
-                        ? ` (${vibrateUpcomingEvents.length})`
-                        : ` (${upcomingEventsToShow} of ${vibrateUpcomingEvents.length})`}
+                      {upcomingEventsToShow >= (vibrateUpcomingEvents?.length || 0)
+                        ? ` (${vibrateUpcomingEvents?.length || 0})`
+                        : ` (${upcomingEventsToShow} of ${vibrateUpcomingEvents?.length || 0})`}
                     </h4>
                     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                       <div className="overflow-x-auto">
@@ -811,7 +828,7 @@ const ArtistDetails = () => {
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {vibrateUpcomingEvents.slice(0, upcomingEventsToShow).map((event) => {
+                            {vibrateUpcomingEvents?.slice(0, upcomingEventsToShow).map((event) => {
                               // Helper function to format date from ISO string
                               const formatVibrateDate = (dateString: string) => {
                                 try {
@@ -899,22 +916,22 @@ const ArtistDetails = () => {
                           </tbody>
                         </table>
                       </div>
-                      {vibrateUpcomingEvents.length > 5 && (
+                      {(vibrateUpcomingEvents?.length || 0) > 5 && (
                         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                           <div className="flex gap-2">
                             <button
                               onClick={() => {
-                                if (upcomingEventsToShow >= vibrateUpcomingEvents.length) {
+                                if (upcomingEventsToShow >= (vibrateUpcomingEvents?.length || 0)) {
                                   setUpcomingEventsToShow(5);
                                 } else {
-                                  setUpcomingEventsToShow(Math.min(upcomingEventsToShow + 5, vibrateUpcomingEvents.length));
+                                  setUpcomingEventsToShow(Math.min(upcomingEventsToShow + 5, vibrateUpcomingEvents?.length || 0));
                                 }
                               }}
                               className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
                             >
-                              {upcomingEventsToShow >= vibrateUpcomingEvents.length
+                              {upcomingEventsToShow >= (vibrateUpcomingEvents?.length || 0)
                                 ? 'Show First 5 Only'
-                                : `Show ${Math.min(5, vibrateUpcomingEvents.length - upcomingEventsToShow)} More Events`}
+                                : `Show ${Math.min(5, (vibrateUpcomingEvents?.length || 0) - upcomingEventsToShow)} More Events`}
                             </button>
                             {upcomingEventsToShow > 5 && (
                               <button
@@ -932,14 +949,14 @@ const ArtistDetails = () => {
                 )}
 
                 {/* Vibrate Past Events Section */}
-                {vibratePastEvents.length > 0 && (
+                {vibratePastEvents && vibratePastEvents.length > 0 && (
                   <div className="mb-8">
                     <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
                       <span className="inline-block w-3 h-3 bg-gray-500 rounded-full"></span>
                       Past Events Tracked via External Partners 
-                      {pastEventsToShow >= vibratePastEvents.length
-                        ? ` (${vibratePastEvents.length})`
-                        : ` (${pastEventsToShow} of ${vibratePastEvents.length})`}
+                      {pastEventsToShow >= (vibratePastEvents?.length || 0)
+                        ? ` (${vibratePastEvents?.length || 0})`
+                        : ` (${pastEventsToShow} of ${vibratePastEvents?.length || 0})`}
                     </h4>
                     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                       <div className="overflow-x-auto">
@@ -958,7 +975,7 @@ const ArtistDetails = () => {
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {vibratePastEvents.slice(0, pastEventsToShow).map((event) => {
+                            {vibratePastEvents?.slice(0, pastEventsToShow).map((event) => {
                               // Helper function to format date from ISO string
                               const formatVibrateDate = (dateString: string) => {
                                 try {
@@ -1028,22 +1045,22 @@ const ArtistDetails = () => {
                           </tbody>
                         </table>
                       </div>
-                      {vibratePastEvents.length > 5 && (
+                      {(vibratePastEvents?.length || 0) > 5 && (
                         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                           <div className="flex gap-2">
                             <button
                               onClick={() => {
-                                if (pastEventsToShow >= vibratePastEvents.length) {
+                                if (pastEventsToShow >= (vibratePastEvents?.length || 0)) {
                                   setPastEventsToShow(5);
                                 } else {
-                                  setPastEventsToShow(Math.min(pastEventsToShow + 5, vibratePastEvents.length));
+                                  setPastEventsToShow(Math.min(pastEventsToShow + 5, vibratePastEvents?.length || 0));
                                 }
                               }}
                               className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors"
                             >
-                              {pastEventsToShow >= vibratePastEvents.length
+                              {pastEventsToShow >= (vibratePastEvents?.length || 0)
                                 ? 'Show First 5 Only'
-                                : `Show ${Math.min(5, vibratePastEvents.length - pastEventsToShow)} More Events`}
+                                : `Show ${Math.min(5, (vibratePastEvents?.length || 0) - pastEventsToShow)} More Events`}
                             </button>
                             {pastEventsToShow > 5 && (
                               <button
@@ -1061,7 +1078,7 @@ const ArtistDetails = () => {
                 )}
 
                 {/* No Events Message */}
-                {(!artist?.events || artist.events.length === 0) && vibrateUpcomingEvents.length === 0 && vibratePastEvents.length === 0 && (
+                {(!artist?.events || artist.events.length === 0) && (vibrateUpcomingEvents?.length || 0) === 0 && (vibratePastEvents?.length || 0) === 0 && (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1240,7 +1257,7 @@ const ArtistDetails = () => {
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={Object.entries(instagramAudience.byGender).map(([gender, data]) => ({
+                              data={Object.entries(instagramAudience?.byGender || {}).map(([gender, data]) => ({
                                 name: gender.charAt(0).toUpperCase() + gender.slice(1),
                                 value: data.pct,
                               }))}
@@ -1250,18 +1267,32 @@ const ArtistDetails = () => {
                               cy="60%"
                               outerRadius={75}
                             >
-                              {Object.entries(instagramAudience.byGender).map(([gender]) => (
+                              {Object.entries(instagramAudience?.byGender || {}).map(([gender]) => (
                                 <Cell
                                   key={gender}
                                   fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
                                 />
                               ))}
                             </Pie>
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-white p-3 rounded shadow text-xs text-gray-900">
+                                      <div className="font-semibold mb-1">{data.name}</div>
+                                      <div className="font-medium">{Number(data.value).toFixed(1)}%</div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
                             <Legend
                               verticalAlign="bottom"
                               height={36}
                               content={() => {
-                                const data = Object.entries(instagramAudience.byGender).map(([gender, d]) => ({
+                                const data = Object.entries(instagramAudience?.byGender || {}).map(([gender, d]) => ({
                                   name: gender.charAt(0).toUpperCase() + gender.slice(1),
                                   value: d.pct
                                 }));
@@ -1287,7 +1318,7 @@ const ArtistDetails = () => {
                       <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: Math.max(320, Object.keys(instagramAudience?.byAge || {}).length * 48) }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
-                            data={Object.entries(instagramAudience.byAge)
+                            data={Object.entries(instagramAudience?.byAge || {})
                               .filter(([, data]) => (data.male.total + data.female.total) > 0)
                               .sort(([a, b]) => {
                                 const getAgeOrder = (age: string) => {
@@ -1347,7 +1378,7 @@ const ArtistDetails = () => {
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
-                                data={Object.entries(instagramAudience.byGender).map(([gender, data]) => ({
+                                data={Object.entries(instagramAudience?.byGender || {}).map(([gender, data]) => ({
                                   name: gender.charAt(0).toUpperCase() + gender.slice(1),
                                   value: data.pct,
                                 }))}
@@ -1357,18 +1388,32 @@ const ArtistDetails = () => {
                                 cy="60%"
                                 outerRadius={75}
                               >
-                                {Object.entries(instagramAudience.byGender).map(([gender]) => (
+                                {Object.entries(instagramAudience?.byGender || {}).map(([gender]) => (
                                   <Cell
                                     key={gender}
                                     fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
                                   />
                                 ))}
                               </Pie>
+                              <Tooltip
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    return (
+                                      <div className="bg-white p-3 rounded shadow text-xs text-gray-900">
+                                        <div className="font-semibold mb-1">{data.name}</div>
+                                        <div className="font-medium">{Number(data.value).toFixed(1)}%</div>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
                               <Legend
                                 verticalAlign="bottom"
                                 height={36}
                                 content={() => {
-                                  const data = Object.entries(instagramAudience.byGender).map(([gender, d]) => ({
+                                  const data = Object.entries(instagramAudience?.byGender || {}).map(([gender, d]) => ({
                                     name: gender.charAt(0).toUpperCase() + gender.slice(1),
                                     value: d.pct
                                   }));
@@ -1395,7 +1440,7 @@ const ArtistDetails = () => {
                         <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: Math.max(320, Object.keys(instagramAudience?.byAge || {}).length * 48) }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart
-                              data={Object.entries(instagramAudience.byAge)
+                              data={Object.entries(instagramAudience?.byAge || {})
                                 .filter(([, data]) => (data.male.total + data.female.total) > 0)
                                 .sort(([a, b]) => {
                                   const getAgeOrder = (age: string) => {
@@ -1458,7 +1503,7 @@ const ArtistDetails = () => {
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={Object.entries(youtubeAudience.byGender).map(([gender, data]) => ({
+                              data={Object.entries(youtubeAudience?.byGender || {}).map(([gender, data]) => ({
                                 name: gender.charAt(0).toUpperCase() + gender.slice(1),
                                 value: data.pct,
                               }))}
@@ -1468,18 +1513,32 @@ const ArtistDetails = () => {
                               cy="60%"
                               outerRadius={75}
                             >
-                              {Object.entries(youtubeAudience.byGender).map(([gender]) => (
+                              {Object.entries(youtubeAudience?.byGender || {}).map(([gender]) => (
                                 <Cell
                                   key={gender}
                                   fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
                                 />
                               ))}
                             </Pie>
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-white p-3 rounded shadow text-xs text-gray-900">
+                                      <div className="font-semibold mb-1">{data.name}</div>
+                                      <div className="font-medium">{Number(data.value).toFixed(1)}%</div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
                             <Legend
                               verticalAlign="bottom"
                               height={36}
                               content={() => {
-                                const data = Object.entries(youtubeAudience.byGender).map(([gender, d]) => ({
+                                const data = Object.entries(youtubeAudience?.byGender || {}).map(([gender, d]) => ({
                                   name: gender.charAt(0).toUpperCase() + gender.slice(1),
                                   value: d.pct
                                 }));
@@ -1505,7 +1564,7 @@ const ArtistDetails = () => {
                       <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: Math.max(320, Object.keys(youtubeAudience?.byAge || {}).length * 48) }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
-                            data={Object.entries(youtubeAudience.byAge)
+                            data={Object.entries(youtubeAudience?.byAge || {})
                               .filter(([, data]) => (data.male.total + data.female.total) > 0)
                               .sort(([a, b]) => {
                                 const getAgeOrder = (age: string) => {
@@ -1565,7 +1624,7 @@ const ArtistDetails = () => {
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
-                                data={Object.entries(youtubeAudience.byGender).map(([gender, data]) => ({
+                                data={Object.entries(youtubeAudience?.byGender || {}).map(([gender, data]) => ({
                                   name: gender.charAt(0).toUpperCase() + gender.slice(1),
                                   value: data.pct,
                                 }))}
@@ -1575,18 +1634,32 @@ const ArtistDetails = () => {
                                 cy="60%"
                                 outerRadius={75}
                               >
-                                {Object.entries(youtubeAudience.byGender).map(([gender]) => (
+                                {Object.entries(youtubeAudience?.byGender || {}).map(([gender]) => (
                                   <Cell
                                     key={gender}
                                     fill={gender === 'male' ? '#3B82F6' : gender === 'female' ? '#EC4899' : '#A3A3A3'}
                                   />
                                 ))}
                               </Pie>
+                              <Tooltip
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    return (
+                                      <div className="bg-white p-3 rounded shadow text-xs text-gray-900">
+                                        <div className="font-semibold mb-1">{data.name}</div>
+                                        <div className="font-medium">{Number(data.value).toFixed(1)}%</div>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
                               <Legend
                                 verticalAlign="bottom"
                                 height={36}
                                 content={() => {
-                                  const data = Object.entries(youtubeAudience.byGender).map(([gender, d]) => ({
+                                  const data = Object.entries(youtubeAudience?.byGender || {}).map(([gender, d]) => ({
                                     name: gender.charAt(0).toUpperCase() + gender.slice(1),
                                     value: d.pct
                                   }));
@@ -1613,7 +1686,7 @@ const ArtistDetails = () => {
                         <div className="bg-gray-50 rounded-lg p-3 text-sm" style={{ height: Math.max(320, Object.keys(youtubeAudience?.byAge || {}).length * 48) }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart
-                              data={Object.entries(youtubeAudience.byAge)
+                              data={Object.entries(youtubeAudience?.byAge || {})
                                 .filter(([, data]) => (data.male.total + data.female.total) > 0)
                                 .sort(([a, b]) => {
                                   const getAgeOrder = (age: string) => {
