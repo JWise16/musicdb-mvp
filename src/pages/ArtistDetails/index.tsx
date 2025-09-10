@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useGetArtistDetailsQuery } from '../../store/api/artistsApi';
@@ -19,6 +19,56 @@ import {
   FacebookFanbaseChart,
   TikTokFanbaseChart
 } from '../../components/features/artists';
+
+// Helper function to check if chart data is available and has meaningful values
+const hasChartData = (data: any): boolean => {
+  if (!data) return false;
+  
+  // Optimized helper to check if time series data has non-zero values
+  // Uses for...in loop for better performance than Object.values() + some()
+  const hasNonZeroValues = (timeSeriesData: any): boolean => {
+    if (!timeSeriesData || typeof timeSeriesData !== 'object') return false;
+    
+    // Early return if no keys
+    const keys = Object.keys(timeSeriesData);
+    if (keys.length === 0) return false;
+    
+    // Check values directly without creating intermediate arrays
+    for (const key of keys) {
+      const value = timeSeriesData[key];
+      if (typeof value === 'number' && value > 0) {
+        return true; // Found at least one non-zero value
+      }
+    }
+    return false;
+  };
+  
+  // Check for time series data (most charts use .total property)
+  if (data.total && typeof data.total === 'object') {
+    return hasNonZeroValues(data.total);
+  }
+  
+  // Check for SoundCloud plays data
+  if (data.plays && typeof data.plays === 'object') {
+    return hasNonZeroValues(data.plays);
+  }
+  
+  // Check for YouTube views data
+  if (data.views && typeof data.views === 'object') {
+    return hasNonZeroValues(data.views);
+  }
+  
+  // Check for nested chart data (Facebook/TikTok)
+  if (data.facebookFanbase?.data && typeof data.facebookFanbase.data === 'object') {
+    return hasNonZeroValues(data.facebookFanbase.data);
+  }
+  
+  if (data.tiktokFanbase?.data && typeof data.tiktokFanbase.data === 'object') {
+    return hasNonZeroValues(data.tiktokFanbase.data);
+  }
+  
+  return false;
+};
 
 // Helper functions (same as original)
 const getChannelStyle = (channel: string): string => {
@@ -119,6 +169,99 @@ const ArtistDetails = () => {
     skip: !id || !user,
   });
 
+  // Extract data from the response (safe to do here as artistData structure is consistent)
+  const {
+    localArtist: artist,
+    vibrateArtist,
+    links: artistLinks,
+    upcomingEvents: vibrateUpcomingEvents,
+    pastEvents: vibratePastEvents,
+    audience: vibrateAudience,
+    bio: vibrateBio,
+    spotifyListeners,
+    instagramAudience,
+    youtubeAudience,
+    soundcloudFanbase,
+    soundcloudPlays,
+    spotifyFanbase,
+    enhancedSpotifyListeners,
+    youtubeViews,
+    youtubeFanbase,
+    instagramFanbase,
+    facebookFanbase,
+    tiktokFanbase,
+  } = artistData || {};
+
+  // Memoize chart data validation - MUST be before any conditional returns
+  const chartDataValidation = useMemo(() => {
+    if (!artistData) return {};
+    
+    // Helper function to get the latest value from time series data
+    const getLatestValue = (timeSeriesData: any): number => {
+      if (!timeSeriesData || typeof timeSeriesData !== 'object') return 0;
+      const keys = Object.keys(timeSeriesData);
+      if (keys.length === 0) return 0;
+      const latestKey = keys.sort().pop(); // Get the most recent date
+      return timeSeriesData[latestKey] || 0;
+    };
+
+    // Get current Spotify metrics for comparison
+    const currentSpotifyFollowers = getLatestValue(spotifyFanbase?.total);
+    const currentSpotifyListeners = getLatestValue(enhancedSpotifyListeners?.total);
+
+    // Standard chart data validation
+    const standardValidation = {
+      youtubeFanbase: hasChartData(youtubeFanbase),
+      youtubeViews: hasChartData(youtubeViews),
+      spotifyFanbase: hasChartData(spotifyFanbase),
+      enhancedSpotifyListeners: hasChartData(enhancedSpotifyListeners),
+      instagramFanbase: hasChartData(instagramFanbase),
+      facebookFanbase: hasChartData(facebookFanbase),
+      tiktokFanbase: hasChartData(tiktokFanbase)
+    };
+
+    // SoundCloud validation with data quality checks
+    let soundcloudFanbaseValid = hasChartData(soundcloudFanbase);
+    let soundcloudPlaysValid = hasChartData(soundcloudPlays);
+
+    // Additional validation: Filter out SoundCloud data that appears incorrect
+    if (soundcloudFanbaseValid && currentSpotifyFollowers > 0) {
+      const currentSoundcloudFollowers = getLatestValue(soundcloudFanbase?.total);
+      const ratio = currentSoundcloudFollowers / currentSpotifyFollowers;
+      
+      // Hide SoundCloud followers if less than 1% of Spotify followers
+      if (ratio < 0.01) {
+        soundcloudFanbaseValid = false;
+        console.log('🔍 SoundCloud followers filtered out: too low compared to Spotify', {
+          soundcloudFollowers: currentSoundcloudFollowers,
+          spotifyFollowers: currentSpotifyFollowers,
+          ratio: ratio.toFixed(4)
+        });
+      }
+    }
+
+    if (soundcloudPlaysValid && currentSpotifyListeners > 0) {
+      const currentSoundcloudPlays = getLatestValue(soundcloudPlays?.plays);
+      const ratio = currentSoundcloudPlays / currentSpotifyListeners;
+      
+      // Hide SoundCloud plays if less than 1% of Spotify listeners
+      if (ratio < 0.01) {
+        soundcloudPlaysValid = false;
+        console.log('🔍 SoundCloud plays filtered out: too low compared to Spotify', {
+          soundcloudPlays: currentSoundcloudPlays,
+          spotifyListeners: currentSpotifyListeners,
+          ratio: ratio.toFixed(4)
+        });
+      }
+    }
+
+    return {
+      ...standardValidation,
+      soundcloudFanbase: soundcloudFanbaseValid,
+      soundcloudPlays: soundcloudPlaysValid
+    };
+  }, [artistData, youtubeFanbase, youtubeViews, spotifyFanbase, enhancedSpotifyListeners, soundcloudFanbase, soundcloudPlays, instagramFanbase, facebookFanbase, tiktokFanbase]);
+
   console.log(`⚡ ArtistDetails: RTK Query hook completed in ${Math.round(performance.now() - componentStartTime.current)}ms`);
   console.log(`📊 ArtistDetails: Render #${renderCount.current} with data:`, {
     isLoading,
@@ -185,29 +328,6 @@ const ArtistDetails = () => {
   }
 
   console.log('🎯 ArtistDetails: Rendering with complete data');
-
-  // Extract data from the cached response
-  const {
-    localArtist: artist,
-    vibrateArtist,
-    links: artistLinks,
-    upcomingEvents: vibrateUpcomingEvents,
-    pastEvents: vibratePastEvents,
-    audience: vibrateAudience,
-    bio: vibrateBio,
-    spotifyListeners,
-    instagramAudience,
-    youtubeAudience,
-    soundcloudFanbase,
-    soundcloudPlays,
-    spotifyFanbase,
-    enhancedSpotifyListeners,
-    youtubeViews,
-    youtubeFanbase,
-    instagramFanbase,
-    facebookFanbase,
-    tiktokFanbase,
-  } = artistData;
 
   // Note: vibrateArtist now contains full VibrateArtist data (image, verified, genre, country, subgenres)
 
@@ -432,49 +552,95 @@ const ArtistDetails = () => {
 
             {/* Right Column - Content */}
             <div className="lg:col-span-9 space-y-8">
-              {/* Platform Analytics Charts (3x2 Grid) */}
-              {vibrateArtist && (
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold mb-6 text-gray-900">Platform Analytics</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Column 1: YouTube */}
-                    <div className="flex flex-col gap-4">
-                      <YouTubeFanbaseChart data={youtubeFanbase} />
-                      <YouTubeViewsChart data={youtubeViews} />
-                    </div>
-                    
-                    {/* Column 2: Spotify */}
-                    <div className="flex flex-col gap-4">
-                      <SpotifyFanbaseChart data={spotifyFanbase} />
-                      <SpotifyListenersChart data={enhancedSpotifyListeners} />
-                    </div>
-                    
-                    {/* Column 3: SoundCloud */}
-                    <div className="flex flex-col gap-4">
-                      <SoundCloudFanbaseChart data={soundcloudFanbase} />
-                      <SoundCloudPlaysChart data={soundcloudPlays} />
-                    </div>
-                  </div>
+              {/* Platform Analytics Charts */}
+              {vibrateArtist && chartDataValidation && (() => {
+                // Check which charts have data using memoized results
+                const youtubeChartsWithData = [
+                  { component: YouTubeFanbaseChart, data: youtubeFanbase, hasData: chartDataValidation.youtubeFanbase },
+                  { component: YouTubeViewsChart, data: youtubeViews, hasData: chartDataValidation.youtubeViews }
+                ].filter(chart => chart.hasData);
 
-                  {/* Social Media Analytics Charts (Second Row) */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {/* Column 1: Instagram */}
-                    <div className="flex flex-col gap-4">
-                      <InstagramFanbaseChart data={instagramFanbase} />
-                    </div>
+                const spotifyChartsWithData = [
+                  { component: SpotifyFanbaseChart, data: spotifyFanbase, hasData: chartDataValidation.spotifyFanbase },
+                  { component: SpotifyListenersChart, data: enhancedSpotifyListeners, hasData: chartDataValidation.enhancedSpotifyListeners }
+                ].filter(chart => chart.hasData);
+
+                const soundcloudChartsWithData = [
+                  { component: SoundCloudFanbaseChart, data: soundcloudFanbase, hasData: chartDataValidation.soundcloudFanbase },
+                  { component: SoundCloudPlaysChart, data: soundcloudPlays, hasData: chartDataValidation.soundcloudPlays }
+                ].filter(chart => chart.hasData);
+
+                const socialChartsWithData = [
+                  { component: InstagramFanbaseChart, data: instagramFanbase, hasData: chartDataValidation.instagramFanbase },
+                  { component: FacebookFanbaseChart, data: facebookFanbase, hasData: chartDataValidation.facebookFanbase },
+                  { component: TikTokFanbaseChart, data: tiktokFanbase, hasData: chartDataValidation.tiktokFanbase }
+                ].filter(chart => chart.hasData);
+
+                const allChartsWithData = [
+                  ...youtubeChartsWithData,
+                  ...spotifyChartsWithData,
+                  ...soundcloudChartsWithData,
+                  ...socialChartsWithData
+                ];
+
+                // Only render the section if there are charts with data
+                if (allChartsWithData.length === 0) return null;
+
+                return (
+                  <div className="mb-8">
+                    <h2 className="text-xl font-semibold mb-6 text-gray-900">Platform Analytics</h2>
                     
-                    {/* Column 2: Facebook */}
-                    <div className="flex flex-col gap-4">
-                      <FacebookFanbaseChart data={facebookFanbase} />
-                    </div>
-                    
-                    {/* Column 3: TikTok */}
-                    <div className="flex flex-col gap-4">
-                      <TikTokFanbaseChart data={tiktokFanbase} />
-                    </div>
+                    {/* Streaming Platform Analytics */}
+                    {(youtubeChartsWithData.length > 0 || spotifyChartsWithData.length > 0 || soundcloudChartsWithData.length > 0) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        {/* YouTube Column */}
+                        {youtubeChartsWithData.length > 0 && (
+                          <div className="flex flex-col gap-4">
+                            {youtubeChartsWithData.map((chart, index) => {
+                              const ChartComponent = chart.component;
+                              return <ChartComponent key={index} data={chart.data} />;
+                            })}
+                          </div>
+                        )}
+                        
+                        {/* Spotify Column */}
+                        {spotifyChartsWithData.length > 0 && (
+                          <div className="flex flex-col gap-4">
+                            {spotifyChartsWithData.map((chart, index) => {
+                              const ChartComponent = chart.component;
+                              return <ChartComponent key={index} data={chart.data} />;
+                            })}
+                          </div>
+                        )}
+                        
+                        {/* SoundCloud Column */}
+                        {soundcloudChartsWithData.length > 0 && (
+                          <div className="flex flex-col gap-4">
+                            {soundcloudChartsWithData.map((chart, index) => {
+                              const ChartComponent = chart.component;
+                              return <ChartComponent key={index} data={chart.data} />;
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Social Media Analytics */}
+                    {socialChartsWithData.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {socialChartsWithData.map((chart, index) => {
+                          const ChartComponent = chart.component;
+                          return (
+                            <div key={index} className="flex flex-col gap-4">
+                              <ChartComponent data={chart.data} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Events Section */}
               <div id="events-section">
