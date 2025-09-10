@@ -12,6 +12,7 @@ export type VenueData = {
   contact_phone?: string;
   description?: string;
   image_url?: string;
+  is_public?: boolean;
 };
 
 export type UserVenueData = {

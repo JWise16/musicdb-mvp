@@ -45,6 +45,7 @@ interface VenueData {
   contact_phone?: string;
   description?: string;
   image_url: string;
+  is_public?: boolean;
 }
 
 interface EventData {
@@ -137,7 +138,8 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
     location: '',
     address: '',
     capacity: undefined,
-    image_url: ''
+    image_url: '',
+    is_public: true // Default to public (share data)
   });
 
   const [event, setEvent] = useState<EventData>({
@@ -941,6 +943,47 @@ export default function OnboardingWizard({ isOpen, onClose, prefillData, step = 
               onChange={handleVenueImageChange}
               className="hidden"
             />
+          </div>
+        </div>
+
+        {/* Privacy Settings */}
+        <div className="border-t border-gray-200 pt-3 lg:pt-4">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-1">
+              <h4 className="text-xs lg:text-sm font-semibold text-gray-900">Data Sharing</h4>
+              <div className="relative group">
+                <svg 
+                  className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400 cursor-help" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                  />
+                </svg>
+                <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-2 py-1 bg-gray-600 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                  Prevent your venue's events from appearing in the public events directory
+                </div>
+              </div>
+            </div>
+            <div className="flex items-start space-x-2 lg:space-x-3">
+              <input
+                type="checkbox"
+                id="opt-out-sharing"
+                checked={!venue.is_public}
+                onChange={(e) => handleVenueChange('is_public', !e.target.checked)}
+                className="mt-0.5 h-3 w-3 lg:h-4 lg:w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <div className="min-w-0">
+                <label htmlFor="opt-out-sharing" className="text-xs lg:text-sm text-gray-700 cursor-pointer">
+                  <span className="font-medium">Keep my venue events private</span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
       </div>
