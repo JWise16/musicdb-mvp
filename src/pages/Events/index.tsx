@@ -130,7 +130,7 @@ const Events = () => {
           )}
 
           {/* Filters */}
-          <div className="mb-4 flex-shrink-0">
+          <div className="mb-3 flex-shrink-0">
             <EventFiltersComponent
               filters={filters}
               filterOptions={filterOptions}

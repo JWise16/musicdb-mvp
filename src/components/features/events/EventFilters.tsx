@@ -53,9 +53,9 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
   const hasActiveFilters = Object.values(filters).some(value => value !== undefined);
 
   return (
-    <div className="mb-6 lg:mb-8">
+    <div className="mb-4 lg:mb-6">
       {/* Search Bar */}
-      <div className="mb-4 lg:mb-6">
+      <div className="mb-3 lg:mb-4">
         <div className="relative max-w-full">
           <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -81,7 +81,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
       </div>
 
       {/* Filter Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-3">
         {/* Genre Filter */}
         <div className="min-w-0">
           <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-2">Genre</label>
@@ -143,7 +143,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
       </div>
 
       {/* Venue Size and Date Range Filters */}
-      <div className="mt-3 lg:mt-4 grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">
+      <div className="mt-2 lg:mt-3 grid grid-cols-1 lg:grid-cols-3 gap-2 lg:gap-3">
         <div className="min-w-0">
           <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-2">Venue Size</label>
           <VenueSizeDropdown
@@ -176,7 +176,7 @@ const EventFiltersComponent = ({ filters, filterOptions, onFilterChange }: Event
 
       {/* Active Filters Display */}
       {hasActiveFilters && (
-        <div className="mt-3 lg:mt-4 flex flex-wrap gap-1 lg:gap-2">
+        <div className="mt-2 lg:mt-3 flex flex-wrap gap-1 lg:gap-2">
           {filters.searchQuery && (
             <span className="inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm bg-accent-100 text-accent-700">
               <span className="truncate max-w-[120px] lg:max-w-none">Search: "{filters.searchQuery}"</span>

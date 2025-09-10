@@ -490,7 +490,7 @@ const EventTable = ({ events }: EventTableProps) => {
             {/* Scrollbar thumb */}
             <div 
               ref={scrollbarThumbRef}
-              className="absolute top-0 h-full bg-accent-600 rounded-full cursor-pointer hover:bg-accent-700 transition-all duration-200 shadow-sm"
+              className="absolute top-0 h-full bg-gray-400 rounded-full cursor-pointer hover:bg-gray-500 transition-all duration-200 shadow-sm"
               style={{
                 left: '0%',
                 width: '20%'
