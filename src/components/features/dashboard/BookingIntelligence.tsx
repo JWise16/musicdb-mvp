@@ -629,7 +629,6 @@ const BookingIntelligence = () => {
 
         {/* Right Column: Social Media Distribution Pie Chart */}
         <div>
-          <h5 className="text-sm font-semibold text-gray-900 mb-4">Social Media Distribution</h5>
           {pieChartData.length === 0 ? (
             <div className="bg-gray-50 rounded-lg p-8 text-center h-64 flex items-center justify-center">
               <div>
