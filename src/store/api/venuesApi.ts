@@ -8,11 +8,44 @@ export type UserVenueRelation = {
   venue: Tables<'venues'>;
 };
 
+// Booking intelligence types (inline to avoid import issues)
+interface BookingIntelligenceMetrics {
+  spotifyFollowers: number;
+  youtubeSubscribers: number;
+  instagramFollowers: number;
+  tiktokFollowers: number;
+  spotifyListenersLocal: number;
+  totalPerformances: number;
+  localPerformances: number;
+}
+
+interface BookingIntelligenceFilters {
+  percentSoldRange: [number, number];
+  genres: string[];
+  timeFrame: 'month' | '3months' | '6months' | '12months' | 'all';
+}
+
+export interface BookingIntelligenceData {
+  metrics: BookingIntelligenceMetrics;
+  artistCount: number;
+  eventCount: number;
+  dateRange: { from: string; to: string } | null;
+  venue: { id: string; name: string; city: string };
+  lastUpdated: string;
+  appliedFilters: BookingIntelligenceFilters;
+}
+
+export interface BookingIntelligenceParams {
+  venueId: string;
+  filters: BookingIntelligenceFilters;
+  forceRefresh?: boolean;
+}
+
 // Define our venues API
 export const venuesApi = createApi({
   reducerPath: 'venuesApi',
   baseQuery: fakeBaseQuery(),
-  tagTypes: ['Venue', 'UserVenues', 'AllVenues', 'VenueAnalytics', 'VenueEvents'],
+  tagTypes: ['Venue', 'UserVenues', 'AllVenues', 'VenueAnalytics', 'VenueEvents', 'BookingIntelligence', 'VenueGenres'],
   endpoints: (builder) => ({
     // Get all venues (for venue selection, admin purposes)
     getAllVenues: builder.query<Tables<'venues'>[], void>({
@@ -266,6 +299,67 @@ export const venuesApi = createApi({
         'VenueEvents',
       ],
     }),
+
+    // Get booking intelligence data for a venue
+    getVenueBookingIntelligence: builder.query<BookingIntelligenceData, BookingIntelligenceParams>({
+      queryFn: async (params) => {
+        try {
+          console.log('RTK Query: Fetching booking intelligence for venue:', params.venueId, 'with filters:', params.filters);
+          const cacheKey = `${params.venueId}-${JSON.stringify(params.filters)}`;
+          console.log('RTK Query: Cache key:', cacheKey);
+          const result = await VenueService.getBookingIntelligence(params);
+          
+          if (result.error) {
+            console.error('RTK Query: Booking intelligence error:', result.error);
+            return { error: { status: 'CUSTOM_ERROR', error: result.error.message, data: result.error } };
+          }
+          
+          if (!result.data) {
+            console.error('RTK Query: No booking intelligence data returned');
+            return { error: { status: 'FETCH_ERROR', error: 'No data returned' } };
+          }
+          
+          console.log('RTK Query: Cached booking intelligence data', {
+            venueId: params.venueId,
+            artistCount: result.data.artistCount,
+            eventCount: result.data.eventCount
+          });
+          
+          return { data: result.data };
+        } catch (error: any) {
+          console.error('RTK Query: Booking intelligence fetch error:', error);
+          return { error: { status: 'FETCH_ERROR', error: error.message } };
+        }
+      },
+      providesTags: (_result, _error, { venueId, filters }) => [
+        { type: 'BookingIntelligence', id: `${venueId}-${JSON.stringify(filters)}` },
+        { type: 'BookingIntelligence', id: venueId },
+        'BookingIntelligence'
+      ],
+      // Reduced cache time for debugging - normally would be 15 minutes
+      keepUnusedDataFor: 10, // 10 seconds for debugging
+    }),
+
+    // Get available genres for a venue
+    getVenueGenres: builder.query<string[], string>({
+      queryFn: async (venueId) => {
+        try {
+          console.log('RTK Query: Fetching venue genres for:', venueId);
+          const genres = await VenueService.getVenueGenres(venueId);
+          console.log('RTK Query: Cached venue genres:', genres);
+          return { data: genres };
+        } catch (error: any) {
+          console.error('RTK Query: Venue genres fetch error:', error);
+          return { error: { status: 'FETCH_ERROR', error: error.message } };
+        }
+      },
+      providesTags: (_result, _error, venueId) => [
+        { type: 'VenueGenres', id: venueId },
+        'VenueGenres'
+      ],
+      // Cache genres for 30 minutes (they change infrequently)
+      keepUnusedDataFor: 30 * 60, // 30 minutes
+    }),
   }),
 });
 
@@ -279,6 +373,8 @@ export const {
   useGetVenueByIdQuery,
   useGetVenueAnalyticsQuery,
   useGetVenueEventsQuery,
+  useGetVenueBookingIntelligenceQuery,
+  useGetVenueGenresQuery,
   useLazyGetAllVenuesQuery,
   useLazyGetUserVenuesQuery,
   

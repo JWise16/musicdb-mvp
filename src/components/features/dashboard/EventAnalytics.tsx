@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { type VenueAnalytics } from '../../../services/venueService';
+import BookingIntelligence from './BookingIntelligence';
 
 interface EventAnalyticsProps {
   analytics: VenueAnalytics;
@@ -288,6 +289,9 @@ const EventAnalytics = ({ analytics }: EventAnalyticsProps) => {
           </div>
         ))}
       </div>
+
+      {/* Booking Intelligence */}
+      <BookingIntelligence />
 
       {/* Performance Chart */}
       <div className="card p-6 min-w-0">

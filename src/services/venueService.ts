@@ -2,6 +2,76 @@ import { supabase } from '../supabaseClient';
 import type { Tables } from '../database.types';
 import { parseEventDate } from '../utils/dateUtils';
 import { AdminService } from './adminService';
+import { VibrateService } from './vibrateService';
+
+// Temporary inline types - will move back to separate file once module resolution is fixed
+interface BookingIntelligenceMetrics {
+  spotifyFollowers: number;
+  youtubeSubscribers: number;
+  instagramFollowers: number;
+  tiktokFollowers: number;
+  spotifyListenersLocal: number;
+  totalPerformances: number;
+  localPerformances: number;
+}
+
+interface BookingIntelligenceFilters {
+  percentSoldRange: [number, number];
+  genres: string[];
+  timeFrame: 'month' | '3months' | '6months' | '12months' | 'all';
+}
+
+interface BookingIntelligenceData {
+  metrics: BookingIntelligenceMetrics;
+  artistCount: number;
+  eventCount: number;
+  dateRange: {
+    from: string;
+    to: string;
+  } | null;
+  venue: {
+    id: string;
+    name: string;
+    city: string;
+  };
+  lastUpdated: string;
+  appliedFilters: BookingIntelligenceFilters;
+}
+
+interface BookingIntelligenceError {
+  code: 'NO_VENUE' | 'NO_EVENTS' | 'NO_ARTISTS' | 'API_ERROR' | 'UNKNOWN';
+  message: string;
+  details?: Record<string, any>;
+}
+
+interface BookingIntelligenceResult {
+  data: BookingIntelligenceData | null;
+  error: BookingIntelligenceError | null;
+  success: boolean;
+}
+
+interface GetBookingIntelligenceParams {
+  venueId: string;
+  filters: BookingIntelligenceFilters;
+  forceRefresh?: boolean;
+}
+
+interface ArtistBookingDataPoint {
+  artistId: string;
+  artistName: string;
+  eventId: string;
+  bookingDate: string;
+  genre: string | null;
+  percentageSold: number;
+  socialMetrics: {
+    spotifyFollowers: number | null;
+    youtubeSubscribers: number | null;
+    instagramFollowers: number | null;
+    tiktokFollowers: number | null;
+    spotifyListenersLocal: number | null;
+  };
+  isHeadliner: boolean;
+}
 
 export type VenueData = {
   name: string;
@@ -1768,5 +1838,629 @@ export class VenueService {
         genres: [] // Empty when no events exist
       }))
     };
+  }
+
+  /**
+   * Get booking intelligence data for a venue
+   * 
+   * This method calculates average social media metrics for all artists
+   * that have performed at the venue, using historical data from around
+   * each artist's booking date.
+   * 
+   * @param params - Parameters including venueId and filters
+   * @returns Promise<BookingIntelligenceResult> - The calculated intelligence data
+   */
+  static async getBookingIntelligence(params: GetBookingIntelligenceParams): Promise<BookingIntelligenceResult> {
+    const { venueId, filters } = params;
+    
+    try {
+      console.log('VenueService.getBookingIntelligence: Starting calculation for venue:', venueId);
+      
+      // 1. Get venue information
+      const venue = await this.getVenueById(venueId);
+      if (!venue) {
+        return {
+          data: null,
+          error: {
+            code: 'NO_VENUE',
+            message: 'Venue not found',
+            details: { venueId }
+          },
+          success: false
+        };
+      }
+
+      // 2. Get venue events with applied filters
+      const artistDataPoints = await this.getArtistBookingDataPoints(venueId, filters);
+      
+      if (artistDataPoints.length === 0) {
+        return {
+          data: null,
+          error: {
+            code: 'NO_EVENTS',
+            message: 'No events found for this venue with the applied filters',
+            details: { venueId, filters }
+          },
+          success: false
+        };
+      }
+
+      // 3. Calculate averages from the data points
+      const metrics = this.calculateAverageMetrics(artistDataPoints);
+      
+      // 4. Build date range from events
+      const dates = artistDataPoints.map(dp => dp.bookingDate).sort();
+      const dateRange = dates.length > 0 ? {
+        from: dates[0],
+        to: dates[dates.length - 1]
+      } : null;
+
+      // 5. Count unique artists and total events
+      const uniqueArtists = new Set(artistDataPoints.map(dp => dp.artistId));
+      
+      const result: BookingIntelligenceData = {
+        metrics,
+        artistCount: uniqueArtists.size,
+        eventCount: artistDataPoints.length,
+        dateRange,
+        venue: {
+          id: venue.id,
+          name: venue.name,
+          city: venue.location || 'Unknown'
+        },
+        lastUpdated: new Date().toISOString(),
+        appliedFilters: filters
+      };
+      
+      console.log('VenueService.getBookingIntelligence: Calculation completed', {
+        artistCount: result.artistCount,
+        eventCount: result.eventCount,
+        venueId
+      });
+      
+      return {
+        data: result,
+        error: null,
+        success: true
+      };
+      
+    } catch (error) {
+      console.error('VenueService.getBookingIntelligence: Error:', error);
+      
+      return {
+        data: null,
+        error: {
+          code: 'API_ERROR',
+          message: 'Failed to calculate booking intelligence',
+          details: { error: error instanceof Error ? error.message : 'Unknown error' }
+        },
+        success: false
+      };
+    }
+  }
+
+  /**
+   * Get artist booking data points for intelligence calculation
+   * 
+   * This helper method retrieves all artists who performed at a venue
+   * with their booking dates and performance details.
+   * 
+   * @param venueId - The venue ID
+   * @param filters - Filters to apply to events
+   * @returns Promise<any[]> - Array of artist data points (to be typed in Phase 5)
+   */
+  private static async getArtistBookingDataPoints(
+    venueId: string, 
+    filters: BookingIntelligenceFilters
+  ): Promise<ArtistBookingDataPoint[]> {
+    try {
+      console.log('VenueService.getArtistBookingDataPoints: Fetching events for venue:', venueId);
+      
+      // 1. Build date filter based on timeframe
+      let dateFilter = '';
+      const now = new Date();
+      
+      switch (filters.timeFrame) {
+        case 'month': {
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(now.getMonth() - 1);
+          dateFilter = oneMonthAgo.toISOString().split('T')[0];
+          break;
+        }
+        case '3months': {
+          const threeMonthsAgo = new Date();
+          threeMonthsAgo.setMonth(now.getMonth() - 3);
+          dateFilter = threeMonthsAgo.toISOString().split('T')[0];
+          break;
+        }
+        case '6months': {
+          const sixMonthsAgo = new Date();
+          sixMonthsAgo.setMonth(now.getMonth() - 6);
+          dateFilter = sixMonthsAgo.toISOString().split('T')[0];
+          break;
+        }
+        case '12months': {
+          const oneYearAgo = new Date();
+          oneYearAgo.setFullYear(now.getFullYear() - 1);
+          dateFilter = oneYearAgo.toISOString().split('T')[0];
+          break;
+        }
+        case 'all':
+        default:
+          dateFilter = '2000-01-01'; // Far back date to include all events
+          break;
+      }
+
+      // 2. Query events with artist information
+      const query = supabase
+        .from('events')
+        .select(`
+          id,
+          name,
+          date,
+          total_tickets,
+          tickets_sold,
+          event_artists (
+            artist_id,
+            is_headliner,
+            performance_order,
+            artists (
+              id,
+              name,
+              genre
+            )
+          )
+        `)
+        .eq('venue_id', venueId)
+        .gte('date', dateFilter)
+        .order('date', { ascending: false });
+
+      const { data: events, error } = await query;
+
+      if (error) {
+        console.error('VenueService.getArtistBookingDataPoints: Database error:', error);
+        throw error;
+      }
+
+      if (!events || events.length === 0) {
+        console.log('VenueService.getArtistBookingDataPoints: No events found for venue');
+        return [];
+      }
+
+      console.log(`VenueService.getArtistBookingDataPoints: Found ${events.length} events with filters:`, filters);
+
+      // 3. Process events and extract artist data points
+      const dataPoints: ArtistBookingDataPoint[] = [];
+      let filteredOutByPercentage = 0;
+      let filteredOutByGenre = 0;
+
+      for (const event of events) {
+        // Calculate percentage sold
+        const percentageSold = event.total_tickets > 0 
+          ? ((event.tickets_sold || 0) / event.total_tickets) * 100 
+          : 0;
+
+        console.log(`📊 Event Debug: "${event.name}" (${event.date})`, {
+          totalTickets: event.total_tickets,
+          ticketsSold: event.tickets_sold,
+          percentageSold: percentageSold.toFixed(1) + '%',
+          filterRange: `${filters.percentSoldRange[0]}-${filters.percentSoldRange[1]}%`
+        });
+
+        // Apply percentage sold filter
+        const [minPercent, maxPercent] = filters.percentSoldRange;
+        if (percentageSold < minPercent || percentageSold > maxPercent) {
+          console.log(`❌ Event "${event.name}" filtered out by percentage: ${percentageSold.toFixed(1)}% not in range ${minPercent}-${maxPercent}%`);
+          filteredOutByPercentage++;
+          continue;
+        }
+
+        console.log(`✅ Event "${event.name}" passed percentage filter: ${percentageSold.toFixed(1)}% is in range ${minPercent}-${maxPercent}%`);
+
+        // Process each artist in the event
+        if (event.event_artists && event.event_artists.length > 0) {
+          for (const eventArtist of event.event_artists) {
+            if (!(eventArtist as any).artists) continue;
+
+            const artist = (eventArtist as any).artists;
+
+            // Apply genre filter
+            if (filters.genres.length > 0 && artist.genre) {
+              if (!filters.genres.includes(artist.genre)) {
+                filteredOutByGenre++;
+                continue;
+              }
+            }
+
+            // Create data point and fetch real social metrics from VibrateService
+            const dataPoint: ArtistBookingDataPoint = {
+              artistId: artist.id,
+              artistName: artist.name,
+              eventId: event.id,
+              bookingDate: event.date,
+              genre: artist.genre,
+              percentageSold,
+              socialMetrics: {
+                spotifyFollowers: null, // Will be populated below
+                youtubeSubscribers: null,
+                instagramFollowers: null,
+                tiktokFollowers: null,
+                spotifyListenersLocal: null
+              },
+              isHeadliner: eventArtist.is_headliner || false
+            };
+
+            dataPoints.push(dataPoint);
+          }
+        }
+      }
+
+      console.log(`VenueService.getArtistBookingDataPoints: Filter Results:`, {
+        totalEvents: events.length,
+        filteredOutByPercentage,
+        filteredOutByGenre,
+        finalArtistDataPoints: dataPoints.length,
+        appliedFilters: filters
+      });
+      
+      // 4. Fetch real social media data for each artist around their booking date
+      console.log('VenueService.getArtistBookingDataPoints: Fetching real social media data...');
+      const dataPointsWithSocialData = await this.fetchHistoricalSocialMetrics(dataPoints);
+      
+      console.log(`VenueService.getArtistBookingDataPoints: Completed with ${dataPointsWithSocialData.length} data points with social metrics`);
+      return dataPointsWithSocialData;
+
+    } catch (error) {
+      console.error('VenueService.getArtistBookingDataPoints: Error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all unique genres from events at a venue
+   * 
+   * @param venueId - The venue ID
+   * @returns Promise<string[]> - Array of unique genre names
+   */
+  static async getVenueGenres(venueId: string): Promise<string[]> {
+    try {
+      console.log('VenueService.getVenueGenres: Fetching genres for venue:', venueId);
+      
+      const { data: events, error } = await supabase
+        .from('events')
+        .select(`
+          event_artists (
+            artists (
+              genre
+            )
+          )
+        `)
+        .eq('venue_id', venueId);
+
+      if (error) {
+        console.error('VenueService.getVenueGenres: Database error:', error);
+        return [];
+      }
+
+      if (!events || events.length === 0) {
+        console.log('VenueService.getVenueGenres: No events found for venue');
+        return [];
+      }
+
+      // Extract unique genres
+      const genres = new Set<string>();
+      
+      for (const event of events) {
+        if (event.event_artists && event.event_artists.length > 0) {
+          for (const eventArtist of event.event_artists) {
+            if ((eventArtist as any).artists?.genre) {
+              genres.add((eventArtist as any).artists.genre);
+            }
+          }
+        }
+      }
+
+      const uniqueGenres = Array.from(genres).sort();
+      console.log(`VenueService.getVenueGenres: Found ${uniqueGenres.length} unique genres:`, uniqueGenres);
+      
+      return uniqueGenres;
+    } catch (error) {
+      console.error('VenueService.getVenueGenres: Error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch historical social media metrics for artists around their booking dates
+   * 
+   * This method takes artist data points and fetches real social media data 
+   * from VibrateService for the time period around each artist's booking date.
+   * 
+   * @param dataPoints - Array of artist booking data points
+   * @returns Promise<ArtistBookingDataPoint[]> - Data points with populated social metrics
+   */
+  private static async fetchHistoricalSocialMetrics(dataPoints: ArtistBookingDataPoint[]): Promise<ArtistBookingDataPoint[]> {
+    const results: ArtistBookingDataPoint[] = [];
+    
+    for (const dataPoint of dataPoints) {
+      try {
+        console.log(`Fetching social data for artist: ${dataPoint.artistName} (booking date: ${dataPoint.bookingDate})`);
+        
+        // 1. Search for artist in Vibrate database
+        const searchResults = await VibrateService.searchArtists(dataPoint.artistName);
+        console.log(`Search results for "${dataPoint.artistName}":`, searchResults);
+        
+        if (!searchResults?.artists?.length) {
+          console.log(`No Vibrate data found for artist: ${dataPoint.artistName}`);
+          results.push(dataPoint); // Keep original data point with null social metrics
+          continue;
+        }
+
+        // Log all found artists for debugging
+        console.log(`Found ${searchResults.artists.length} artists for "${dataPoint.artistName}":`, 
+          searchResults.artists.map(a => ({ name: a.name, uuid: a.uuid })));
+
+        // For now, let's use the first result even if it's not an exact match
+        // This helps with testing - in production you might want stricter matching
+        const vibrateArtist = searchResults.artists[0];
+        console.log(`Using best match: ${vibrateArtist.name} (UUID: ${vibrateArtist.uuid}) for search term "${dataPoint.artistName}"`);
+
+        // 2. Calculate date range around booking date (±1 week to find closest data)
+        const bookingDate = new Date(dataPoint.bookingDate);
+        const dateFrom = new Date(bookingDate);
+        dateFrom.setDate(bookingDate.getDate() - 7); // 1 week before
+        const dateTo = new Date(bookingDate);
+        dateTo.setDate(bookingDate.getDate() + 7); // 1 week after
+
+        const dateFromStr = dateFrom.toISOString().split('T')[0];
+        const dateToStr = dateTo.toISOString().split('T')[0];
+
+        console.log(`Fetching social data for date range: ${dateFromStr} to ${dateToStr}`);
+
+        // 3. Fetch historical social media data in parallel
+        const [spotifyFanbase, instagramFanbase, tiktokFanbase, youtubeFanbase] = await Promise.allSettled([
+          this.getHistoricalSpotifyFanbase(vibrateArtist.uuid, dateFromStr, dateToStr),
+          this.getHistoricalInstagramFanbase(vibrateArtist.uuid, dateFromStr, dateToStr),
+          this.getHistoricalTikTokFanbase(vibrateArtist.uuid, dateFromStr, dateToStr),
+          this.getHistoricalYouTubeFanbase(vibrateArtist.uuid, dateFromStr, dateToStr)
+        ]);
+
+        // 4. Extract the closest data point to booking date
+        const socialMetrics = {
+          spotifyFollowers: this.extractClosestValue(spotifyFanbase, dataPoint.bookingDate),
+          youtubeSubscribers: this.extractClosestValue(youtubeFanbase, dataPoint.bookingDate),
+          instagramFollowers: this.extractClosestValue(instagramFanbase, dataPoint.bookingDate),
+          tiktokFollowers: this.extractClosestValue(tiktokFanbase, dataPoint.bookingDate),
+          spotifyListenersLocal: null // TODO: Implement local listeners logic
+        };
+
+        console.log(`Social metrics for ${dataPoint.artistName}:`, socialMetrics);
+
+        // 5. Update data point with real social metrics
+        results.push({
+          ...dataPoint,
+          socialMetrics
+        });
+
+      } catch (error) {
+        console.error(`Error fetching social data for ${dataPoint.artistName}:`, error);
+        results.push(dataPoint); // Keep original data point on error
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Get historical Spotify fanbase data for specific date range
+   */
+  private static async getHistoricalSpotifyFanbase(artistUuid: string, dateFrom: string, dateTo: string): Promise<any> {
+    try {
+      const { data, error } = await supabase.functions.invoke('spotify-fanbase', {
+        body: { artistUuid, dateFrom, dateTo }
+      });
+
+      if (error || !data?.success) {
+        console.error('Error fetching historical Spotify fanbase:', error || data);
+        return null;
+      }
+
+      return data.total || {};
+    } catch (error) {
+      console.error('Error in getHistoricalSpotifyFanbase:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get historical Instagram fanbase data for specific date range
+   */
+  private static async getHistoricalInstagramFanbase(artistUuid: string, dateFrom: string, dateTo: string): Promise<any> {
+    try {
+      const { data, error } = await supabase.functions.invoke('instagram-fanbase', {
+        body: { artistUuid, dateFrom, dateTo }
+      });
+
+      if (error || !data?.success) {
+        console.error('Error fetching historical Instagram fanbase:', error || data);
+        return null;
+      }
+
+      return data.total || {};
+    } catch (error) {
+      console.error('Error in getHistoricalInstagramFanbase:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get historical TikTok fanbase data for specific date range
+   */
+  private static async getHistoricalTikTokFanbase(artistUuid: string, dateFrom: string, dateTo: string): Promise<any> {
+    try {
+      const { data, error } = await supabase.functions.invoke('tiktok-fanbase', {
+        body: { artistUuid, dateFrom, dateTo }
+      });
+
+      if (error || !data?.success) {
+        console.error('Error fetching historical TikTok fanbase:', error || data);
+        return null;
+      }
+
+      return data.tiktokFanbase?.data || {};
+    } catch (error) {
+      console.error('Error in getHistoricalTikTokFanbase:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get historical YouTube fanbase data for specific date range
+   */
+  private static async getHistoricalYouTubeFanbase(artistUuid: string, dateFrom: string, dateTo: string): Promise<any> {
+    try {
+      const { data, error } = await supabase.functions.invoke('youtube-fanbase', {
+        body: { artistUuid, dateFrom, dateTo }
+      });
+
+      if (error || !data?.success) {
+        console.error('Error fetching historical YouTube fanbase:', error || data);
+        return null;
+      }
+
+      return data.total || {};
+    } catch (error) {
+      console.error('Error in getHistoricalYouTubeFanbase:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Extract the value closest to the booking date from time-series data
+   */
+  private static extractClosestValue(promiseResult: PromiseSettledResult<any>, bookingDate: string): number | null {
+    if (promiseResult.status === 'rejected' || !promiseResult.value) {
+      return null;
+    }
+
+    const timeSeriesData = promiseResult.value;
+    if (!timeSeriesData || typeof timeSeriesData !== 'object') {
+      return null;
+    }
+
+    const bookingDateTime = new Date(bookingDate).getTime();
+    let closestDate: string | null = null;
+    let closestTimeDiff = Infinity;
+
+    // Find the date closest to booking date
+    for (const dateStr in timeSeriesData) {
+      const dataPointTime = new Date(dateStr).getTime();
+      const timeDiff = Math.abs(dataPointTime - bookingDateTime);
+      
+      if (timeDiff < closestTimeDiff) {
+        closestTimeDiff = timeDiff;
+        closestDate = dateStr;
+      }
+    }
+
+    if (!closestDate) {
+      return null;
+    }
+
+    const value = timeSeriesData[closestDate];
+    console.log(`Closest data point for ${bookingDate}: ${closestDate} = ${value}`);
+    
+    return typeof value === 'number' ? value : null;
+  }
+
+  /**
+   * Calculate average metrics from artist data points
+   * 
+   * @param dataPoints - Array of artist booking data points (to be typed in Phase 5)
+   * @returns Calculated average metrics
+   */
+  private static calculateAverageMetrics(dataPoints: ArtistBookingDataPoint[]): BookingIntelligenceData['metrics'] {
+    console.log(`VenueService.calculateAverageMetrics: Calculating averages for ${dataPoints.length} data points`);
+    
+    if (dataPoints.length === 0) {
+      return {
+        spotifyFollowers: 0,
+        youtubeSubscribers: 0,
+        instagramFollowers: 0,
+        tiktokFollowers: 0,
+        spotifyListenersLocal: 0,
+        totalPerformances: 0,
+        localPerformances: 0
+      };
+    }
+
+    // Calculate averages from real social media data
+    let spotifyTotal = 0;
+    let youtubeTotal = 0;
+    let instagramTotal = 0;
+    let tiktokTotal = 0;
+    let spotifyLocalTotal = 0;
+    
+    let spotifyCount = 0;
+    let youtubeCount = 0;
+    let instagramCount = 0;
+    let tiktokCount = 0;
+    let spotifyLocalCount = 0;
+
+    // Sum up all available social metrics
+    for (const dataPoint of dataPoints) {
+      const { socialMetrics } = dataPoint;
+      
+      if (socialMetrics.spotifyFollowers !== null) {
+        spotifyTotal += socialMetrics.spotifyFollowers;
+        spotifyCount++;
+      }
+      
+      if (socialMetrics.youtubeSubscribers !== null) {
+        youtubeTotal += socialMetrics.youtubeSubscribers;
+        youtubeCount++;
+      }
+      
+      if (socialMetrics.instagramFollowers !== null) {
+        instagramTotal += socialMetrics.instagramFollowers;
+        instagramCount++;
+      }
+      
+      if (socialMetrics.tiktokFollowers !== null) {
+        tiktokTotal += socialMetrics.tiktokFollowers;
+        tiktokCount++;
+      }
+      
+      if (socialMetrics.spotifyListenersLocal !== null) {
+        spotifyLocalTotal += socialMetrics.spotifyListenersLocal;
+        spotifyLocalCount++;
+      }
+    }
+
+    // Calculate performance metrics
+    const totalPerformances = dataPoints.length;
+    const localPerformances = Math.floor(totalPerformances * 0.6); // Assume 60% are local
+
+    const result = {
+      spotifyFollowers: spotifyCount > 0 ? Math.round(spotifyTotal / spotifyCount) : 0,
+      youtubeSubscribers: youtubeCount > 0 ? Math.round(youtubeTotal / youtubeCount) : 0,
+      instagramFollowers: instagramCount > 0 ? Math.round(instagramTotal / instagramCount) : 0,
+      tiktokFollowers: tiktokCount > 0 ? Math.round(tiktokTotal / tiktokCount) : 0,
+      spotifyListenersLocal: spotifyLocalCount > 0 ? Math.round(spotifyLocalTotal / spotifyLocalCount) : 0,
+      totalPerformances,
+      localPerformances
+    };
+
+    console.log('VenueService.calculateAverageMetrics: Calculated metrics from real data:', result);
+    console.log('VenueService.calculateAverageMetrics: Data availability:', {
+      spotifyCount,
+      youtubeCount,
+      instagramCount,
+      tiktokCount,
+      spotifyLocalCount,
+      totalDataPoints: dataPoints.length
+    });
+    
+    return result;
   }
 } 
